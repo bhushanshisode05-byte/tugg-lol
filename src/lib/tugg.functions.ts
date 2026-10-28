@@ -211,6 +211,8 @@ const sideSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
+export const MATCHUP_CHECKOUTS_PER_HOUR = 5;
+
 export const createMatchupCheckout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
@@ -230,6 +232,13 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getRequestIP } = await import("@tanstack/react-start/server");
+    const ip = getRequestIP({ xForwardedFor: true }) || "unknown";
+    const ipHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip))))
+      .map((b) => b.toString(16).padStart(2, "0")).join("");
+    const { data: allowed, error: rlErr } = await supabaseAdmin.rpc("take_checkout_slot", { p_ip: ipHash, p_max: MATCHUP_CHECKOUTS_PER_HOUR, p_window_minutes: 60 });
+    if (rlErr) return { error: "Could not start checkout. Please try again." };
+    if (!allowed) return { error: "Too many matchup checkouts from your network. Please try again in an hour." };
     let slug = slugify(`${data.a.name} vs ${data.b.name}`) || "matchup";
     const { data: existing } = await supabaseAdmin.from("matchups").select("slug,status").eq("slug", slug).maybeSingle();
     if (existing && existing.status !== "pending_payment" && existing.status !== "rejected")

@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkout_attempts: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       creators: {
         Row: {
           created_at: string
@@ -337,6 +355,10 @@ export type Database = {
           p_side: string
         }
         Returns: Json
+      }
+      take_checkout_slot: {
+        Args: { p_ip: string; p_max: number; p_window_minutes: number }
+        Returns: boolean
       }
       tugg_countries: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }

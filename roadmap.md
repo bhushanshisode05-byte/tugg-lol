@@ -20,4 +20,4 @@
 - [ ] Turnstile bot protection + rate limits (needs Turnstile keys)
 - [ ] X / Bluesky auto-posting (needs keys)
 - [ ] Generated share image
-- [ ] Per-IP rate limit on matchup checkout (awaiting owner OK on ad-hoc approach)
+- [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)
