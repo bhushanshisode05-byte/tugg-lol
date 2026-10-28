@@ -282,7 +282,7 @@ function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; pause
       >
         Pull ${valid ? amount : "–"} for {sides.find((s) => s.id === side)?.name}
       </button>
-      <p className="mt-3 text-xs text-muted-foreground">Non-refundable entertainment purchase. No prizes or payouts. Sales tax may be added at checkout.</p>
+      <p className="mt-3 text-xs text-muted-foreground">Non-refundable entertainment purchase. No prizes or payouts.</p>
     </section>
   );
 }

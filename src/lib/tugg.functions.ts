@@ -177,7 +177,6 @@ export const createPullCheckout = createServerFn({ method: "POST" })
         mode: "payment",
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
-        automatic_tax: { enabled: true },
         billing_address_collection: "required",
         payment_intent_data: { description: `Tugg pull: ${side.name} in ${(side as any).matchups.title}` },
         metadata: {
@@ -243,7 +242,6 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         mode: "payment",
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
-        automatic_tax: { enabled: true },
         billing_address_collection: "required",
         payment_intent_data: { description: `Tugg matchup (${data.tier}): ${data.title}` },
         metadata: { kind: "matchup", matchup_id: m.id, tier: data.tier, managed_payments: "false" },
