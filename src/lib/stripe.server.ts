@@ -90,6 +90,7 @@ export async function verifyWebhook(req: Request, env: StripeEnv): Promise<{ id:
   const v1Signatures: string[] = [];
   for (const part of signature.split(",")) {
     const [key, value] = part.split("=", 2);
+    if (!value) continue;
     if (key === "t") timestamp = value;
     if (key === "v1") v1Signatures.push(value);
   }

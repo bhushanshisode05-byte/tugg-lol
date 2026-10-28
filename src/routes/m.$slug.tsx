@@ -12,8 +12,8 @@ import { getStripeEnvironment } from "@/lib/stripe";
 const mq = (slug: string) => queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
 
 export const Route = createFileRoute("/m/$slug")({
-  validateSearch: (s: Record<string, unknown>): { paid?: string } => ({
-    paid: typeof s.paid === "string" ? s.paid : undefined,
+  validateSearch: (s: Record<string, unknown>): { paid?: string | undefined } => ({
+    paid: typeof s["paid"] === "string" ? s["paid"] : undefined,
   }),
   loader: async ({ context, params }) => {
     const d = await context.queryClient.ensureQueryData(mq(params.slug));
