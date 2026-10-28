@@ -8,8 +8,10 @@
 - [x] Products set up (rope pull $1 x qty, $9 standard, $29 featured)
 
 ## Next
-- [ ] Verify test pull lands via webhook (endpoint goes live after this build deploys)
-- [ ] Leaderboards, Hall of Fame + result cards, /rivalries/[slug], Yesterday on Tugg recap
+- [x] Test pull lands via webhook and moves the rope live
+- [x] Leaderboards, Hall of Fame + result cards (/results/[id]), /rivalries/[slug]
+- [ ] Check Hall of Fame cards with real winners after the first 00:00 UTC close
+- [ ] Yesterday on Tugg recap
 - [ ] How it works, FAQ, Terms, Privacy, Refund, Contact (AI answers), About/Legal
 - [ ] Read-only /admin (login)
 - [ ] AI daily generator (3/day, cap 30, 14-day retirement, AI_GENERATOR_ENABLED)
