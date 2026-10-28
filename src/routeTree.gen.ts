@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutLegalRouteImport } from './routes/about-legal'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LeaderboardsRouteImport } from './routes/leaderboards'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
@@ -27,9 +33,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutLegalRoute = AboutLegalRouteImport.update({
+  id: '/about-legal',
+  path: '/about-legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HallOfFameRoute = HallOfFameRouteImport.update({
@@ -37,9 +53,24 @@ const HallOfFameRoute = HallOfFameRouteImport.update({
   path: '/hall-of-fame',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeaderboardsRoute = LeaderboardsRouteImport.update({
   id: '/leaderboards',
   path: '/leaderboards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -50,6 +81,11 @@ const RulesRoute = RulesRouteImport.update({
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MSlugRoute = MSlugRouteImport.update({
@@ -86,11 +122,17 @@ const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about-legal': typeof AboutLegalRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -100,11 +142,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about-legal': typeof AboutLegalRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -115,11 +163,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about-legal': typeof AboutLegalRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -131,11 +185,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about-legal'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -145,11 +205,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about-legal'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -159,11 +225,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about-legal'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -174,11 +246,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutLegalRoute: typeof AboutLegalRoute
   CreateRoute: typeof CreateRoute
+  FaqRoute: typeof FaqRoute
   HallOfFameRoute: typeof HallOfFameRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   LeaderboardsRoute: typeof LeaderboardsRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   RulesRoute: typeof RulesRoute
   StatsRoute: typeof StatsRoute
+  TermsRoute: typeof TermsRoute
   MSlugRoute: typeof MSlugRoute
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
@@ -196,11 +274,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about-legal': {
+      id: '/about-legal'
+      path: '/about-legal'
+      fullPath: '/about-legal'
+      preLoaderRoute: typeof AboutLegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/create': {
       id: '/create'
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hall-of-fame': {
@@ -210,11 +302,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HallOfFameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leaderboards': {
       id: '/leaderboards'
       path: '/leaderboards'
       fullPath: '/leaderboards'
       preLoaderRoute: typeof LeaderboardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -229,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/m/$slug': {
@@ -278,11 +398,17 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutLegalRoute: AboutLegalRoute,
   CreateRoute: CreateRoute,
+  FaqRoute: FaqRoute,
   HallOfFameRoute: HallOfFameRoute,
+  HowItWorksRoute: HowItWorksRoute,
   LeaderboardsRoute: LeaderboardsRoute,
+  PrivacyRoute: PrivacyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   RulesRoute: RulesRoute,
   StatsRoute: StatsRoute,
+  TermsRoute: TermsRoute,
   MSlugRoute: MSlugRoute,
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,
