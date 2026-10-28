@@ -27,6 +27,7 @@ export const config = () => ({
   pausePulls: flag("PAUSE_PULLS", false),
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
+  ownerEmail: process.env["OWNER_EMAIL"]?.trim() || "",
   /** Server-only Stripe environment. Anything but "live" means sandbox. */
   paymentsEnv: ((process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live" ? "live" : "sandbox") as "sandbox" | "live",
 });
