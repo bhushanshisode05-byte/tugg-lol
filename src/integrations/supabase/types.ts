@@ -321,6 +321,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_stale_matchups: { Args: never; Returns: number }
       close_due_rounds: { Args: never; Returns: number }
       close_round: { Args: { p_round: string }; Returns: undefined }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
@@ -336,6 +337,73 @@ export type Database = {
           p_side: string
         }
         Returns: Json
+      }
+      tugg_countries: {
+        Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
+        Returns: {
+          cents: number
+          country: string
+          pulls: number
+        }[]
+      }
+      tugg_recent_pulls: {
+        Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
+        Returns: {
+          amount_cents: number
+          country: string
+          created_at: string
+          display_name: string
+          id: string
+          matchup_id: string
+          shout_out: string
+          side_id: string
+        }[]
+      }
+      tugg_round_leaders: {
+        Args: { p_limit?: number; p_live: boolean; p_open_only: boolean }
+        Returns: {
+          ends_at: string
+          matchup_id: string
+          pullers: number
+          round_id: string
+          status: string
+          total_a_cents: number
+          total_b_cents: number
+        }[]
+      }
+      tugg_round_totals: {
+        Args: { p_live: boolean; p_rounds: string[] }
+        Returns: {
+          pullers: number
+          round_id: string
+          total_a_cents: number
+          total_b_cents: number
+        }[]
+      }
+      tugg_side_totals: {
+        Args: { p_live: boolean; p_matchups: string[] }
+        Returns: {
+          cents: number
+          side_id: string
+        }[]
+      }
+      tugg_stats: {
+        Args: { p_live: boolean }
+        Returns: {
+          countries: number
+          pulls_today: number
+          today_cents: number
+          total_cents: number
+          total_pulls: number
+        }[]
+      }
+      tugg_top_pullers: {
+        Args: { p_limit?: number; p_live: boolean; p_round: string }
+        Returns: {
+          cents: number
+          name: string
+          side_id: string
+        }[]
       }
     }
     Enums: {
