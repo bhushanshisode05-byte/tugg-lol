@@ -11,9 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as LeaderboardsRouteImport } from './routes/leaderboards'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
+import { Route as ResultsIdRouteImport } from './routes/results.$id'
+import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,6 +28,16 @@ const IndexRoute = IndexRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HallOfFameRoute = HallOfFameRouteImport.update({
+  id: '/hall-of-fame',
+  path: '/hall-of-fame',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardsRoute = LeaderboardsRouteImport.update({
+  id: '/leaderboards',
+  path: '/leaderboards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -41,6 +55,16 @@ const MSlugRoute = MSlugRouteImport.update({
   path: '/m/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResultsIdRoute = ResultsIdRouteImport.update({
+  id: '/results/$id',
+  path: '/results/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RivalriesSlugRoute = RivalriesSlugRouteImport.update({
+  id: '/rivalries/$slug',
+  path: '/rivalries/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -51,26 +75,38 @@ const ApiPublicPaymentsWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/leaderboards': typeof LeaderboardsRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
   '/m/$slug': typeof MSlugRoute
+  '/results/$id': typeof ResultsIdRoute
+  '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/leaderboards': typeof LeaderboardsRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
   '/m/$slug': typeof MSlugRoute
+  '/results/$id': typeof ResultsIdRoute
+  '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/leaderboards': typeof LeaderboardsRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
   '/m/$slug': typeof MSlugRoute
+  '/results/$id': typeof ResultsIdRoute
+  '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -78,34 +114,50 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/create'
+    | '/hall-of-fame'
+    | '/leaderboards'
     | '/rules'
     | '/stats'
     | '/m/$slug'
+    | '/results/$id'
+    | '/rivalries/$slug'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/create'
+    | '/hall-of-fame'
+    | '/leaderboards'
     | '/rules'
     | '/stats'
     | '/m/$slug'
+    | '/results/$id'
+    | '/rivalries/$slug'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
     | '/create'
+    | '/hall-of-fame'
+    | '/leaderboards'
     | '/rules'
     | '/stats'
     | '/m/$slug'
+    | '/results/$id'
+    | '/rivalries/$slug'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CreateRoute: typeof CreateRoute
+  HallOfFameRoute: typeof HallOfFameRoute
+  LeaderboardsRoute: typeof LeaderboardsRoute
   RulesRoute: typeof RulesRoute
   StatsRoute: typeof StatsRoute
   MSlugRoute: typeof MSlugRoute
+  ResultsIdRoute: typeof ResultsIdRoute
+  RivalriesSlugRoute: typeof RivalriesSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -123,6 +175,20 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hall-of-fame': {
+      id: '/hall-of-fame'
+      path: '/hall-of-fame'
+      fullPath: '/hall-of-fame'
+      preLoaderRoute: typeof HallOfFameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboards': {
+      id: '/leaderboards'
+      path: '/leaderboards'
+      fullPath: '/leaderboards'
+      preLoaderRoute: typeof LeaderboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -146,6 +212,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/results/$id': {
+      id: '/results/$id'
+      path: '/results/$id'
+      fullPath: '/results/$id'
+      preLoaderRoute: typeof ResultsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rivalries/$slug': {
+      id: '/rivalries/$slug'
+      path: '/rivalries/$slug'
+      fullPath: '/rivalries/$slug'
+      preLoaderRoute: typeof RivalriesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -159,9 +239,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CreateRoute: CreateRoute,
+  HallOfFameRoute: HallOfFameRoute,
+  LeaderboardsRoute: LeaderboardsRoute,
   RulesRoute: RulesRoute,
   StatsRoute: StatsRoute,
   MSlugRoute: MSlugRoute,
+  ResultsIdRoute: ResultsIdRoute,
+  RivalriesSlugRoute: RivalriesSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport

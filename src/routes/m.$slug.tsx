@@ -104,6 +104,7 @@ function MatchupPage() {
         </div>
         <h1 className="mt-2 font-display text-4xl font-extrabold leading-none sm:text-6xl">{m.title}</h1>
         {m.description && <p className="mt-2 text-muted-foreground">{m.description}</p>}
+        <Link to="/rivalries/$slug" params={{ slug: m.slug }} className="mt-2 inline-block text-sm text-muted-foreground underline">Who is winning? Full results</Link>
 
         <div className="mt-8">
           <Rope sides={m.sides} a={a} b={b} />

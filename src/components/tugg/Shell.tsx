@@ -12,8 +12,10 @@ export function Shell({ children }: { children: ReactNode }) {
             tugg<span className="text-primary">.</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm font-semibold">
-            <Link to="/stats" className="hidden text-muted-foreground hover:text-foreground sm:inline">Stats</Link>
-            <Link to="/rules" className="text-muted-foreground hover:text-foreground">Rules</Link>
+            <Link to="/leaderboards" className="text-muted-foreground hover:text-foreground">Leaders</Link>
+            <Link to="/hall-of-fame" className="hidden text-muted-foreground hover:text-foreground sm:inline">Hall of Fame</Link>
+            <Link to="/stats" className="hidden text-muted-foreground hover:text-foreground md:inline">Stats</Link>
+            <Link to="/rules" className="hidden text-muted-foreground hover:text-foreground sm:inline">Rules</Link>
             <Link
               to="/create"
               className="rounded-full bg-primary px-4 py-2 text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
@@ -30,6 +32,8 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="flex gap-4">
             <Link to="/rules" className="hover:text-foreground">Rules & refunds</Link>
             <Link to="/stats" className="hover:text-foreground">Stats</Link>
+            <Link to="/leaderboards" className="hover:text-foreground">Leaderboards</Link>
+            <Link to="/hall-of-fame" className="hover:text-foreground">Hall of Fame</Link>
           </div>
         </div>
       </footer>
