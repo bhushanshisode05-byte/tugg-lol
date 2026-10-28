@@ -451,6 +451,7 @@ export type Database = {
           pulls: number
         }[]
       }
+      tugg_creation_revenue: { Args: never; Returns: Json }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {

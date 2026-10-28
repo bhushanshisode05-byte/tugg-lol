@@ -29,6 +29,13 @@
       "when": 1793231211075,
       "tag": "0003_private_support_and_owner_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793231591030,
+      "tag": "0004_admin_creation_revenue_aggregate",
+      "breakpoints": true
     }
   ]
 }
