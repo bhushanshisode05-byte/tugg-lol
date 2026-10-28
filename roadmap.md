@@ -14,6 +14,7 @@
 - [ ] Yesterday on Tugg recap
 - [ ] How it works, FAQ, Terms, Privacy, Refund, Contact (AI answers), About/Legal
 - [ ] Read-only /admin (login)
+- [ ] Policy-grounded FAQ chat, private support records, payment-error escalation and support rate limits
 - [ ] AI daily generator (3/day, cap 30, 14-day retirement, AI_GENERATOR_ENABLED)
 - [ ] Emails: rejection notice, payment-error escalation, weekly owner summary, digest signup (needs email domain)
 - [ ] GEO: robots.txt, llms.txt, sitemap, JSON-LD, JSON/RSS feeds, OG images, IndexNow, SITE_URL everywhere
