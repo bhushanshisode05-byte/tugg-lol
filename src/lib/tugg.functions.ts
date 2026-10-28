@@ -268,3 +268,94 @@ export const getCreationStatus = createServerFn({ method: "GET" })
     const { data: log } = await supabaseAdmin.from("moderation_log").select("reason,verdict").eq("subject_type", "matchup").eq("subject_id", data.sessionId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     return { slug: m?.slug as string, status: m?.status as string, title: m?.title as string, refunded: c.refunded, reason: log?.reason ?? null };
   });
+
+// ---------- Leaderboards / Hall of Fame / Results ----------
+
+type Lite = { slug: string; title: string; status: string; sides: Side[] };
+async function matchupMap() {
+  const { data } = await publicDb()
+    .from("matchups")
+    .select("id,slug,title,status,sides(*)")
+    .in("status", ["active", "retired"]);
+  return new Map(
+    (data ?? []).map((m: any) => [m.id, { slug: m.slug, title: m.title, status: m.status, sides: [...m.sides].sort((a: Side, b: Side) => a.position - b.position) } as Lite]),
+  );
+}
+
+export const getLeaderboards = createServerFn({ method: "GET" }).handler(async () => {
+  const db = publicDb();
+  const mm = await matchupMap();
+  const ids = [...mm.keys()];
+  const [rounds, sides, pulls] = await Promise.all([
+    ids.length
+      ? db.from("rounds").select("id,matchup_id,status,ends_at,total_a_cents,total_b_cents,pullers").in("matchup_id", ids).or("total_a_cents.gt.0,total_b_cents.gt.0").limit(5000)
+      : Promise.resolve({ data: [] as any[] }),
+    ids.length
+      ? db.from("sides").select("id,matchup_id,name,emoji,best_streak,current_streak,wins").in("matchup_id", ids).gt("best_streak", 0).order("best_streak", { ascending: false }).limit(20)
+      : Promise.resolve({ data: [] as any[] }),
+    db.from("pulls").select("country,amount_cents").not("country", "is", null).limit(100000),
+  ]);
+  const withM = (r: any) => {
+    const m = mm.get(r.matchup_id)!;
+    return { id: r.id as string, slug: m.slug, title: m.title, a: m.sides[0]!, b: m.sides[1]!, total_a: Number(r.total_a_cents), total_b: Number(r.total_b_cents), pullers: r.pullers as number, ends_at: r.ends_at as string, open: r.status === "open" };
+  };
+  const all = (rounds.data ?? []).filter((r: any) => mm.has(r.matchup_id)).map(withM);
+  const sum = (r: { total_a: number; total_b: number }) => r.total_a + r.total_b;
+  const cmap = new Map<string, { cents: number; pulls: number }>();
+  for (const p of pulls.data ?? []) {
+    const c = cmap.get(p.country!) ?? { cents: 0, pulls: 0 };
+    c.cents += p.amount_cents; c.pulls += 1; cmap.set(p.country!, c);
+  }
+  return {
+    biggest: [...all].sort((x, y) => sum(y) - sum(x)).slice(0, 15),
+    today: all.filter((r) => r.open).sort((x, y) => sum(y) - sum(x)).slice(0, 15),
+    streaks: (sides.data ?? []).filter((s: any) => mm.has(s.matchup_id)).map((s: any) => {
+      const m = mm.get(s.matchup_id)!;
+      return { id: s.id as string, name: s.name as string, emoji: s.emoji as string, best: s.best_streak as number, current: s.current_streak as number, wins: s.wins as number, slug: m.slug, title: m.title };
+    }),
+    countries: [...cmap].map(([country, v]) => ({ country, ...v })).sort((a, b) => b.cents - a.cents).slice(0, 20),
+  };
+});
+
+export type ResultCard = {
+  id: string; slug: string; title: string; ends_at: string; note: string | null;
+  winner: Side; loser: Side; winner_cents: number; loser_cents: number; pullers: number;
+};
+
+function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
+  const m = mm.get(r.matchup_id);
+  if (!m || !r.winner_side_id) return null;
+  const [a, b] = m.sides;
+  if (!a || !b) return null;
+  const aWon = r.winner_side_id === a.id;
+  return {
+    id: r.id, slug: m.slug, title: m.title, ends_at: r.ends_at, note: r.result_note,
+    winner: aWon ? a : b, loser: aWon ? b : a,
+    winner_cents: Number(aWon ? r.total_a_cents : r.total_b_cents),
+    loser_cents: Number(aWon ? r.total_b_cents : r.total_a_cents),
+    pullers: r.pullers,
+  };
+}
+
+export const getHallOfFame = createServerFn({ method: "GET" }).handler(async () => {
+  const mm = await matchupMap();
+  const ids = [...mm.keys()];
+  if (!ids.length) return { cards: [] as ResultCard[] };
+  const { data } = await publicDb()
+    .from("rounds")
+    .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
+    .eq("status", "closed").not("winner_side_id", "is", null).in("matchup_id", ids)
+    .order("ends_at", { ascending: false }).limit(60);
+  return { cards: (data ?? []).map((r) => toCard(r, mm)).filter((c): c is ResultCard => !!c) };
+});
+
+export const getResult = createServerFn({ method: "GET" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: r } = await publicDb()
+      .from("rounds")
+      .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
+      .eq("id", data.id).eq("status", "closed").maybeSingle();
+    if (!r) return null;
+    return toCard(r, await matchupMap());
+  });
