@@ -53,6 +53,8 @@ export async function answerFromPolicies(request: Request, text: string) {
   try { const output = await result.output; return approvedAnswer(output.answerId); }
   catch (e) {
     if (e instanceof SupportError) throw e;
+    const { data } = await db.from("support_ai_state").select("paused,status,reason").eq("id", "support").maybeSingle();
+    if (data?.paused) throw new SupportError(data.status || 503, data.reason || "AI support is paused.");
     throw new SupportError(503, "AI support could not answer this request. Your message has been saved.");
   }
 }
@@ -79,6 +81,7 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
     if (session.payment_status !== "paid") return " This reference does not show a completed payment.";
     if (Date.now()/1000 - session.created < 900) return " Payment confirmation may still be processing; a delay alone does not establish an error.";
     const kind = session.metadata?.["kind"];
+    if (kind !== "pull" && kind !== "matchup") return " This reference is not a Tugg purchase.";
     const pull = kind === "pull" ? await db.from("pulls").select("id").eq("stripe_session_id", session.id).maybeSingle() : null;
     const creator = kind === "matchup" ? await db.from("creators").select("id,refunded,matchups(status)").eq("stripe_session_id", session.id).maybeSingle() : null;
     if (pull?.error || creator?.error) throw new Error("Could not verify purchase");

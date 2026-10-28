@@ -17,3 +17,6 @@
 - Public pull data is served only through SECURITY DEFINER tugg_* SQL functions (aggregates, live-only filter); the pulls table has no anon/authenticated access. Why: hides stripe_session_id and keeps totals exact past row limits.
 - Realtime listens to rounds only; every recorded pull updates its round row. Why: pulls aren't publicly readable.
 - Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.
+- Legal pages and AI support share one policy catalog; AI selects an approved answer ID rather than generating advice. Why: prevents invented policies and refund promises.
+- Support messages and replies are archived through service-only access; abuse counters reuse the atomic hashed-IP limiter in separate support namespaces. Why: keeps personal messages private and limits AI spending.
+- Admin handlers revalidate the token, configured owner email, confirmed identity and unique owner role before privileged reads. Why: hidden routes are not authorization.

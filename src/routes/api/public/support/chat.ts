@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
 import { z } from "zod";
+import { readSupportJson } from "@/lib/support-input.server";
 const schema = z.object({ messages: z.array(z.object({ id: z.string().max(200), role: z.enum(["user","assistant"]), parts: z.array(z.object({ type: z.literal("text"), text: z.string().max(3000) })).min(1).max(10) })).min(1).max(30) });
 export const Route = createFileRoute("/api/public/support/chat")({ server: { handlers: { POST: async ({ request }) => {
   const { limitSupport, saveMessage, answerFromPolicies, saveReply, SupportError } = await import("@/lib/support.server");
   try {
-    const input = schema.parse(await request.json());
+    const input = schema.parse(await readSupportJson(request));
     const last = input.messages.at(-1);
     if (last?.role !== "user") return Response.json({ error: "A question is required." }, { status: 400 });
     const text = z.string().trim().min(1).max(3000).parse(last.parts.map(p => p.text).join("\n"));
