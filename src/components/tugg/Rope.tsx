@@ -12,7 +12,7 @@ export function ropePosition(a: number, b: number) {
 }
 
 export function Rope({ sides, a, b, size = "lg" }: { sides: Side[]; a: number; b: number; size?: "lg" | "sm" }) {
-  const pos = 100 - ropePosition(a, b); // leading side pulls flag toward itself
+  const pos = ropePosition(a, b); // flag drifts toward the leading side
   const [A, B] = sides;
   const big = size === "lg";
   return (
