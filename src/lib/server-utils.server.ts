@@ -27,7 +27,12 @@ export const config = () => ({
   pausePulls: flag("PAUSE_PULLS", false),
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
+  /** Server-only Stripe environment. Anything but "live" means sandbox. */
+  paymentsEnv: ((process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live" ? "live" : "sandbox") as "sandbox" | "live",
 });
+
+/** True when only live-money pulls may count in public numbers. */
+export const liveOnly = () => config().paymentsEnv === "live";
 
 export type Verdict = { allowed: boolean; reason: string };
 
@@ -82,3 +87,9 @@ export async function moderate(kind: "matchup" | "shout_out", text: string): Pro
 
 export const slugify = (s: string) =>
   s.toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, 70);
+
+/** Server decides the Stripe env; in live mode a sandbox hint from the browser is refused. */
+export function resolvePaymentsEnv(server: "sandbox" | "live", hint?: "sandbox" | "live"): { env: "sandbox" | "live" } | { error: string } {
+  if (server === "live" && hint === "sandbox") return { error: "Test checkouts are disabled. Please refresh the page." };
+  return { env: server };
+}

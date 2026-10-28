@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-/** Calls onChange (debounced) whenever a pull lands or a round updates. */
+/** Calls onChange (debounced) whenever a round updates (every recorded pull updates its round). Raw pulls are not public. */
 export function useLive(onChange: () => void, matchupId?: string) {
   const cb = useRef(onChange);
   cb.current = onChange;
@@ -15,7 +15,6 @@ export function useLive(onChange: () => void, matchupId?: string) {
     const ch = supabase
       .channel(`live-${matchupId ?? "all"}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "rounds", ...(filter && { filter }) }, fire)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pulls", ...(filter && { filter }) }, fire)
       .subscribe();
     return () => {
       clearTimeout(t);

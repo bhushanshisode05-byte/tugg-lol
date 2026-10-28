@@ -20,3 +20,4 @@
 - [ ] Turnstile bot protection + rate limits (needs Turnstile keys)
 - [ ] X / Bluesky auto-posting (needs keys)
 - [ ] Generated share image
+- [ ] Per-IP rate limit on matchup checkout (awaiting owner OK on ad-hoc approach)
