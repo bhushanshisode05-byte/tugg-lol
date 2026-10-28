@@ -15,6 +15,13 @@
       "when": 1793192593560,
       "tag": "0001_public_pull_aggregates",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793230363606,
+      "tag": "0002_matchup_checkout_rate_limit",
+      "breakpoints": true
     }
   ]
 }
