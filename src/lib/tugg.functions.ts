@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { publicDb, config, slugify, liveOnly } from "./server-utils.server";
+import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
 
 export type Side = {
@@ -157,12 +157,7 @@ export const getStats = createServerFn({ method: "GET" }).handler(async () => {
 type CheckoutResult = { clientSecret: string } | { error: string };
 const envSchema = z.enum(["sandbox", "live"]).optional();
 
-/** Server decides the Stripe env; a browser hint that disagrees with live mode is refused. */
-function serverEnv(hint?: "sandbox" | "live"): { env: StripeEnv } | { error: string } {
-  const env = config().paymentsEnv;
-  if (env === "live" && hint === "sandbox") return { error: "Test checkouts are disabled. Please refresh the page." };
-  return { env };
-}
+const serverEnv = (hint?: "sandbox" | "live") => resolvePaymentsEnv(config().paymentsEnv, hint);
 
 export const createPullCheckout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
