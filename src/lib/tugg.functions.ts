@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { publicDb, config, slugify } from "./server-utils.server";
+import { publicDb, config, slugify, liveOnly } from "./server-utils.server";
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
 
 export type Side = {
@@ -61,10 +61,22 @@ async function loadMatchups(filter?: { slug?: string }) {
   const { data: rounds } = ids.length
     ? await db.from("rounds").select("id,matchup_id,ends_at,starts_at,total_a_cents,total_b_cents,pullers,extensions").eq("status", "open").in("matchup_id", ids)
     : { data: [] as any[] };
-  const byM = new Map((rounds ?? []).map((r: any) => [r.matchup_id, r]));
+  const live = liveOnly();
+  const [rt, st] = await Promise.all([
+    rounds?.length ? db.rpc("tugg_round_totals", { p_live: live, p_rounds: rounds.map((r: any) => r.id) }) : Promise.resolve({ data: [] as any[] }),
+    ids.length ? db.rpc("tugg_side_totals", { p_live: live, p_matchups: ids }) : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const rtot = new Map((rt.data ?? []).map((t: any) => [t.round_id, t]));
+  const stot = new Map((st.data ?? []).map((t: any) => [t.side_id, Number(t.cents)]));
+  const byM = new Map(
+    (rounds ?? []).map((r: any) => {
+      const t: any = rtot.get(r.id);
+      return [r.matchup_id, { ...r, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0), pullers: t?.pullers ?? 0 }];
+    }),
+  );
   return (data ?? []).map((m: any) => ({
     ...m,
-    sides: [...m.sides].sort((a: Side, b: Side) => a.position - b.position),
+    sides: [...m.sides].map((s: Side) => ({ ...s, all_time_cents: stot.get(s.id) ?? 0 })).sort((a: Side, b: Side) => a.position - b.position),
     round: byM.get(m.id) ?? null,
   })) as Matchup[];
 }
@@ -77,17 +89,16 @@ const startOfUtcDay = () => {
 
 export const getHome = createServerFn({ method: "GET" }).handler(async () => {
   const db = publicDb();
-  const matchups = await loadMatchups();
-  const { data: today } = await db.from("pulls").select("amount_cents").gte("created_at", startOfUtcDay()).limit(10000);
-  const { data: recent } = await db
-    .from("pulls")
-    .select("id,side_id,matchup_id,amount_cents,display_name,shout_out,country,created_at")
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const live = liveOnly();
+  const [matchups, stats, recent] = await Promise.all([
+    loadMatchups(),
+    db.rpc("tugg_stats", { p_live: live }),
+    db.rpc("tugg_recent_pulls", { p_live: live, p_limit: 20 }),
+  ]);
   return {
     matchups,
-    pulledTodayCents: (today ?? []).reduce((s, p) => s + p.amount_cents, 0),
-    recent: (recent ?? []) as PullRow[],
+    pulledTodayCents: Number(stats.data?.[0]?.today_cents ?? 0),
+    recent: (recent.data ?? []) as PullRow[],
     paused: config().pausePulls,
   };
 });
@@ -98,56 +109,60 @@ export const getMatchup = createServerFn({ method: "GET" })
     const [m] = await loadMatchups({ slug: data.slug });
     if (!m) return null;
     const db = publicDb();
-    const [roundPulls, recent, allPulls, history] = await Promise.all([
-      m.round
-        ? db.from("pulls").select("side_id,amount_cents,display_name").eq("round_id", m.round.id).limit(5000)
-        : Promise.resolve({ data: [] as any[] }),
-      db.from("pulls").select("id,side_id,matchup_id,amount_cents,display_name,shout_out,country,created_at").eq("matchup_id", m.id).order("created_at", { ascending: false }).limit(25),
-      db.from("pulls").select("country,amount_cents").eq("matchup_id", m.id).limit(10000),
+    const live = liveOnly();
+    const [topRows, recent, countries, history] = await Promise.all([
+      m.round ? db.rpc("tugg_top_pullers", { p_live: live, p_round: m.round.id, p_limit: 5 }) : Promise.resolve({ data: [] as any[] }),
+      db.rpc("tugg_recent_pulls", { p_live: live, p_matchup: m.id, p_limit: 25 }),
+      db.rpc("tugg_countries", { p_live: live, p_matchup: m.id, p_limit: 10 }),
       db.from("rounds").select("id,starts_at,ends_at,total_a_cents,total_b_cents,winner_side_id,result_note").eq("matchup_id", m.id).eq("status", "closed").order("ends_at", { ascending: false }).limit(30),
     ]);
     const top: Record<string, { name: string; cents: number }[]> = {};
-    for (const s of m.sides) {
-      const agg = new Map<string, number>();
-      for (const p of roundPulls.data ?? []) if (p.side_id === s.id) {
-        const n = p.display_name || "Anonymous";
-        agg.set(n, (agg.get(n) ?? 0) + p.amount_cents);
-      }
-      top[s.id] = [...agg].map(([name, cents]) => ({ name, cents })).sort((a, b) => b.cents - a.cents).slice(0, 5);
-    }
-    const cmap = new Map<string, number>();
-    for (const p of allPulls.data ?? []) if (p.country) cmap.set(p.country, (cmap.get(p.country) ?? 0) + p.amount_cents);
+    for (const s of m.sides) top[s.id] = [];
+    for (const r of topRows.data ?? []) top[r.side_id]?.push({ name: r.name, cents: Number(r.cents) });
+    const hist = history.data ?? [];
+    const ht = hist.length ? (await db.rpc("tugg_round_totals", { p_live: live, p_rounds: hist.map((h) => h.id) })).data ?? [] : [];
+    const hmap = new Map(ht.map((t: any) => [t.round_id, t]));
+    const historyOut = hist.map((h) => {
+      const t: any = hmap.get(h.id);
+      return { ...h, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0) };
+    });
     return {
       matchup: m,
       top,
       recent: (recent.data ?? []) as PullRow[],
-      countries: [...cmap].map(([country, cents]) => ({ country, cents })).sort((a, b) => b.cents - a.cents).slice(0, 10),
-      history: history.data ?? [],
+      countries: (countries.data ?? []).map((c: any) => ({ country: c.country as string, cents: Number(c.cents) })),
+      history: historyOut,
       paused: config().pausePulls,
     };
   });
 
 export const getStats = createServerFn({ method: "GET" }).handler(async () => {
   const db = publicDb();
-  const [all, today, active, rounds] = await Promise.all([
-    db.from("pulls").select("amount_cents,country").limit(100000),
-    db.from("pulls").select("id", { count: "exact", head: true }).gte("created_at", startOfUtcDay()),
+  const [st, active, rounds] = await Promise.all([
+    db.rpc("tugg_stats", { p_live: liveOnly() }),
     db.from("matchups").select("id", { count: "exact", head: true }).eq("status", "active"),
     db.from("rounds").select("id", { count: "exact", head: true }).eq("status", "closed"),
   ]);
-  const rows = all.data ?? [];
+  const r = st.data?.[0];
   return {
-    totalCents: rows.reduce((s, r) => s + r.amount_cents, 0),
-    totalPulls: rows.length,
-    pullsToday: today.count ?? 0,
+    totalCents: Number(r?.total_cents ?? 0),
+    totalPulls: Number(r?.total_pulls ?? 0),
+    pullsToday: Number(r?.pulls_today ?? 0),
     activeMatchups: active.count ?? 0,
-    countries: new Set(rows.map((r) => r.country).filter(Boolean)).size,
+    countries: Number(r?.countries ?? 0),
     roundsCompleted: rounds.count ?? 0,
   };
 });
 
 type CheckoutResult = { clientSecret: string } | { error: string };
-const envSchema = z.enum(["sandbox", "live"]);
+const envSchema = z.enum(["sandbox", "live"]).optional();
+
+/** Server decides the Stripe env; a browser hint that disagrees with live mode is refused. */
+function serverEnv(hint?: "sandbox" | "live"): { env: StripeEnv } | { error: string } {
+  const env = config().paymentsEnv;
+  if (env === "live" && hint === "sandbox") return { error: "Test checkouts are disabled. Please refresh the page." };
+  return { env };
+}
 
 export const createPullCheckout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
@@ -164,11 +179,13 @@ export const createPullCheckout = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<CheckoutResult> => {
     if (config().pausePulls) return { error: "Pulls are paused right now. Please try again later." };
+    const se = serverEnv(data.environment);
+    if ("error" in se) return se;
     const db = publicDb();
     const { data: side } = await db.from("sides").select("id,name,matchup_id,matchups(title,status)").eq("id", data.sideId).maybeSingle();
     if (!side || (side as any).matchups?.status !== "active") return { error: "This matchup is not open for pulls." };
     try {
-      const stripe = createStripeClient(data.environment as StripeEnv);
+      const stripe = createStripeClient(se.env);
       const prices = await stripe.prices.list({ lookup_keys: ["rope_pull_1usd"] });
       const price = prices.data[0];
       if (!price) return { error: "Pull price not found" };
@@ -215,6 +232,8 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<CheckoutResult> => {
+    const se = serverEnv(data.environment);
+    if ("error" in se) return se;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let slug = slugify(`${data.a.name} vs ${data.b.name}`) || "matchup";
     const { data: existing } = await supabaseAdmin.from("matchups").select("slug,status").eq("slug", slug).maybeSingle();
@@ -232,7 +251,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       { matchup_id: m.id, position: 1, ...data.b },
     ]);
     try {
-      const stripe = createStripeClient(data.environment as StripeEnv);
+      const stripe = createStripeClient(se.env);
       const lookup = data.tier === "featured" ? "matchup_featured_once" : "matchup_standard_once";
       const prices = await stripe.prices.list({ lookup_keys: [lookup] });
       const price = prices.data[0];
@@ -250,7 +269,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         matchup_id: m.id,
         tier: data.tier,
         stripe_session_id: session.id,
-        environment: data.environment,
+        environment: se.env,
       });
       return { clientSecret: session.client_secret ?? "" };
     } catch (e) {
@@ -286,34 +305,28 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
   const db = publicDb();
   const mm = await matchupMap();
   const ids = [...mm.keys()];
-  const [rounds, sides, pulls] = await Promise.all([
-    ids.length
-      ? db.from("rounds").select("id,matchup_id,status,ends_at,total_a_cents,total_b_cents,pullers").in("matchup_id", ids).or("total_a_cents.gt.0,total_b_cents.gt.0").limit(5000)
-      : Promise.resolve({ data: [] as any[] }),
+  const live = liveOnly();
+  const [biggest, today, sides, countries] = await Promise.all([
+    db.rpc("tugg_round_leaders", { p_live: live, p_open_only: false, p_limit: 15 }),
+    db.rpc("tugg_round_leaders", { p_live: live, p_open_only: true, p_limit: 15 }),
     ids.length
       ? db.from("sides").select("id,matchup_id,name,emoji,best_streak,current_streak,wins").in("matchup_id", ids).gt("best_streak", 0).order("best_streak", { ascending: false }).limit(20)
       : Promise.resolve({ data: [] as any[] }),
-    db.from("pulls").select("country,amount_cents").not("country", "is", null).limit(100000),
+    db.rpc("tugg_countries", { p_live: live, p_limit: 20 }),
   ]);
   const withM = (r: any) => {
     const m = mm.get(r.matchup_id)!;
-    return { id: r.id as string, slug: m.slug, title: m.title, a: m.sides[0]!, b: m.sides[1]!, total_a: Number(r.total_a_cents), total_b: Number(r.total_b_cents), pullers: r.pullers as number, ends_at: r.ends_at as string, open: r.status === "open" };
+    return { id: r.round_id as string, slug: m.slug, title: m.title, a: m.sides[0]!, b: m.sides[1]!, total_a: Number(r.total_a_cents), total_b: Number(r.total_b_cents), pullers: r.pullers as number, ends_at: r.ends_at as string, open: r.status === "open" };
   };
-  const all = (rounds.data ?? []).filter((r: any) => mm.has(r.matchup_id)).map(withM);
-  const sum = (r: { total_a: number; total_b: number }) => r.total_a + r.total_b;
-  const cmap = new Map<string, { cents: number; pulls: number }>();
-  for (const p of pulls.data ?? []) {
-    const c = cmap.get(p.country!) ?? { cents: 0, pulls: 0 };
-    c.cents += p.amount_cents; c.pulls += 1; cmap.set(p.country!, c);
-  }
+  const list = (d: any[] | null) => (d ?? []).filter((r: any) => mm.has(r.matchup_id)).map(withM);
   return {
-    biggest: [...all].sort((x, y) => sum(y) - sum(x)).slice(0, 15),
-    today: all.filter((r) => r.open).sort((x, y) => sum(y) - sum(x)).slice(0, 15),
+    biggest: list(biggest.data),
+    today: list(today.data),
     streaks: (sides.data ?? []).filter((s: any) => mm.has(s.matchup_id)).map((s: any) => {
       const m = mm.get(s.matchup_id)!;
       return { id: s.id as string, name: s.name as string, emoji: s.emoji as string, best: s.best_streak as number, current: s.current_streak as number, wins: s.wins as number, slug: m.slug, title: m.title };
     }),
-    countries: [...cmap].map(([country, v]) => ({ country, ...v })).sort((a, b) => b.cents - a.cents).slice(0, 20),
+    countries: (countries.data ?? []).map((c: any) => ({ country: c.country as string, cents: Number(c.cents), pulls: Number(c.pulls) })),
   };
 });
 
@@ -337,6 +350,16 @@ function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
   };
 }
 
+async function withLiveTotals<T extends { id: string }>(rows: T[]) {
+  if (!rows.length) return rows;
+  const { data } = await publicDb().rpc("tugg_round_totals", { p_live: liveOnly(), p_rounds: rows.map((r) => r.id) });
+  const m = new Map((data ?? []).map((t: any) => [t.round_id, t]));
+  return rows.map((r) => {
+    const t: any = m.get(r.id);
+    return { ...r, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0), pullers: t?.pullers ?? 0 };
+  });
+}
+
 export const getHallOfFame = createServerFn({ method: "GET" }).handler(async () => {
   const mm = await matchupMap();
   const ids = [...mm.keys()];
@@ -346,7 +369,7 @@ export const getHallOfFame = createServerFn({ method: "GET" }).handler(async () 
     .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
     .eq("status", "closed").not("winner_side_id", "is", null).in("matchup_id", ids)
     .order("ends_at", { ascending: false }).limit(60);
-  return { cards: (data ?? []).map((r) => toCard(r, mm)).filter((c): c is ResultCard => !!c) };
+  return { cards: (await withLiveTotals(data ?? [])).map((r) => toCard(r, mm)).filter((c): c is ResultCard => !!c) };
 });
 
 export const getResult = createServerFn({ method: "GET" })
@@ -357,5 +380,6 @@ export const getResult = createServerFn({ method: "GET" })
       .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
       .eq("id", data.id).eq("status", "closed").maybeSingle();
     if (!r) return null;
-    return toCard(r, await matchupMap());
+    const [rr] = await withLiveTotals([r]);
+    return toCard(rr, await matchupMap());
   });

@@ -27,7 +27,12 @@ export const config = () => ({
   pausePulls: flag("PAUSE_PULLS", false),
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
+  /** Server-only Stripe environment. Anything but "live" means sandbox. */
+  paymentsEnv: ((process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live" ? "live" : "sandbox") as "sandbox" | "live",
 });
+
+/** True when only live-money pulls may count in public numbers. */
+export const liveOnly = () => config().paymentsEnv === "live";
 
 export type Verdict = { allowed: boolean; reason: string };
 
