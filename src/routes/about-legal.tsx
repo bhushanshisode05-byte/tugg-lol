@@ -3,8 +3,12 @@ import { PolicyPage } from "@/components/tugg/PolicyPage";
 import { policySections, pageHead } from "@/lib/policies";
 import { getPublicContact } from "@/lib/support.functions";
 export const Route = createFileRoute("/about-legal")({
- loader: () => getPublicContact(),
- head: () => pageHead(policySections["about-legal"].title, policySections["about-legal"].description),
- component: Page,
+  loader: () => getPublicContact(),
+  head: () =>
+    pageHead(policySections["about-legal"].title, policySections["about-legal"].description),
+  component: Page,
 });
-function Page() { const { email } = Route.useLoaderData(); return <PolicyPage id="about-legal" email={email} />; }
+function Page() {
+  const { email } = Route.useLoaderData();
+  return <PolicyPage id="about-legal" email={email} />;
+}

@@ -1,6 +1,127 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { pageHead } from "@/lib/policies";
-type AdminData={summary:{pullRevenue:{environment:string;cents:string;pulls:number}[];sources:{source:string;count:number}[]};creationRevenue:{live:number;sandbox:number};pulls:Record<string,unknown>[];matchups:Record<string,unknown>[];moderation:Record<string,unknown>[];events:Record<string,unknown>[];support:Record<string,unknown>[]};
-export const Route=createFileRoute("/_authenticated/admin")({head:()=>({meta:[...pageHead("Owner records","Private Tugg owner records.").meta,{name:"robots",content:"noindex,nofollow"}]}),loader:async()=>{const {data}=await supabase.auth.getSession();const response=await fetch("/api/public/admin/data",{headers:{Authorization:`Bearer ${data.session?.access_token || ""}`}});if(!response.ok){const body=await response.json();throw new Error(body.error);}return response.json() as Promise<AdminData>;},component:Admin});
-function Admin(){const data=Route.useLoaderData();return <main className="mx-auto max-w-6xl px-4 py-10"><p className="font-mono text-sm text-primary">TUGG / OWNER</p><h1 className="mt-3 font-display text-4xl font-extrabold">Read-only records</h1><section className="mt-8 border-y border-border py-6"><h2 className="text-2xl font-bold">Revenue</h2><div className="mt-4 grid gap-6 sm:grid-cols-2">{(["live","sandbox"] as const).map(env=>{const pull=data.summary.pullRevenue.find(r=>r.environment===env);return <div key={env}><h3 className="font-bold">{env === "live" ? "Live money":"Test money"}</h3><p className="mt-2 font-mono text-3xl">${((Number(pull?.cents ?? 0)+data.creationRevenue[env])/100).toFixed(2)}</p><p className="text-muted-foreground">Pulls: {pull?.pulls ?? 0} · Creation fees: ${(data.creationRevenue[env]/100).toFixed(2)}</p></div>})}</div><p className="mt-4 text-sm text-muted-foreground">Recorded purchase amounts, not Stripe settlement balances. Creation fees are inferred from the published tier price and approved, non-refunded matchups.</p></section><section className="py-6"><h2 className="text-2xl font-bold">Matchups by source</h2><div className="mt-3 flex gap-8">{["seed","user","ai"].map(s=><p key={s}>{s}: {data.summary.sources.find(r=>r.source===s)?.count ?? 0}</p>)}</div></section>{([['Pulls',data.pulls],['Matchups',data.matchups],['Moderation log',data.moderation],['Errors / events',data.events],['Support threads',data.support]] as const).map(([title,rows])=><section key={title} className="border-t border-border py-6"><h2 className="text-2xl font-bold">{title}</h2><p className="my-2 text-sm text-muted-foreground">Latest 200 records</p>{!rows.length ? <p className="text-muted-foreground">No records.</p>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{Object.keys(rows[0] ?? {}).filter(k=>k!=='id').map(k=><th className="border-b border-border p-3" key={k}>{k.replaceAll('_',' ')}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={String(row['id'] ?? i)}>{Object.entries(row).filter(([k])=>k!=='id').map(([k,v])=><td className="max-w-md whitespace-pre-wrap break-words border-b border-border p-3 align-top" key={k}>{typeof v==='object' ? JSON.stringify(v) : String(v ?? '—')}</td>)}</tr>)}</tbody></table></div>}</section>)}</main>;}
+type AdminData = {
+  summary: {
+    pullRevenue: { environment: string; cents: string; pulls: number }[];
+    sources: { source: string; count: number }[];
+  };
+  creationRevenue: { live: number; sandbox: number };
+  pulls: Record<string, unknown>[];
+  matchups: Record<string, unknown>[];
+  moderation: Record<string, unknown>[];
+  events: Record<string, unknown>[];
+  support: Record<string, unknown>[];
+};
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      ...pageHead("Owner records", "Private Tugg owner records.").meta,
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
+  loader: async () => {
+    const { data } = await supabase.auth.getSession();
+    const response = await fetch("/api/public/admin/data", {
+      headers: { Authorization: `Bearer ${data.session?.access_token || ""}` },
+    });
+    if (!response.ok) {
+      const body = await response.json();
+      throw new Error(body.error);
+    }
+    return response.json() as Promise<AdminData>;
+  },
+  component: Admin,
+});
+function Admin() {
+  const data = Route.useLoaderData();
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-10">
+      <p className="font-mono text-sm text-primary">TUGG / OWNER</p>
+      <h1 className="mt-3 font-display text-4xl font-extrabold">Read-only records</h1>
+      <section className="mt-8 border-y border-border py-6">
+        <h2 className="text-2xl font-bold">Revenue</h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+          {(["live", "sandbox"] as const).map((env) => {
+            const pull = data.summary.pullRevenue.find((r) => r.environment === env);
+            return (
+              <div key={env}>
+                <h3 className="font-bold">{env === "live" ? "Live money" : "Test money"}</h3>
+                <p className="mt-2 font-mono text-3xl">
+                  ${((Number(pull?.cents ?? 0) + data.creationRevenue[env]) / 100).toFixed(2)}
+                </p>
+                <p className="text-muted-foreground">
+                  Pulls: {pull?.pulls ?? 0} · Creation fees: $
+                  {(data.creationRevenue[env] / 100).toFixed(2)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Recorded purchase amounts, not Stripe settlement balances. Creation fees are inferred from
+          the published tier price and approved, non-refunded matchups.
+        </p>
+      </section>
+      <section className="py-6">
+        <h2 className="text-2xl font-bold">Matchups by source</h2>
+        <div className="mt-3 flex gap-8">
+          {["seed", "user", "ai"].map((s) => (
+            <p key={s}>
+              {s}: {data.summary.sources.find((r) => r.source === s)?.count ?? 0}
+            </p>
+          ))}
+        </div>
+      </section>
+      {(
+        [
+          ["Pulls", data.pulls],
+          ["Matchups", data.matchups],
+          ["Moderation log", data.moderation],
+          ["Errors / events", data.events],
+          ["Support threads", data.support],
+        ] as const
+      ).map(([title, rows]) => (
+        <section key={title} className="border-t border-border py-6">
+          <h2 className="text-2xl font-bold">{title}</h2>
+          <p className="my-2 text-sm text-muted-foreground">Latest 200 records</p>
+          {!rows.length ? (
+            <p className="text-muted-foreground">No records.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr>
+                    {Object.keys(rows[0] ?? {})
+                      .filter((k) => k !== "id")
+                      .map((k) => (
+                        <th className="border-b border-border p-3" key={k}>
+                          {k.replaceAll("_", " ")}
+                        </th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={String(row["id"] ?? i)}>
+                      {Object.entries(row)
+                        .filter(([k]) => k !== "id")
+                        .map(([k, v]) => (
+                          <td
+                            className="max-w-md whitespace-pre-wrap break-words border-b border-border p-3 align-top"
+                            key={k}
+                          >
+                            {typeof v === "object" ? JSON.stringify(v) : String(v ?? "—")}
+                          </td>
+                        ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+    </main>
+  );
+}
