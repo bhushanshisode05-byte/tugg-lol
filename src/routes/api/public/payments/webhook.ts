@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook, createStripeClient } from "@/lib/stripe.server";
-import { moderate } from "@/lib/server-utils.server";
+import { moderate, config } from "@/lib/server-utils.server";
 
 const SHOUT_PLACEHOLDER = "📣 (shout-out removed)";
 
@@ -92,7 +92,6 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         const rawEnv = new URL(request.url).searchParams.get("env");
         if (rawEnv !== "sandbox" && rawEnv !== "live") return Response.json({ received: true, ignored: "invalid env" });
         const env: StripeEnv = rawEnv;
-        const { config } = await import("@/lib/server-utils.server");
         // In live mode, test-mode events never touch the rope or matchups.
         if (config().paymentsEnv === "live" && env === "sandbox") return Response.json({ received: true, ignored: "sandbox event in live mode" });
         let event;
