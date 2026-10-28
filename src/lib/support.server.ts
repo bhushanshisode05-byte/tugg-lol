@@ -59,7 +59,7 @@ export async function answerFromPolicies(request: Request, text: string) {
 
 export async function saveMessage(channel: "contact" | "chat", message: string, email?: string, name?: string) {
   const db = await supportDb();
-  const { data, error } = await db.from("support_threads").insert({ channel, message, email, name }).select("id").single();
+  const { data, error } = await db.from("support_threads").insert({ channel, message, email: email ?? null, name: name ?? null }).select("id").single();
   if (error || !data) throw new SupportError(503, "Could not save your message. Please try again.");
   return data.id;
 }
@@ -78,7 +78,7 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
     if (!email || email.toLowerCase() !== input.email.toLowerCase()) return " The payment reference could not be verified against your checkout email.";
     if (session.payment_status !== "paid") return " This reference does not show a completed payment.";
     if (Date.now()/1000 - session.created < 900) return " Payment confirmation may still be processing; a delay alone does not establish an error.";
-    const kind = session.metadata?.kind;
+    const kind = session.metadata?.["kind"];
     const pull = kind === "pull" ? await db.from("pulls").select("id").eq("stripe_session_id", session.id).maybeSingle() : null;
     const creator = kind === "matchup" ? await db.from("creators").select("id,refunded,matchups(status)").eq("stripe_session_id", session.id).maybeSingle() : null;
     if (pull?.error || creator?.error) throw new Error("Could not verify purchase");
