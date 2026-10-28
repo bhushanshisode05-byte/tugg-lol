@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { contactSchema } from "@/lib/support-schema";
-import { readSupportJson } from "@/lib/support-input.server";
+import { readSupportJson, BodyTooLarge } from "@/lib/support-input.server";
 export const Route = createFileRoute("/api/public/support/contact")({
   server: {
     handlers: {
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/support/contact")({
           const error =
             e instanceof SupportError ? e.message : "Please check your message and email address.";
           if (id) await saveReply(id, error, "error");
-          return Response.json({ error }, { status: e instanceof SupportError ? e.status : 400 });
+          return Response.json({ error }, { status: e instanceof BodyTooLarge ? 413 : e instanceof SupportError ? e.status : 400 });
         }
       },
     },

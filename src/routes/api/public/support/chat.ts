@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
 import { z } from "zod";
-import { readSupportJson } from "@/lib/support-input.server";
+import { readSupportJson, BodyTooLarge } from "@/lib/support-input.server";
 const schema = z.object({
   messages: z
     .array(
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/public/support/chat")({
         } catch (e) {
           return Response.json(
             { error: e instanceof SupportError ? e.message : "Please enter a valid question." },
-            { status: e instanceof SupportError ? e.status : 400 },
+            { status: e instanceof BodyTooLarge ? 413 : e instanceof SupportError ? e.status : 400 },
           );
         }
       },

@@ -43,17 +43,13 @@ export async function getAdminData(request: Request) {
       .select("id,channel,email,name,message,ai_reply,payment_error,status,created_at")
       .order("created_at", { ascending: false })
       .limit(200),
-    supabaseAdmin.from("creators").select("tier,environment,refunded,matchups(status)"),
+    supabaseAdmin.rpc("tugg_creation_revenue"),
   ]);
   if ([summary, pulls, matchups, moderation, events, support, creators].some((r) => r.error))
     return Response.json({ error: "Could not load owner records." }, { status: 503 });
   // Creator amounts are inferred from published prices; unpaid/rejected records are never revenue.
-  const creationRevenue = { live: 0, sandbox: 0 };
-  for (const row of creators.data ?? [])
-    if (!row.refunded && ["active", "retired"].includes(row.matchups?.status ?? "")) {
-      const env = row.environment === "live" ? "live" : "sandbox";
-      creationRevenue[env] += row.tier === "featured" ? 2900 : 900;
-    }
+  const fees = creators.data as { live?: number; sandbox?: number } | null;
+  const creationRevenue = { live: Number(fees?.live ?? 0), sandbox: Number(fees?.sandbox ?? 0) };
   return Response.json(
     {
       summary: summary.data,

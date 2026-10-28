@@ -1,3 +1,4 @@
+export class BodyTooLarge extends Error {}
 export async function readSupportJson(request: Request) {
   const reader = request.body?.getReader();
   if (!reader) throw new Error("A message is required.");
@@ -9,7 +10,7 @@ export async function readSupportJson(request: Request) {
     size += value.byteLength;
     if (size > 20000) {
       await reader.cancel();
-      throw new Error("Message too long.");
+      throw new BodyTooLarge("Message too long.");
     }
     chunks.push(value);
   }
