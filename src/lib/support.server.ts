@@ -206,15 +206,13 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
       .update({ payment_error: true, status: "payment_error_logged" })
       .eq("id", threadId);
     if (error) throw new Error("Could not record payment error");
-    const { error: eventError } = await db
-      .from("events")
-      .insert({
-        kind: "support_payment_error_email_unavailable",
-        detail: {
-          support_thread_id: threadId,
-          reason: "Owner email / email domain not configured",
-        },
-      });
+    const { error: eventError } = await db.from("events").insert({
+      kind: "support_payment_error_email_unavailable",
+      detail: {
+        support_thread_id: threadId,
+        reason: "Owner email / email domain not configured",
+      },
+    });
     if (eventError) throw new Error("Could not record escalation");
     return " A verified payment recording error has been logged for the owner. Email escalation is not available yet. This does not authorize a refund outside the published policy.";
   } catch {
