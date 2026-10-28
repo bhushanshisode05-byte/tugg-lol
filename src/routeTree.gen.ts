@@ -19,6 +19,8 @@ import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
+import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,6 +73,16 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSupportChatRoute = ApiPublicSupportChatRouteImport.update({
+  id: '/api/public/support/chat',
+  path: '/api/public/support/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
+  id: '/api/public/support/contact',
+  path: '/api/public/support/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,6 +95,8 @@ export interface FileRoutesByFullPath {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -95,6 +109,8 @@ export interface FileRoutesByTo {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,6 +124,8 @@ export interface FileRoutesById {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,6 +140,8 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -134,6 +154,8 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   id:
     | '__root__'
     | '/'
@@ -146,6 +168,8 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +183,8 @@ export interface RootRouteChildren {
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
+  ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -233,6 +259,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/support/chat': {
+      id: '/api/public/support/chat'
+      path: '/api/public/support/chat'
+      fullPath: '/api/public/support/chat'
+      preLoaderRoute: typeof ApiPublicSupportChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/support/contact': {
+      id: '/api/public/support/contact'
+      path: '/api/public/support/contact'
+      fullPath: '/api/public/support/contact'
+      preLoaderRoute: typeof ApiPublicSupportContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -247,6 +287,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
+  ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
