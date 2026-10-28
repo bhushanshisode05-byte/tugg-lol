@@ -14,13 +14,329 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      creators: {
+        Row: {
+          created_at: string
+          email: string | null
+          environment: string
+          id: string
+          matchup_id: string
+          payment_intent: string | null
+          refunded: boolean
+          stripe_session_id: string | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          environment?: string
+          id?: string
+          matchup_id: string
+          payment_intent?: string | null
+          refunded?: boolean
+          stripe_session_id?: string | null
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          environment?: string
+          id?: string
+          matchup_id?: string
+          payment_intent?: string | null
+          refunded?: boolean
+          stripe_session_id?: string | null
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creators_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+        }
+        Relationships: []
+      }
+      matchups: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          featured_until: string | null
+          id: string
+          slug: string
+          source: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          featured_until?: string | null
+          id?: string
+          slug: string
+          source?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          featured_until?: string | null
+          id?: string
+          slug?: string
+          source?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      moderation_log: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          reason: string | null
+          subject_id: string | null
+          subject_type: string
+          verdict: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_id?: string | null
+          subject_type: string
+          verdict: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_id?: string | null
+          subject_type?: string
+          verdict?: string
+        }
+        Relationships: []
+      }
+      pulls: {
+        Row: {
+          amount_cents: number
+          country: string | null
+          created_at: string
+          display_name: string | null
+          environment: string
+          id: string
+          matchup_id: string
+          round_id: string
+          shout_out: string | null
+          side_id: string
+          stripe_session_id: string
+        }
+        Insert: {
+          amount_cents: number
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          environment?: string
+          id?: string
+          matchup_id: string
+          round_id: string
+          shout_out?: string | null
+          side_id: string
+          stripe_session_id: string
+        }
+        Update: {
+          amount_cents?: number
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          environment?: string
+          id?: string
+          matchup_id?: string
+          round_id?: string
+          shout_out?: string | null
+          side_id?: string
+          stripe_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pulls_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pulls_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pulls_side_id_fkey"
+            columns: ["side_id"]
+            isOneToOne: false
+            referencedRelation: "sides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rounds: {
+        Row: {
+          closed_at: string | null
+          ends_at: string
+          extensions: number
+          id: string
+          matchup_id: string
+          pullers: number
+          result_note: string | null
+          starts_at: string
+          status: string
+          total_a_cents: number
+          total_b_cents: number
+          winner_side_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          ends_at: string
+          extensions?: number
+          id?: string
+          matchup_id: string
+          pullers?: number
+          result_note?: string | null
+          starts_at?: string
+          status?: string
+          total_a_cents?: number
+          total_b_cents?: number
+          winner_side_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          ends_at?: string
+          extensions?: number
+          id?: string
+          matchup_id?: string
+          pullers?: number
+          result_note?: string | null
+          starts_at?: string
+          status?: string
+          total_a_cents?: number
+          total_b_cents?: number
+          winner_side_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rounds_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rounds_winner_side_id_fkey"
+            columns: ["winner_side_id"]
+            isOneToOne: false
+            referencedRelation: "sides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sides: {
+        Row: {
+          all_time_cents: number
+          best_streak: number
+          color: string
+          current_streak: number
+          emoji: string
+          id: string
+          matchup_id: string
+          name: string
+          position: number
+          wins: number
+        }
+        Insert: {
+          all_time_cents?: number
+          best_streak?: number
+          color?: string
+          current_streak?: number
+          emoji?: string
+          id?: string
+          matchup_id: string
+          name: string
+          position: number
+          wins?: number
+        }
+        Update: {
+          all_time_cents?: number
+          best_streak?: number
+          color?: string
+          current_streak?: number
+          emoji?: string
+          id?: string
+          matchup_id?: string
+          name?: string
+          position?: number
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sides_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      close_due_rounds: { Args: never; Returns: number }
+      close_round: { Args: { p_round: string }; Returns: undefined }
+      ensure_open_round: { Args: { p_matchup: string }; Returns: string }
+      next_utc_midnight: { Args: never; Returns: string }
+      record_pull: {
+        Args: {
+          p_amount: number
+          p_country: string
+          p_env: string
+          p_name: string
+          p_session: string
+          p_shout: string
+          p_side: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
