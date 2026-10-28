@@ -16,3 +16,4 @@
 - Stripe environment comes only from server-side PAYMENTS_ENV via config(); browser hints are never trusted, and live mode ignores sandbox webhooks. Why: test payments must never move real ropes.
 - Public pull data is served only through SECURITY DEFINER tugg_* SQL functions (aggregates, live-only filter); the pulls table has no anon/authenticated access. Why: hides stripe_session_id and keeps totals exact past row limits.
 - Realtime listens to rounds only; every recorded pull updates its round row. Why: pulls aren't publicly readable.
+- Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.
