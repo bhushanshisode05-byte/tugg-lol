@@ -10,19 +10,51 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AboutLegalRouteImport } from './routes/about-legal'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LeaderboardsRouteImport } from './routes/leaderboards'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
+import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
+import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutLegalRoute = AboutLegalRouteImport.update({
+  id: '/about-legal',
+  path: '/about-legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -30,14 +62,34 @@ const CreateRoute = CreateRouteImport.update({
   path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HallOfFameRoute = HallOfFameRouteImport.update({
   id: '/hall-of-fame',
   path: '/hall-of-fame',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeaderboardsRoute = LeaderboardsRouteImport.update({
   id: '/leaderboards',
   path: '/leaderboards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -49,6 +101,16 @@ const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const MSlugRoute = MSlugRouteImport.update({
   id: '/m/$slug',
@@ -65,100 +127,201 @@ const RivalriesSlugRoute = RivalriesSlugRouteImport.update({
   path: '/rivalries/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminDataRoute = ApiPublicAdminDataRouteImport.update({
+  id: '/api/public/admin/data',
+  path: '/api/public/admin/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSupportChatRoute = ApiPublicSupportChatRouteImport.update({
+  id: '/api/public/support/chat',
+  path: '/api/public/support/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
+  id: '/api/public/support/contact',
+  path: '/api/public/support/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about-legal': typeof AboutLegalRoute
+  '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about-legal': typeof AboutLegalRoute
+  '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about-legal': typeof AboutLegalRoute
+  '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/create': typeof CreateRoute
+  '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaderboards': typeof LeaderboardsRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/rules': typeof RulesRoute
   '/stats': typeof StatsRoute
+  '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/support/chat': typeof ApiPublicSupportChatRoute
+  '/api/public/support/contact': typeof ApiPublicSupportContactRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about-legal'
+    | '/auth'
+    | '/contact'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
+    | '/admin'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/api/public/admin/data'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about-legal'
+    | '/auth'
+    | '/contact'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
+    | '/admin'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/api/public/admin/data'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/about-legal'
+    | '/auth'
+    | '/contact'
     | '/create'
+    | '/faq'
     | '/hall-of-fame'
+    | '/how-it-works'
     | '/leaderboards'
+    | '/privacy'
+    | '/refund-policy'
     | '/rules'
     | '/stats'
+    | '/terms'
+    | '/_authenticated/admin'
     | '/m/$slug'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/api/public/admin/data'
     | '/api/public/payments/webhook'
+    | '/api/public/support/chat'
+    | '/api/public/support/contact'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutLegalRoute: typeof AboutLegalRoute
+  AuthRoute: typeof AuthRoute
+  ContactRoute: typeof ContactRoute
   CreateRoute: typeof CreateRoute
+  FaqRoute: typeof FaqRoute
   HallOfFameRoute: typeof HallOfFameRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   LeaderboardsRoute: typeof LeaderboardsRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   RulesRoute: typeof RulesRoute
   StatsRoute: typeof StatsRoute
+  TermsRoute: typeof TermsRoute
   MSlugRoute: typeof MSlugRoute
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
+  ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
+  ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -170,11 +333,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about-legal': {
+      id: '/about-legal'
+      path: '/about-legal'
+      fullPath: '/about-legal'
+      preLoaderRoute: typeof AboutLegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/create': {
       id: '/create'
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hall-of-fame': {
@@ -184,11 +382,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HallOfFameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leaderboards': {
       id: '/leaderboards'
       path: '/leaderboards'
       fullPath: '/leaderboards'
       preLoaderRoute: typeof LeaderboardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -204,6 +423,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/m/$slug': {
       id: '/m/$slug'
@@ -226,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RivalriesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/data': {
+      id: '/api/public/admin/data'
+      path: '/api/public/admin/data'
+      fullPath: '/api/public/admin/data'
+      preLoaderRoute: typeof ApiPublicAdminDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -233,20 +473,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/support/chat': {
+      id: '/api/public/support/chat'
+      path: '/api/public/support/chat'
+      fullPath: '/api/public/support/chat'
+      preLoaderRoute: typeof ApiPublicSupportChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/support/contact': {
+      id: '/api/public/support/contact'
+      path: '/api/public/support/contact'
+      fullPath: '/api/public/support/contact'
+      preLoaderRoute: typeof ApiPublicSupportContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutLegalRoute: AboutLegalRoute,
+  AuthRoute: AuthRoute,
+  ContactRoute: ContactRoute,
   CreateRoute: CreateRoute,
+  FaqRoute: FaqRoute,
   HallOfFameRoute: HallOfFameRoute,
+  HowItWorksRoute: HowItWorksRoute,
   LeaderboardsRoute: LeaderboardsRoute,
+  PrivacyRoute: PrivacyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   RulesRoute: RulesRoute,
   StatsRoute: StatsRoute,
+  TermsRoute: TermsRoute,
   MSlugRoute: MSlugRoute,
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,
+  ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
+  ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

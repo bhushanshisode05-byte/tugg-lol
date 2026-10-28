@@ -334,11 +334,93 @@ export type Database = {
           },
         ]
       }
+      support_ai_state: {
+        Row: {
+          id: string
+          paused: boolean
+          reason: string | null
+          status: number | null
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          paused?: boolean
+          reason?: string | null
+          status?: number | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          paused?: boolean
+          reason?: string | null
+          status?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_threads: {
+        Row: {
+          ai_reply: string | null
+          channel: string
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string | null
+          payment_error: boolean
+          status: string
+        }
+        Insert: {
+          ai_reply?: string | null
+          channel: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name?: string | null
+          payment_error?: boolean
+          status?: string
+        }
+        Update: {
+          ai_reply?: string | null
+          channel?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+          payment_error?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_tugg_owner: {
+        Args: { p_email: string; p_user: string }
+        Returns: boolean
+      }
       cleanup_stale_matchups: { Args: never; Returns: number }
       close_due_rounds: { Args: never; Returns: number }
       close_round: { Args: { p_round: string }; Returns: undefined }
@@ -360,6 +442,7 @@ export type Database = {
         Args: { p_ip: string; p_max: number; p_window_minutes: number }
         Returns: boolean
       }
+      tugg_admin_summary: { Args: never; Returns: Json }
       tugg_countries: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {
@@ -368,6 +451,7 @@ export type Database = {
           pulls: number
         }[]
       }
+      tugg_creation_revenue: { Args: never; Returns: Json }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {
