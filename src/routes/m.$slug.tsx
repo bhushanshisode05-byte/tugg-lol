@@ -62,7 +62,7 @@ function MatchupPage() {
 
   if (!data) return null;
   const { matchup: m, top, recent, countries, history } = data;
-  const [A, B] = m.sides;
+  const A = m.sides[0]!, B = m.sides[1]!;
   const a = m.round?.total_a_cents ?? 0, b = m.round?.total_b_cents ?? 0;
   const winsA = history.filter((h) => h.winner_side_id === A.id).length;
   const winsB = history.filter((h) => h.winner_side_id === B.id).length;
@@ -123,7 +123,7 @@ function MatchupPage() {
             <Panel key={s.id} title={`Top pullers · ${s.emoji} ${s.name}`}>
               {top[s.id]?.length ? (
                 <ol className="space-y-1">
-                  {top[s.id].map((t, i) => (
+                  {(top[s.id] ?? []).map((t, i) => (
                     <li key={t.name} className="flex justify-between"><span>{i + 1}. {t.name}</span><span className="font-mono">{usd(t.cents)}</span></li>
                   ))}
                 </ol>
@@ -210,7 +210,7 @@ function ShareButtons({ text, slug }: { text: string; slug: string }) {
 const PRESETS = [1, 5, 10, 25, 100];
 
 function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; paused: boolean }) {
-  const [side, setSide] = useState<string>(sides[0].id);
+  const [side, setSide] = useState<string>(sides[0]!.id);
   const [amount, setAmount] = useState(5);
   const [name, setName] = useState("");
   const [shout, setShout] = useState("");
