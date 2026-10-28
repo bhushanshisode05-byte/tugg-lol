@@ -38,11 +38,11 @@ export const Route = createFileRoute("/leaderboards")({
   component: Leaderboards,
 });
 
-function Board({ title, empty, children }: { title: string; empty: boolean; children: ReactNode }) {
+function Board({ title, empty, emptyText = "No pulls yet. The first real pull puts someone on this board.", children }: { title: string; empty: boolean; emptyText?: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-5">
       <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted-foreground">{title}</h2>
-      {empty ? <p className="text-sm text-muted-foreground">No pulls yet. The first real pull puts someone on this board.</p> : <ol className="space-y-2">{children}</ol>}
+      {empty ? <p className="text-sm text-muted-foreground">{emptyText}</p> : <ol className="space-y-2">{children}</ol>}
     </section>
   );
 }
@@ -79,7 +79,7 @@ function Leaderboards() {
               </Row>
             ))}
           </Board>
-          <Board title="Longest win streaks" empty={!data.streaks.length}>
+          <Board title="Longest win streaks" empty={!data.streaks.length} emptyText="No round winners yet. Streaks start when rounds close at 00:00 UTC.">
             {data.streaks.map((s, i) => (
               <Row key={s.id} i={i} right={`${s.best}🔥`}>
                 <span className="font-bold">{s.emoji} {s.name}</span>{" "}
