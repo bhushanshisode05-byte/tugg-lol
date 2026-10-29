@@ -34,3 +34,12 @@ describe("sharing", () => {
     expect(shareUrl("https://tugg.lol/", "pizza-vs-burgers")).toBe("https://tugg.lol/m/pizza-vs-burgers");
   });
 });
+
+describe("AI_GENERATOR_ENABLED", () => {
+  it("false stops the generator before any work", async () => {
+    process.env["AI_GENERATOR_ENABLED"] = "false";
+    const { runGenerator } = await import("@/lib/jobs.server");
+    expect(await runGenerator()).toEqual({ skipped: "AI_GENERATOR_ENABLED is false" });
+    delete process.env["AI_GENERATOR_ENABLED"];
+  });
+});
