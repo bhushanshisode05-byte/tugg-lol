@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config } from "./server-utils.server";
+import { SHARE_CHANNELS } from "./share";
+export { SHARE_CHANNELS } from "./share";
 
 export type Recap = {
   day: string;
@@ -39,8 +41,6 @@ export const subscribeDigest = createServerFn({ method: "POST" })
     if (error) return { ok: false, message: "Could not save your email. Please try again." };
     return { ok: true, message: "You're on the list for the daily Tugg digest." };
   });
-
-export const SHARE_CHANNELS = ["native", "x", "whatsapp", "facebook", "linkedin", "reddit", "telegram", "copy"] as const;
 
 /** Anonymous share counter: stores only matchup slug + channel. */
 export const trackShare = createServerFn({ method: "POST" })
