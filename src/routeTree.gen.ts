@@ -26,6 +26,8 @@ import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
+import { Route as RecapIndexRouteImport } from './routes/recap.index'
+import { Route as RecapDateRouteImport } from './routes/recap.$date'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
@@ -118,6 +120,16 @@ const MSlugRoute = MSlugRouteImport.update({
   path: '/m/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecapIndexRoute = RecapIndexRouteImport.update({
+  id: '/recap/',
+  path: '/recap/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecapDateRoute = RecapDateRouteImport.update({
+  id: '/recap/$date',
+  path: '/recap/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultsIdRoute = ResultsIdRouteImport.update({
   id: '/results/$id',
   path: '/results/$id',
@@ -172,8 +184,10 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
+  '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -197,8 +211,10 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
+  '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/recap': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -224,8 +240,10 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/m/$slug': typeof MSlugRoute
+  '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
+  '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -251,8 +269,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/m/$slug'
+    | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
@@ -276,8 +296,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/m/$slug'
+    | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/recap'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
@@ -302,8 +324,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/admin'
     | '/m/$slug'
+    | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
+    | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
@@ -328,8 +352,10 @@ export interface RootRouteChildren {
   StatsRoute: typeof StatsRoute
   TermsRoute: typeof TermsRoute
   MSlugRoute: typeof MSlugRoute
+  RecapDateRoute: typeof RecapDateRoute
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
+  RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -458,6 +484,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recap/': {
+      id: '/recap/'
+      path: '/recap'
+      fullPath: '/recap/'
+      preLoaderRoute: typeof RecapIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recap/$date': {
+      id: '/recap/$date'
+      path: '/recap/$date'
+      fullPath: '/recap/$date'
+      preLoaderRoute: typeof RecapDateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/results/$id': {
       id: '/results/$id'
       path: '/results/$id'
@@ -538,8 +578,10 @@ const rootRouteChildren: RootRouteChildren = {
   StatsRoute: StatsRoute,
   TermsRoute: TermsRoute,
   MSlugRoute: MSlugRoute,
+  RecapDateRoute: RecapDateRoute,
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,
+  RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
