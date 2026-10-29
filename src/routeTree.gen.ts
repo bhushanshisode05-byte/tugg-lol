@@ -29,6 +29,7 @@ import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
+import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
@@ -132,6 +133,11 @@ const ApiPublicAdminDataRoute = ApiPublicAdminDataRouteImport.update({
   path: '/api/public/admin/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsDailyRoute = ApiPublicJobsDailyRouteImport.update({
+  id: '/api/public/jobs/daily',
+  path: '/api/public/jobs/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/admin/data'
+    | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/admin/data'
+    | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/api/public/admin/data'
+    | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
@@ -319,6 +331,7 @@ export interface RootRouteChildren {
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
+  ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/daily': {
+      id: '/api/public/jobs/daily'
+      path: '/api/public/jobs/daily'
+      fullPath: '/api/public/jobs/daily'
+      preLoaderRoute: typeof ApiPublicJobsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -521,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
+  ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
