@@ -100,6 +100,7 @@ export const getHome = createServerFn({ method: "GET" }).handler(async () => {
     pulledTodayCents: Number(stats.data?.[0]?.today_cents ?? 0),
     recent: (recent.data ?? []) as PullRow[],
     paused: config().pausePulls,
+    siteUrl: config().siteUrl,
   };
 });
 
@@ -133,6 +134,7 @@ export const getMatchup = createServerFn({ method: "GET" })
       countries: (countries.data ?? []).map((c: any) => ({ country: c.country as string, cents: Number(c.cents) })),
       history: historyOut,
       paused: config().pausePulls,
+      siteUrl: config().siteUrl,
     };
   });
 

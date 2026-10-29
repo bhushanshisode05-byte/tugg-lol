@@ -20,3 +20,5 @@
 - Legal pages and AI support share one policy catalog; AI selects an approved answer ID rather than generating advice. Why: prevents invented policies and refund promises.
 - Support messages and replies are archived through service-only access; abuse counters reuse the atomic hashed-IP limiter in separate support namespaces. Why: keeps personal messages private and limits AI spending.
 - Admin handlers revalidate the token, configured owner email, confirmed identity and unique owner role before privileged reads. Why: hidden routes are not authorization.
+- Daily jobs (recap, AI generator) run through the managed-schedule route /api/public/jobs/daily and lock once per UTC day in job_runs; AI 402/403 pauses them in job_state. Why: no duplicate runs or runaway AI spend.
+- Recap summaries are built in code from stored facts; AI only writes prose from those facts. Why: numbers can never be invented.

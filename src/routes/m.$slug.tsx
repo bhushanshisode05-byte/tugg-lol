@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-
 import { useEffect, useState } from "react";
 import { getMatchup, createPullCheckout, type Side } from "@/lib/tugg.functions";
 import { Shell } from "@/components/tugg/Shell";
+import { ShareButton } from "@/components/tugg/ShareButton";
 import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
 import { EmbeddedPay } from "@/components/tugg/EmbeddedPay";
@@ -18,20 +19,38 @@ export const Route = createFileRoute("/m/$slug")({
   loader: async ({ context, params }) => {
     const d = await context.queryClient.ensureQueryData(mq(params.slug));
     if (!d) throw notFound();
-    return { title: d.matchup.title, a: d.matchup.sides[0]?.name, b: d.matchup.sides[1]?.name };
+    const m = d.matchup;
+    return {
+      title: m.title, slug: m.slug, a: m.sides[0]?.name, b: m.sides[1]?.name,
+      aCents: m.round?.total_a_cents ?? 0, bCents: m.round?.total_b_cents ?? 0,
+      siteUrl: d.siteUrl || "https://tugg.lol",
+    };
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [
-          { title: `${loaderData.title} — who's winning today? | Tugg` },
-          { name: "description", content: `Live rope: ${loaderData.a} vs ${loaderData.b}. See today's totals, win streaks and pull for your side on Tugg.` },
-          { property: "og:title", content: `${loaderData.title} on Tugg` },
-          { property: "og:description", content: `Pull the rope for ${loaderData.a} or ${loaderData.b}. Rounds end at 00:00 UTC.` },
-          { property: "og:type", content: "website" },
-          { name: "twitter:card", content: "summary_large_image" },
-        ]
-      : [{ title: "Matchup unavailable | Tugg" }, { name: "robots", content: "noindex" }],
-  }),
+  head: ({ loaderData: l }) => {
+    if (!l) return { meta: [{ title: "Matchup unavailable | Tugg" }, { name: "robots", content: "noindex" }] };
+    const score = `${l.a} ${usd(l.aCents)} vs ${l.b} ${usd(l.bCents)}`;
+    const url = `${l.siteUrl}/m/${l.slug}`;
+    const img = `${l.siteUrl}/og-default.jpg`;
+    const desc = `Live now: ${score} in today's round. Pull the rope for your side on Tugg. Rounds end at 00:00 UTC.`;
+    return {
+      meta: [
+        { title: `${l.title} — who's winning today? | Tugg` },
+        { name: "description", content: desc },
+        { property: "og:title", content: `${l.title} on Tugg` },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { property: "og:image", content: img },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: `${l.title} on Tugg` },
+        { name: "twitter:description", content: desc },
+        { name: "twitter:image", content: img },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   notFoundComponent: () => (
     <Shell>
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
@@ -69,7 +88,7 @@ function MatchupPage() {
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
   const lead = a === b ? null : a > b ? [A, B, a, b] as const : [B, A, b, a] as const;
   const sideById = new Map(m.sides.map((s) => [s.id, s]));
-  const shareText = `I just pulled the rope in ${m.title} on Tugg. Pick your side 👉`;
+  const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b };
 
   return (
     <Shell>
@@ -89,7 +108,7 @@ function MatchupPage() {
           <div className="mb-6 rounded-2xl border-2 border-primary bg-primary/10 p-4">
             <p className="font-display text-2xl font-extrabold">You pulled! 🎉</p>
             <p className="text-sm text-muted-foreground">Your pull shows up on the rope as soon as the payment is confirmed (a few seconds).</p>
-            <ShareButtons text={shareText} slug={m.slug} />
+            <div className="mt-3"><ShareButton siteUrl={data.siteUrl} m={shareData} /></div>
           </div>
         )}
 
@@ -102,7 +121,10 @@ function MatchupPage() {
             </span>
           )}
         </div>
-        <h1 className="mt-2 font-display text-4xl font-extrabold leading-none sm:text-6xl">{m.title}</h1>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-display text-4xl font-extrabold leading-none sm:text-6xl">{m.title}</h1>
+          <ShareButton siteUrl={data.siteUrl} m={shareData} />
+        </div>
         {m.description && <p className="mt-2 text-muted-foreground">{m.description}</p>}
         <Link to="/rivalries/$slug" params={{ slug: m.slug }} className="mt-2 inline-block text-sm text-muted-foreground underline">Who is winning? Full results</Link>
 
@@ -195,18 +217,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 const Empty = ({ text = "Nothing yet." }: { text?: string }) => <p className="text-sm text-muted-foreground">{text}</p>;
-
-function ShareButtons({ text, slug }: { text: string; slug: string }) {
-  const url = typeof window !== "undefined" ? `${window.location.origin}/m/${slug}` : "";
-  const enc = encodeURIComponent;
-  return (
-    <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold">
-      <a className="rounded-full border border-border px-4 py-1.5" target="_blank" rel="noopener noreferrer" href={`https://x.com/intent/post?text=${enc(text)}&url=${enc(url)}`}>Share on X</a>
-      <a className="rounded-full border border-border px-4 py-1.5" target="_blank" rel="noopener noreferrer" href={`https://bsky.app/intent/compose?text=${enc(`${text} ${url}`)}`}>Bluesky</a>
-      <button className="rounded-full border border-border px-4 py-1.5" onClick={() => navigator.clipboard.writeText(`${text} ${url}`)}>Copy link</button>
-    </div>
-  );
-}
 
 const PRESETS = [1, 5, 10, 25, 100];
 

@@ -24,6 +24,9 @@ export function Shell({ children }: { children: ReactNode }) {
             >
               Hall of Fame
             </Link>
+            <Link to="/recap" className="hidden text-muted-foreground hover:text-foreground lg:inline">
+              Recap
+            </Link>
             <Link
               to="/stats"
               className="hidden text-muted-foreground hover:text-foreground md:inline"
@@ -64,6 +67,9 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
             <Link to="/hall-of-fame" className="hover:text-foreground">
               Hall of Fame
+            </Link>
+            <Link to="/recap" className="hover:text-foreground">
+              Yesterday on Tugg
             </Link>
             <Link to="/how-it-works" className="hover:text-foreground">
               How it works
