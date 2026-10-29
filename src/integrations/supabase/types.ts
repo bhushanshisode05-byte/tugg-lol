@@ -76,6 +76,24 @@ export type Database = {
           },
         ]
       }
+      digest_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -94,6 +112,57 @@ export type Database = {
           detail?: Json
           id?: string
           kind?: string
+        }
+        Relationships: []
+      }
+      job_runs: {
+        Row: {
+          day: string
+          detail: Json
+          finished_at: string | null
+          job: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          day: string
+          detail?: Json
+          finished_at?: string | null
+          job: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          day?: string
+          detail?: Json
+          finished_at?: string | null
+          job?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      job_state: {
+        Row: {
+          job: string
+          paused: boolean
+          reason: string | null
+          status: number | null
+          updated_at: string
+        }
+        Insert: {
+          job: string
+          paused?: boolean
+          reason?: string | null
+          status?: number | null
+          updated_at?: string
+        }
+        Update: {
+          job?: string
+          paused?: boolean
+          reason?: string | null
+          status?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -226,6 +295,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recaps: {
+        Row: {
+          body: Json
+          created_at: string
+          day: string
+          facts: Json
+          summary: string
+        }
+        Insert: {
+          body?: Json
+          created_at?: string
+          day: string
+          facts?: Json
+          summary: string
+        }
+        Update: {
+          body?: Json
+          created_at?: string
+          day?: string
+          facts?: Json
+          summary?: string
+        }
+        Relationships: []
       }
       rounds: {
         Row: {
@@ -438,6 +531,7 @@ export type Database = {
         }
         Returns: Json
       }
+      retire_idle_ai_matchups: { Args: { p_live: boolean }; Returns: number }
       take_checkout_slot: {
         Args: { p_ip: string; p_max: number; p_window_minutes: number }
         Returns: boolean
@@ -452,6 +546,10 @@ export type Database = {
         }[]
       }
       tugg_creation_revenue: { Args: never; Returns: Json }
+      tugg_day_facts: {
+        Args: { p_from: string; p_live: boolean; p_to: string }
+        Returns: Json
+      }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {

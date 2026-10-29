@@ -36,6 +36,13 @@
       "when": 1793231591030,
       "tag": "0004_admin_creation_revenue_aggregate",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793298469233,
+      "tag": "0005_automation_recaps_sharing",
+      "breakpoints": true
     }
   ]
 }
