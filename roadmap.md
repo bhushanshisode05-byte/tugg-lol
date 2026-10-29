@@ -8,6 +8,7 @@
 - [x] Products set up (rope pull $1 x qty, $9 standard, $29 featured)
 
 ## Next
+- [ ] Share menu: Instagram, India-aware TikTok, optional native More apps; verify desktop/mobile and private counters.
 - [x] Test pull lands via webhook and moves the rope live
 - [x] Leaderboards, Hall of Fame + result cards (/results/[id]), /rivalries/[slug]
 - [ ] Check Hall of Fame cards with real winners after the first 00:00 UTC close
