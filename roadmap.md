@@ -8,7 +8,7 @@
 - [x] Products set up (rope pull $1 x qty, $9 standard, $29 featured)
 
 ## Next
-- [ ] Share menu: Instagram, India-aware TikTok, optional native More apps; verify desktop/mobile and private counters.
+- [x] Share menu: Instagram for everyone, TikTok hidden in India (server country first, browser zone fallback), optional native More apps. Verified 1280px desktop and 390px phone menus; India header, US header overriding Indian zone, Kolkata fallback, foreign/unknown country; clipboard, toasts, destination tabs, no page errors. Native share exercised with a browser stub (actual phone app handoff unverified). All 14 selected tests pass; private events confirmed: Instagram 5, TikTok 3, native 2.
 - [x] Test pull lands via webhook and moves the rope live
 - [x] Leaderboards, Hall of Fame + result cards (/results/[id]), /rivalries/[slug]
 - [ ] Check Hall of Fame cards with real winners after the first 00:00 UTC close
@@ -20,7 +20,7 @@
 - [ ] Activate and verify owner admin access: OWNER_EMAIL is missing and auth currently has no users; owner account must be provisioned in Users with public signup remaining disabled
 - [ ] Activate payment-error email escalation: no email domain or OWNER_EMAIL; verified errors currently log events instead; genuine-error and signed-in owner flows not yet verified
 - [x] AI daily generator (01:05 UTC, 3/day, cap 30, 14-day retirement, AI_GENERATOR_ENABLED)
-- [x] Share button on every rope (native share on phones; X, WhatsApp, Facebook, LinkedIn, Reddit, Telegram, Copy link), private share counts, per-matchup preview tags with fallback image
+- [x] Share button on every rope (menu on all devices; optional More apps, Instagram, TikTok outside India, X, WhatsApp, Facebook, LinkedIn, Reddit, Telegram, Copy link), private share counts, per-matchup preview tags with fallback image
 - [x] Confirmed the 00:00 UTC close ran on 2026-10-29
 - [ ] Emails: rejection notice, payment-error escalation, weekly owner summary, digest signup (needs email domain)
 - [ ] GEO: robots.txt, llms.txt, sitemap, JSON-LD, JSON/RSS feeds, OG images, IndexNow, SITE_URL everywhere
