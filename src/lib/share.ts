@@ -2,6 +2,8 @@ import { usd } from "@/components/tugg/Rope";
 
 export type ShareInput = { slug: string; title: string; sides: { name: string }[]; a: number; b: number };
 
+export const SHARE_CHANNELS = ["native", "x", "whatsapp", "facebook", "linkedin", "reddit", "telegram", "copy", "instagram", "tiktok"] as const;
+
 export const shareUrl = (siteUrl: string, slug: string) => `${siteUrl.replace(/\/$/, "")}/m/${slug}`;
 
 /** Pre-written text from the current real round totals (cents). */
