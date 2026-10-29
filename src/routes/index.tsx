@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ShareButton } from "@/components/tugg/ShareButton";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getHome, type Matchup } from "@/lib/tugg.functions";
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery),
   component: Home,
 });
+
+const toShare = (m: Matchup) => ({ slug: m.slug, title: m.title, sides: m.sides, a: m.round?.total_a_cents ?? 0, b: m.round?.total_b_cents ?? 0 });
 
 function total(m: Matchup) {
   return (m.round?.total_a_cents ?? 0) + (m.round?.total_b_cents ?? 0);
@@ -83,6 +86,11 @@ function Home() {
             </div>
           </Link>
         )}
+        {featured && (
+          <div className="mt-3 flex justify-end">
+            <ShareButton siteUrl={data.siteUrl} m={toShare(featured)} />
+          </div>
+        )}
       </section>
 
       <div className="overflow-hidden border-y border-border bg-card py-2">
@@ -124,12 +132,8 @@ function Home() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((m) => (
-            <Link
-              key={m.id}
-              to="/m/$slug"
-              params={{ slug: m.slug }}
-              className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
-            >
+            <div key={m.id} className="flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary">
+            <Link to="/m/$slug" params={{ slug: m.slug }} className="block">
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 <span>{m.category}</span>
                 {m.source === "ai" && <span>Added by Tugg</span>}
@@ -144,6 +148,10 @@ function Home() {
                 <span>{usd(m.round?.total_b_cents ?? 0)}</span>
               </div>
             </Link>
+              <div className="mt-3 flex justify-end">
+                <ShareButton siteUrl={data.siteUrl} m={toShare(m)} />
+              </div>
+            </div>
           ))}
         </div>
         {!list.length && <p className="text-muted-foreground">No matchups match. <Link to="/create" className="text-primary underline">Create one</Link>.</p>}
