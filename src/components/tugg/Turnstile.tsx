@@ -37,7 +37,7 @@ function loadScript(): Promise<TurnstileApi> {
 
 let siteKeyPromise: Promise<string> | null = null;
 function resolveSiteKey(): Promise<string> {
-  const built = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+  const built = import.meta.env['VITE_TURNSTILE_SITE_KEY'] as string | undefined;
   if (built) return Promise.resolve(built);
   if (!siteKeyPromise)
     siteKeyPromise = getTurnstileSiteKey()

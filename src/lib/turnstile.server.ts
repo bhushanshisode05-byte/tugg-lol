@@ -25,9 +25,9 @@ const MESSAGES: Record<TurnstileFailure, [number, string]> = {
 export const turnstileError = (r: TurnstileFailure) => new TurnstileError(r, ...MESSAGES[r]);
 
 type Opts = {
-  secret?: string;
-  remoteip?: string;
-  fetchImpl?: typeof fetch;
+  secret?: string | undefined;
+  remoteip?: string | undefined;
+  fetchImpl?: typeof fetch | undefined;
 };
 
 /**
