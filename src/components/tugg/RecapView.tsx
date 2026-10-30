@@ -95,6 +95,7 @@ function Facts({ recap }: { recap: Recap }) {
         ) : <p className="text-sm text-muted-foreground">No country data.</p>}
       </section>
     </div>
+    </>
   );
 }
 
