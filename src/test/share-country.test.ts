@@ -27,3 +27,20 @@ describe("sharing country rules", () => {
     expect(channels.safeParse("unapproved").success).toBe(false);
   });
 });
+import { appShareOptions, appClipboardText, APP_DESTINATIONS } from "@/lib/share";
+describe("Instagram and TikTok share options", () => {
+  const m = { slug: "pizza-vs-burgers", title: "Pizza vs Burgers", sides: [{ name: "Pizza" }, { name: "Burgers" }], a: 4200, b: 5800 };
+  it("hides TikTok for IN and always shows Instagram", () => {
+    expect(appShareOptions(showTikTok("IN"))).toEqual(["instagram"]);
+  });
+  it("shows Instagram and TikTok outside India", () => {
+    expect(appShareOptions(showTikTok("US"))).toEqual(["instagram", "tiktok"]);
+    expect(appShareOptions(showTikTok(null))).toEqual(["instagram", "tiktok"]);
+  });
+  it("both copy the share text plus the matchup link", () => {
+    expect(appClipboardText(m, "https://tugg.lol/")).toBe(
+      "Pizza vs Burgers is live on Tugg: Pizza $42 vs Burgers $58. Pull your side. https://tugg.lol/m/pizza-vs-burgers",
+    );
+    expect(APP_DESTINATIONS).toEqual({ instagram: "https://www.instagram.com/", tiktok: "https://www.tiktok.com/" });
+  });
+});

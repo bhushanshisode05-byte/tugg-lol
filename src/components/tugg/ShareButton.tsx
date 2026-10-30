@@ -4,7 +4,7 @@ import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { trackShare, SHARE_CHANNELS } from "@/lib/recap.functions";
-import { shareText, shareUrl, shareLinks, type ShareInput } from "@/lib/share";
+import { shareText, shareUrl, shareLinks, APP_COPY_NOTICE, APP_DESTINATIONS, type ShareInput } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { getShareCountry } from "@/lib/share-country.functions";
 import { showTikTok } from "@/lib/share-country";
@@ -31,8 +31,8 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
     track(channel);
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
-      toast.success(`Copied. Paste it in your ${channel === "instagram" ? "Instagram" : "TikTok"} story, post, or DM.`);
-      const destination = channel === "instagram" ? "https://www.instagram.com/" : "https://www.tiktok.com/";
+      toast.success(APP_COPY_NOTICE);
+      const destination = APP_DESTINATIONS[channel];
       if (tab) tab.location.replace(destination);
       else window.open(destination, "_blank", "noopener,noreferrer");
     } catch {

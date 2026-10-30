@@ -21,3 +21,11 @@ export function shareLinks(text: string, url: string) {
     { channel: "telegram", label: "Telegram", href: `https://t.me/share/url?url=${e(url)}&text=${e(text)}` },
   ] as const;
 }
+
+export const APP_COPY_NOTICE = "Copied. Paste it into your story, post, bio or message.";
+export const APP_DESTINATIONS = { instagram: "https://www.instagram.com/", tiktok: "https://www.tiktok.com/" } as const;
+/** Clipboard text for apps without a web share link: pre-written text plus the matchup link. */
+export const appClipboardText = (m: ShareInput, siteUrl: string) => `${shareText(m)} ${shareUrl(siteUrl, m.slug)}`;
+/** Copy-and-open apps shown in the menu. Instagram for everyone; TikTok only when allowed for the visitor's country. */
+export const appShareOptions = (tiktokAllowed: boolean) =>
+  (["instagram", ...(tiktokAllowed ? ["tiktok"] : [])] as ("instagram" | "tiktok")[]);
