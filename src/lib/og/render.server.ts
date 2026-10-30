@@ -82,9 +82,9 @@ type Metrics = {
   ropeY: number; rope: number; pullY: number; pull: number; brandY: number; brand: number; centered: boolean;
 };
 const METRICS: Record<CardSize, Metrics> = {
-  link: { pad: 56, header: 22, headerY: 74, titleTop: 100, titleBottom: 250, titleMax: 84, titleMin: 34, emojiY: 268, emoji: 76, nameY: 392, name: 38, totalY: 462, total: 62, ropeY: 514, rope: 22, pullY: 590, pull: 32, brandY: 590, brand: 28, centered: false },
-  square: { pad: 72, header: 30, headerY: 116, titleTop: 160, titleBottom: 420, titleMax: 120, titleMin: 46, emojiY: 460, emoji: 130, nameY: 670, name: 54, totalY: 770, total: 92, ropeY: 850, rope: 30, pullY: 966, pull: 48, brandY: 1030, brand: 34, centered: true },
-  story: { pad: 80, header: 38, headerY: 250, titleTop: 320, titleBottom: 760, titleMax: 150, titleMin: 56, emojiY: 820, emoji: 200, nameY: 1120, name: 70, totalY: 1250, total: 124, ropeY: 1370, rope: 40, pullY: 1580, pull: 76, brandY: 1760, brand: 52, centered: true },
+  link: { pad: 56, header: 22, headerY: 74, titleTop: 100, titleBottom: 250, titleMax: 84, titleMin: 34, emojiY: 268, emoji: 76, nameY: 388, name: 38, totalY: 454, total: 62, ropeY: 524, rope: 22, pullY: 590, pull: 32, brandY: 590, brand: 28, centered: false },
+  square: { pad: 72, header: 30, headerY: 116, titleTop: 160, titleBottom: 420, titleMax: 120, titleMin: 46, emojiY: 460, emoji: 130, nameY: 670, name: 54, totalY: 770, total: 92, ropeY: 872, rope: 30, pullY: 966, pull: 48, brandY: 1030, brand: 34, centered: true },
+  story: { pad: 80, header: 38, headerY: 250, titleTop: 320, titleBottom: 760, titleMax: 150, titleMin: 56, emojiY: 780, emoji: 220, nameY: 1100, name: 72, totalY: 1240, total: 124, ropeY: 1390, rope: 40, pullY: 1580, pull: 76, brandY: 1760, brand: 52, centered: true },
 };
 
 const fmtDay = (day: string) =>
@@ -161,7 +161,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
     }
     const nm = fit(display, side.s.name, colW, m.name, m.name * 0.55);
     text(r, display, nm.text, ax(nm.w), m.nameY, nm.size, side.c);
-    const tt = fit(mono, usd(side.s.cents), colW, m.total, m.total * 0.5);
+    const tt = fit(mono, usd(side.s.cents), colW, m.total, m.total * 0.2);
     text(r, mono, tt.text, ax(tt.w), m.totalY, tt.size, hex(FG));
   }
 
@@ -175,7 +175,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   r.circle(rx0, ry, t * 0.95, [...ca.slice(0, 3), 1] as RGBA);
   r.circle(rx1, ry, t * 0.95, [...cb.slice(0, 3), 1] as RGBA);
   const fx = rx0 + ((rx1 - rx0) * ropePosition(input.a.cents, input.b.cents)) / 100;
-  const pole = t * 3.2;
+  const pole = t * 2.2;
   r.rect(fx - t * 0.13, ry - pole, t * 0.26, pole + t * 0.9, hex(FG));
   r.fill([[fx + t * 0.13, ry - pole, fx + t * 1.6, ry - pole + t * 0.55, fx + t * 0.13, ry - pole + t * 1.1]], hex(PINK));
 
