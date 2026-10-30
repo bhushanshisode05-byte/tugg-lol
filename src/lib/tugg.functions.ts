@@ -34,7 +34,7 @@ export type Side = {
   image_id?: string | null;
   image_status?: string | null;
   image_report_count?: number | null;
-  image_preview?: string;
+  image_preview?: string | undefined;
 };
 export type Round = {
   id: string;
@@ -377,8 +377,8 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const attached = await supabaseAdmin.rpc("attach_side_images", {
         p_matchup: m.id,
-        p_a: data.a.imageId ?? null,
-        p_b: data.b.imageId ?? null,
+        p_a: data.a.imageId ?? "00000000-0000-0000-0000-000000000000",
+        p_b: data.b.imageId ?? "00000000-0000-0000-0000-000000000000",
         p_ip: await imageIpHash(getRequest()),
       });
       if (attached.error || !attached.data)

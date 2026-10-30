@@ -12,7 +12,7 @@ export function SideImageField({
 }: {
   label: string;
   color: string;
-  value?: DraftSideImage;
+  value?: DraftSideImage | undefined;
   onChange: (v: DraftSideImage | undefined) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);

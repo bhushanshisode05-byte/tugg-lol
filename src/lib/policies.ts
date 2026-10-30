@@ -46,7 +46,8 @@ export type AnswerId = (typeof supportAnswers)[number]["id"];
 export function approvedAnswer(id: string) {
   return (
     supportAnswers.find((a) => a.id === id)?.text ??
-    supportAnswers.find((a) => a.id === "scope")?.text
+    supportAnswers.find((a) => a.id === "scope")?.text ??
+    "Tugg support answers only published policies."
   );
 }
 export const policySections = {

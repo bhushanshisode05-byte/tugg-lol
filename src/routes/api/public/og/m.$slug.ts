@@ -10,18 +10,37 @@ export const Route = createFileRoute("/api/public/og/m/$slug")({
       GET: async ({ request, params }) => {
         const sizeParam = new URL(request.url).searchParams.get("size");
         const size = isCardSize(sizeParam) ? sizeParam : "link";
-        if (!/^[a-z0-9-]{1,100}$/.test(params.slug)) return new Response("Not found", { status: 404 });
+        if (!/^[a-z0-9-]{1,100}$/.test(params.slug))
+          return new Response("Not found", { status: 404 });
         try {
           const d = await getMatchup({ data: { slug: params.slug } });
           const [a, b] = d?.matchup.sides ?? [];
-          if (!d || !a || !b) return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=60" } });
+          if (!d || !a || !b)
+            return new Response("Not found", {
+              status: 404,
+              headers: { "Cache-Control": "public, max-age=60" },
+            });
           const { renderCard } = await import("@/lib/og/render.server");
           const png = await renderCard(
             {
               kind: "live",
               day: (d.matchup.round?.starts_at ?? new Date().toISOString()).slice(0, 10),
-              a: { name: a.name, emoji: a.emoji, color: a.color, cents: d.matchup.round?.total_a_cents ?? 0 },
-              b: { name: b.name, emoji: b.emoji, color: b.color, cents: d.matchup.round?.total_b_cents ?? 0 },
+              a: {
+                image_id: a.image_id,
+                image_status: a.image_status,
+                name: a.name,
+                emoji: a.emoji,
+                color: a.color,
+                cents: d.matchup.round?.total_a_cents ?? 0,
+              },
+              b: {
+                image_id: b.image_id,
+                image_status: b.image_status,
+                name: b.name,
+                emoji: b.emoji,
+                color: b.color,
+                cents: d.matchup.round?.total_b_cents ?? 0,
+              },
             },
             size,
           );
@@ -34,7 +53,10 @@ export const Route = createFileRoute("/api/public/og/m/$slug")({
           });
         } catch (e) {
           console.error("share image failed", e instanceof Error ? e.message : e);
-          return new Response("Image unavailable", { status: 500, headers: { "Cache-Control": "no-store" } });
+          return new Response("Image unavailable", {
+            status: 500,
+            headers: { "Cache-Control": "no-store" },
+          });
         }
       },
     },

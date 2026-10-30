@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
-const body = z.object({ task: z.enum(["generate", "recap"]) });
+const body = z.object({ task: z.enum(["generate", "recap", "cleanup_images"]) });
 
 export const Route = createFileRoute("/api/public/jobs/daily")({
   staticData: { sitemap: false },
@@ -15,7 +15,12 @@ export const Route = createFileRoute("/api/public/jobs/daily")({
         if (!parsed.success) return Response.json({ error: "bad body" }, { status: 400 });
         const { runGenerator, runRecap } = await import("@/lib/jobs.server");
         try {
-          const out = parsed.data.task === "generate" ? await runGenerator() : await runRecap();
+          const out =
+            parsed.data.task === "cleanup_images"
+              ? await (await import("@/lib/side-images.server")).cleanupSideImages()
+              : parsed.data.task === "generate"
+                ? await runGenerator()
+                : await runRecap();
           return Response.json({ ok: true, ...out });
         } catch (e) {
           console.error("daily job", parsed.data.task, e);

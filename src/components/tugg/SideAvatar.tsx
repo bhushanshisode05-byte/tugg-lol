@@ -4,14 +4,16 @@ export function SideAvatar({
   side,
   size = "sm",
 }: {
-  side?: {
-    name: string;
-    emoji: string;
-    color?: string;
-    image_id?: string | null;
-    image_status?: string | null;
-    image_preview?: string;
-  };
+  side?:
+    | {
+        name: string;
+        emoji: string;
+        color?: string;
+        image_id?: string | null;
+        image_status?: string | null;
+        image_preview?: string | undefined;
+      }
+    | undefined;
   size?: "sm" | "lg";
 }) {
   const [failed, setFailed] = useState<string | null>(null);

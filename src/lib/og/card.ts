@@ -5,10 +5,21 @@ export const CARD_SIZES = {
   link: [1200, 630],
 } as const;
 export type CardSize = keyof typeof CARD_SIZES;
-export const CARD_SIZE_LABELS: Record<CardSize, string> = { story: "Story", square: "Square", link: "Link preview" };
+export const CARD_SIZE_LABELS: Record<CardSize, string> = {
+  story: "Story",
+  square: "Square",
+  link: "Link preview",
+};
 export const isCardSize = (s: unknown): s is CardSize => typeof s === "string" && s in CARD_SIZES;
 
-export type CardSide = { name: string; emoji: string; color: string; cents: number };
+export type CardSide = {
+  name: string;
+  emoji: string;
+  color: string;
+  cents: number;
+  image_id?: string | null;
+  image_status?: string | null;
+};
 export type CardInput = {
   kind: "live" | "result";
   /** UTC day (YYYY-MM-DD) the numbers belong to. */
@@ -26,5 +37,7 @@ export const PUBLIC_SITE = "https://tugg.lol";
 /** Link-preview images refresh every 5 minutes: the bucket changes the URL crawlers see. */
 export const imageBucket = (now = Date.now()) => Math.floor(now / 300000).toString(36);
 
-export const matchupImagePath = (slug: string, size: CardSize = "link") => `/api/public/og/m/${encodeURIComponent(slug)}?size=${size}`;
-export const resultImagePath = (id: string, size: CardSize = "link") => `/api/public/og/r/${encodeURIComponent(id)}?size=${size}`;
+export const matchupImagePath = (slug: string, size: CardSize = "link") =>
+  `/api/public/og/m/${encodeURIComponent(slug)}?size=${size}`;
+export const resultImagePath = (id: string, size: CardSize = "link") =>
+  `/api/public/og/r/${encodeURIComponent(id)}?size=${size}`;

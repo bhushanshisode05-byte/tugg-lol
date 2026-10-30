@@ -13,7 +13,11 @@ export const Route = createFileRoute("/api/public/og/r/$id")({
         if (!/^[0-9a-f-]{36}$/i.test(params.id)) return new Response("Not found", { status: 404 });
         try {
           const c = await getResult({ data: { id: params.id } });
-          if (!c) return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=60" } });
+          if (!c)
+            return new Response("Not found", {
+              status: 404,
+              headers: { "Cache-Control": "public, max-age=60" },
+            });
           const winnerIsA = c.winner.position === 0;
           const [a, b] = winnerIsA ? [c.winner, c.loser] : [c.loser, c.winner];
           const { renderCard } = await import("@/lib/og/render.server");
@@ -21,8 +25,22 @@ export const Route = createFileRoute("/api/public/og/r/$id")({
             {
               kind: "result",
               day: new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
-              a: { name: a.name, emoji: a.emoji, color: a.color, cents: winnerIsA ? c.winner_cents : c.loser_cents },
-              b: { name: b.name, emoji: b.emoji, color: b.color, cents: winnerIsA ? c.loser_cents : c.winner_cents },
+              a: {
+                image_id: a.image_id,
+                image_status: a.image_status,
+                name: a.name,
+                emoji: a.emoji,
+                color: a.color,
+                cents: winnerIsA ? c.winner_cents : c.loser_cents,
+              },
+              b: {
+                image_id: b.image_id,
+                image_status: b.image_status,
+                name: b.name,
+                emoji: b.emoji,
+                color: b.color,
+                cents: winnerIsA ? c.loser_cents : c.winner_cents,
+              },
               winner: winnerIsA ? 0 : 1,
               pullers: c.pullers,
             },
@@ -37,7 +55,10 @@ export const Route = createFileRoute("/api/public/og/r/$id")({
           });
         } catch (e) {
           console.error("result image failed", e instanceof Error ? e.message : e);
-          return new Response("Image unavailable", { status: 500, headers: { "Cache-Control": "no-store" } });
+          return new Response("Image unavailable", {
+            status: 500,
+            headers: { "Cache-Control": "no-store" },
+          });
         }
       },
     },
