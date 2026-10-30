@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { subscribeDigest, type Recap } from "@/lib/recap.functions";
 import { Turnstile, type TurnstileHandle } from "@/components/tugg/Turnstile";
