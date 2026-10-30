@@ -29,7 +29,7 @@ export const Route = createFileRoute("/leaderboards")({
             "@context": "https://schema.org",
             "@type": "ItemList",
             name: "Biggest Tugg ropes ever",
-            itemListElement: loaderData.biggest.map((r, i) => ({ "@type": "ListItem", position: i + 1, name: `${r.title}: ${usd(r.total_a + r.total_b)}`, url: `/m/${r.slug}` })),
+            itemListElement: loaderData.biggest.map((r, i) => ({ "@type": "ListItem", position: i + 1, name: `${r.title}: ${usd(r.total_a + r.total_b)}`, url: `https://tugg.lol/m/${r.slug}` })),
           }),
         }]
       : [],

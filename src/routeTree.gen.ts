@@ -18,6 +18,7 @@ import { Route as CreateRouteImport } from './routes/create'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as IndexnowDottxtRouteImport } from './routes/indexnow[.]txt'
 import { Route as LeaderboardsRouteImport } from './routes/leaderboards'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -26,6 +27,12 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as FeedsLeaderboardDotjsonRouteImport } from './routes/feeds/leaderboard[.]json'
+import { Route as FeedsLeaderboardDotrssRouteImport } from './routes/feeds/leaderboard[.]rss'
+import { Route as FeedsMatchupsDotjsonRouteImport } from './routes/feeds/matchups[.]json'
+import { Route as FeedsMatchupsDotrssRouteImport } from './routes/feeds/matchups[.]rss'
+import { Route as FeedsResultsDotjsonRouteImport } from './routes/feeds/results[.]json'
+import { Route as FeedsResultsDotrssRouteImport } from './routes/feeds/results[.]rss'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as RecapIndexRouteImport } from './routes/recap.index'
 import { Route as RecapDateRouteImport } from './routes/recap.$date'
@@ -83,6 +90,11 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
   path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexnowDottxtRoute = IndexnowDottxtRouteImport.update({
+  id: '/indexnow.txt',
+  path: '/indexnow.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeaderboardsRoute = LeaderboardsRouteImport.update({
   id: '/leaderboards',
   path: '/leaderboards',
@@ -122,6 +134,36 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const FeedsLeaderboardDotjsonRoute = FeedsLeaderboardDotjsonRouteImport.update({
+  id: '/feeds/leaderboard.json',
+  path: '/feeds/leaderboard.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedsLeaderboardDotrssRoute = FeedsLeaderboardDotrssRouteImport.update({
+  id: '/feeds/leaderboard.rss',
+  path: '/feeds/leaderboard.rss',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedsMatchupsDotjsonRoute = FeedsMatchupsDotjsonRouteImport.update({
+  id: '/feeds/matchups.json',
+  path: '/feeds/matchups.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedsMatchupsDotrssRoute = FeedsMatchupsDotrssRouteImport.update({
+  id: '/feeds/matchups.rss',
+  path: '/feeds/matchups.rss',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedsResultsDotjsonRoute = FeedsResultsDotjsonRouteImport.update({
+  id: '/feeds/results.json',
+  path: '/feeds/results.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedsResultsDotrssRoute = FeedsResultsDotrssRouteImport.update({
+  id: '/feeds/results.rss',
+  path: '/feeds/results.rss',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MSlugRoute = MSlugRouteImport.update({
   id: '/m/$slug',
@@ -194,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/indexnow.txt': typeof IndexnowDottxtRoute
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -202,6 +245,12 @@ export interface FileRoutesByFullPath {
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
+  '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
+  '/feeds/matchups.json': typeof FeedsMatchupsDotjsonRoute
+  '/feeds/matchups.rss': typeof FeedsMatchupsDotrssRoute
+  '/feeds/results.json': typeof FeedsResultsDotjsonRoute
+  '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
@@ -224,6 +273,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/indexnow.txt': typeof IndexnowDottxtRoute
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -232,6 +282,12 @@ export interface FileRoutesByTo {
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
+  '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
+  '/feeds/matchups.json': typeof FeedsMatchupsDotjsonRoute
+  '/feeds/matchups.rss': typeof FeedsMatchupsDotrssRoute
+  '/feeds/results.json': typeof FeedsResultsDotjsonRoute
+  '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
@@ -256,6 +312,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/indexnow.txt': typeof IndexnowDottxtRoute
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -264,6 +321,12 @@ export interface FileRoutesById {
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
+  '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
+  '/feeds/matchups.json': typeof FeedsMatchupsDotjsonRoute
+  '/feeds/matchups.rss': typeof FeedsMatchupsDotrssRoute
+  '/feeds/results.json': typeof FeedsResultsDotjsonRoute
+  '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
@@ -288,6 +351,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/hall-of-fame'
     | '/how-it-works'
+    | '/indexnow.txt'
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
@@ -296,6 +360,12 @@ export interface FileRouteTypes {
     | '/stats'
     | '/terms'
     | '/admin'
+    | '/feeds/leaderboard.json'
+    | '/feeds/leaderboard.rss'
+    | '/feeds/matchups.json'
+    | '/feeds/matchups.rss'
+    | '/feeds/results.json'
+    | '/feeds/results.rss'
     | '/m/$slug'
     | '/recap/$date'
     | '/results/$id'
@@ -318,6 +388,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/hall-of-fame'
     | '/how-it-works'
+    | '/indexnow.txt'
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
@@ -326,6 +397,12 @@ export interface FileRouteTypes {
     | '/stats'
     | '/terms'
     | '/admin'
+    | '/feeds/leaderboard.json'
+    | '/feeds/leaderboard.rss'
+    | '/feeds/matchups.json'
+    | '/feeds/matchups.rss'
+    | '/feeds/results.json'
+    | '/feeds/results.rss'
     | '/m/$slug'
     | '/recap/$date'
     | '/results/$id'
@@ -349,6 +426,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/hall-of-fame'
     | '/how-it-works'
+    | '/indexnow.txt'
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
@@ -357,6 +435,12 @@ export interface FileRouteTypes {
     | '/stats'
     | '/terms'
     | '/_authenticated/admin'
+    | '/feeds/leaderboard.json'
+    | '/feeds/leaderboard.rss'
+    | '/feeds/matchups.json'
+    | '/feeds/matchups.rss'
+    | '/feeds/results.json'
+    | '/feeds/results.rss'
     | '/m/$slug'
     | '/recap/$date'
     | '/results/$id'
@@ -381,6 +465,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   HallOfFameRoute: typeof HallOfFameRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  IndexnowDottxtRoute: typeof IndexnowDottxtRoute
   LeaderboardsRoute: typeof LeaderboardsRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
@@ -388,6 +473,12 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   TermsRoute: typeof TermsRoute
+  FeedsLeaderboardDotjsonRoute: typeof FeedsLeaderboardDotjsonRoute
+  FeedsLeaderboardDotrssRoute: typeof FeedsLeaderboardDotrssRoute
+  FeedsMatchupsDotjsonRoute: typeof FeedsMatchupsDotjsonRoute
+  FeedsMatchupsDotrssRoute: typeof FeedsMatchupsDotrssRoute
+  FeedsResultsDotjsonRoute: typeof FeedsResultsDotjsonRoute
+  FeedsResultsDotrssRoute: typeof FeedsResultsDotrssRoute
   MSlugRoute: typeof MSlugRoute
   RecapDateRoute: typeof RecapDateRoute
   ResultsIdRoute: typeof ResultsIdRoute
@@ -467,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/indexnow.txt': {
+      id: '/indexnow.txt'
+      path: '/indexnow.txt'
+      fullPath: '/indexnow.txt'
+      preLoaderRoute: typeof IndexnowDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leaderboards': {
       id: '/leaderboards'
       path: '/leaderboards'
@@ -522,6 +620,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/feeds/leaderboard.json': {
+      id: '/feeds/leaderboard.json'
+      path: '/feeds/leaderboard.json'
+      fullPath: '/feeds/leaderboard.json'
+      preLoaderRoute: typeof FeedsLeaderboardDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeds/leaderboard.rss': {
+      id: '/feeds/leaderboard.rss'
+      path: '/feeds/leaderboard.rss'
+      fullPath: '/feeds/leaderboard.rss'
+      preLoaderRoute: typeof FeedsLeaderboardDotrssRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeds/matchups.json': {
+      id: '/feeds/matchups.json'
+      path: '/feeds/matchups.json'
+      fullPath: '/feeds/matchups.json'
+      preLoaderRoute: typeof FeedsMatchupsDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeds/matchups.rss': {
+      id: '/feeds/matchups.rss'
+      path: '/feeds/matchups.rss'
+      fullPath: '/feeds/matchups.rss'
+      preLoaderRoute: typeof FeedsMatchupsDotrssRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeds/results.json': {
+      id: '/feeds/results.json'
+      path: '/feeds/results.json'
+      fullPath: '/feeds/results.json'
+      preLoaderRoute: typeof FeedsResultsDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeds/results.rss': {
+      id: '/feeds/results.rss'
+      path: '/feeds/results.rss'
+      fullPath: '/feeds/results.rss'
+      preLoaderRoute: typeof FeedsResultsDotrssRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/m/$slug': {
       id: '/m/$slug'
@@ -631,6 +771,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   HallOfFameRoute: HallOfFameRoute,
   HowItWorksRoute: HowItWorksRoute,
+  IndexnowDottxtRoute: IndexnowDottxtRoute,
   LeaderboardsRoute: LeaderboardsRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
@@ -638,6 +779,12 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   TermsRoute: TermsRoute,
+  FeedsLeaderboardDotjsonRoute: FeedsLeaderboardDotjsonRoute,
+  FeedsLeaderboardDotrssRoute: FeedsLeaderboardDotrssRoute,
+  FeedsMatchupsDotjsonRoute: FeedsMatchupsDotjsonRoute,
+  FeedsMatchupsDotrssRoute: FeedsMatchupsDotrssRoute,
+  FeedsResultsDotjsonRoute: FeedsResultsDotjsonRoute,
+  FeedsResultsDotrssRoute: FeedsResultsDotrssRoute,
   MSlugRoute: MSlugRoute,
   RecapDateRoute: RecapDateRoute,
   ResultsIdRoute: ResultsIdRoute,

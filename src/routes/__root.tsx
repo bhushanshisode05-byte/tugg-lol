@@ -94,7 +94,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@500;700;800&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "alternate", type: "application/rss+xml", title: "Tugg daily results", href: "/feeds/results.rss" },
+      { rel: "alternate", type: "application/rss+xml", title: "Tugg matchups", href: "/feeds/matchups.rss" },
     ],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify([
+        { "@context": "https://schema.org", "@type": "WebSite", name: "Tugg", url: "https://tugg.lol", description: "A global pay-to-pull rivalry game. Pay $1–$1,000 to pull the rope for your side; rounds close daily at 00:00 UTC. No prizes or payouts." },
+        { "@context": "https://schema.org", "@type": "Organization", name: "Tugg", url: "https://tugg.lol", logo: "https://tugg.lol/favicon.ico" },
+      ]),
+    }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
