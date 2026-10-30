@@ -2,7 +2,7 @@ import { usd } from "@/components/tugg/Rope";
 
 export type ShareInput = { slug: string; title: string; sides: { name: string }[]; a: number; b: number };
 
-export const SHARE_CHANNELS = ["native", "x", "whatsapp", "facebook", "linkedin", "reddit", "telegram", "copy", "instagram", "tiktok", "image_share", "image_save"] as const;
+export const SHARE_CHANNELS = ["native", "x", "whatsapp", "facebook", "linkedin", "reddit", "telegram", "copy", "instagram", "tiktok", "image_share", "image_save", "share_error"] as const;
 
 export const shareUrl = (siteUrl: string, slug: string) => `${siteUrl.replace(/\/$/, "")}/m/${slug}`;
 

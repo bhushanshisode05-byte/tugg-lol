@@ -32,6 +32,7 @@
 - [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)
 
 ## Discovery and share images
+- [ ] Fix phone Instagram/TikTok and Share image: copy first, share story PNG or save with steps; private error-name logs; simulated phone tests and PNG checks.
 - [x] Server-rendered share images (1200×630, 1080×1080, 1080×1920) for live matchups and round results; OG/Twitter tags per matchup, rivalry and result page; 5-minute cache
 - [x] Result cards use the same design on Hall of Fame and recap pages
 - [x] Share menu: Share image (phones with file sharing), Save image with Story/Square/Link preview sizes; image_share/image_save counters
