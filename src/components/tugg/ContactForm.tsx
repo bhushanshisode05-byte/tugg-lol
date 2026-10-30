@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Turnstile, type TurnstileHandle } from "@/components/tugg/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { contactSchema } from "@/lib/support-schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +10,8 @@ export function ContactForm() {
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const ts = useRef<TurnstileHandle>(null);
   return (
     <form
       className="mt-8 space-y-5"
@@ -21,12 +25,16 @@ export function ContactForm() {
           setError(parsed.error.issues[0]?.message || "Check your details.");
           return;
         }
+        if (!token) {
+          setError("Please complete the security check.");
+          return;
+        }
         setBusy(true);
         try {
           const res = await fetch("/api/public/support/contact", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(parsed.data),
+            body: JSON.stringify({ ...parsed.data, turnstileToken: token }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Support unavailable.");
@@ -34,6 +42,7 @@ export function ContactForm() {
         } catch (e) {
           setError(e instanceof Error ? e.message : "Message could not be sent.");
         } finally {
+          ts.current?.reset();
           setBusy(false);
         }
       }}
@@ -60,7 +69,8 @@ export function ContactForm() {
         Messages and replies are stored privately. Do not include card numbers or passwords. For
         payment errors, use the email entered at checkout.
       </p>
-      <Button type="submit" disabled={busy}>
+      <Turnstile ref={ts} action={TURNSTILE_ACTIONS.contact} onToken={setToken} />
+      <Button type="submit" disabled={busy || !token}>
         {busy ? "Sending…" : "Send message"}
       </Button>
       {error && (

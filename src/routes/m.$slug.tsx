@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { getMatchup, createPullCheckout, type Side } from "@/lib/tugg.functions";
+import { Turnstile } from "@/components/tugg/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { Shell } from "@/components/tugg/Shell";
 import { ShareButton } from "@/components/tugg/ShareButton";
 import { Rope, usd } from "@/components/tugg/Rope";
@@ -227,6 +229,7 @@ function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; pause
   const [shout, setShout] = useState("");
   const [checkout, setCheckout] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const valid = Number.isInteger(amount) && amount >= 1 && amount <= 1000;
 
   if (paused) return <p className="mt-8 rounded-xl border border-border p-4 text-muted-foreground">Pulls are paused for a moment. Check back soon.</p>;
@@ -234,7 +237,7 @@ function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; pause
   if (checkout) {
     return (
       <div className="mt-8">
-        <button onClick={() => setCheckout(false)} className="mb-3 text-sm text-muted-foreground underline">← Change pull</button>
+        <button onClick={() => { setToken(null); setCheckout(false); }} className="mb-3 text-sm text-muted-foreground underline">← Change pull</button>
         <EmbeddedPay
           fetchClientSecret={async () => {
             const r = await createPullCheckout({
@@ -242,9 +245,10 @@ function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; pause
                 sideId: side, amount, name: name || undefined, shout: shout || undefined,
                 returnUrl: `${window.location.origin}/m/${slug}?paid={CHECKOUT_SESSION_ID}`,
                 environment: getStripeEnvironment(),
+                turnstileToken: token ?? undefined,
               },
             });
-            if ("error" in r) { setErr(r.error); setCheckout(false); throw new Error(r.error); }
+            if ("error" in r) { setErr(r.error); setToken(null); setCheckout(false); throw new Error(r.error); }
             return r.clientSecret;
           }}
         />
@@ -285,9 +289,10 @@ function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; pause
         <input value={name} onChange={(e) => setName(e.target.value.slice(0, 40))} placeholder="Display name (optional)" className="rounded-xl border border-input bg-background px-4 py-3" />
         <input value={shout} onChange={(e) => setShout(e.target.value.slice(0, 80))} placeholder="Shout-out, 80 chars (optional)" className="rounded-xl border border-input bg-background px-4 py-3" />
       </div>
-      {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
+      <Turnstile action={TURNSTILE_ACTIONS.pull} onToken={setToken} className="mt-4" />
+      {err && <p role="alert" className="mt-3 text-sm text-destructive">{err}</p>}
       <button
-        disabled={!valid}
+        disabled={!valid || !token}
         onClick={() => { setErr(null); setCheckout(true); }}
         className="mt-5 w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50"
       >

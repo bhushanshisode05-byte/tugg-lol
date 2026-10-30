@@ -16,11 +16,15 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Turnstile, type TurnstileHandle } from "@/components/tugg/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 const transport = new DefaultChatTransport({ api: "/api/public/support/chat" });
 export function SupportChat() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const ts = useRef<TurnstileHandle>(null);
   const { messages, sendMessage, status, error, stop } = useChat({ transport });
   const busy = status === "submitted" || status === "streaming";
   useEffect(() => {
@@ -83,12 +87,16 @@ export function SupportChat() {
             </p>
           )}
           <div className="border-t border-border p-3">
+            <Turnstile ref={ts} action={TURNSTILE_ACTIONS.chat} onToken={setToken} className="mb-2" />
             <PromptInput
               onSubmit={async () => {
-                if (!text.trim() || busy) return;
+                if (!text.trim() || busy || !token) return;
                 const value = text;
+                const used = token;
                 setText("");
-                await sendMessage({ text: value });
+                // Each question carries a fresh single-use token; reset for the next one.
+                ts.current?.reset();
+                await sendMessage({ text: value }, { body: { turnstileToken: used } });
               }}
             >
               <PromptInputTextarea
@@ -100,7 +108,7 @@ export function SupportChat() {
                 placeholder="Ask about Tugg…"
               />
               <PromptInputFooter className="justify-end">
-                <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
+                <PromptInputSubmit status={status} onStop={stop} disabled={!busy && (!text.trim() || !token)} />
               </PromptInputFooter>
             </PromptInput>
           </div>
