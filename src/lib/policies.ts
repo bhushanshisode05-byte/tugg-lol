@@ -1,3 +1,4 @@
+import { IMAGE_POLICY } from "./side-image";
 export const supportAnswers = [
   {
     id: "pulls",
@@ -34,6 +35,7 @@ export const supportAnswers = [
     title: "What information does Tugg store?",
     text: "Tugg stores payment references, pull amounts, optional public display names and shout-outs, country information, matchup submissions, and support messages and replies. Stripe handles payment details; Tugg does not store full card numbers. Support records are private and accessible only to the owner. Hashed network identifiers are used to limit abuse. Support text is sent to an AI service to match questions to the published policies; do not include card numbers, passwords, or sensitive personal information.",
   },
+  { id: "images", title: "Side pictures and takedowns", text: IMAGE_POLICY },
   {
     id: "scope",
     title: "What can support answer?",
@@ -42,7 +44,10 @@ export const supportAnswers = [
 ] as const;
 export type AnswerId = (typeof supportAnswers)[number]["id"];
 export function approvedAnswer(id: string) {
-  return supportAnswers.find((a) => a.id === id)?.text ?? supportAnswers[7].text;
+  return (
+    supportAnswers.find((a) => a.id === id)?.text ??
+    supportAnswers.find((a) => a.id === "scope")?.text
+  );
 }
 export const policySections = {
   "how-it-works": {
@@ -80,6 +85,7 @@ export const policySections = {
           supportAnswers[1].text +
           " Results are entertainment only. Tugg is not affiliated with the brands or teams in a matchup.",
       },
+      { title: "Side pictures and takedowns", text: IMAGE_POLICY },
       {
         title: "Your legal rights",
         text: "These terms do not remove rights that cannot legally be excluded under applicable consumer law. Tugg is the business operating this service in India. Contact Tugg using the contact page for questions.",

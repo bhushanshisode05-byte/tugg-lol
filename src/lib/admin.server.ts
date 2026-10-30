@@ -25,7 +25,9 @@ export async function getAdminData(request: Request) {
       .limit(200),
     supabaseAdmin
       .from("matchups")
-      .select("id,title,source,status,created_at")
+      .select(
+        "id,title,source,status,created_at,sides(name,image_id,image_status,image_report_count)",
+      )
       .order("created_at", { ascending: false })
       .limit(200),
     supabaseAdmin
@@ -55,7 +57,18 @@ export async function getAdminData(request: Request) {
       summary: summary.data,
       creationRevenue,
       pulls: pulls.data,
-      matchups: matchups.data,
+      matchups: (matchups.data ?? []).map((m) => {
+        const { sides, ...row } = m;
+        return {
+          ...row,
+          images: sides
+            .map(
+              (s) =>
+                `${s.name}: ${s.image_id ? (s.image_status === "ok" ? "ok" : s.image_status === "hidden" ? "hidden" : s.image_status === "rejected" ? "rejected" : "pending") : "none"} (${s.image_report_count ?? 0} reports)`,
+            )
+            .join("; "),
+        };
+      }),
       moderation: moderation.data,
       events: events.data,
       support: support.data,

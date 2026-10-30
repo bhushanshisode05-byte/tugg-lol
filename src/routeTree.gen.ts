@@ -41,6 +41,9 @@ import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicSideImagesIdRouteImport } from './routes/api/public/side-images/$id'
+import { Route as ApiPublicSideImagesReportRouteImport } from './routes/api/public/side-images/report'
+import { Route as ApiPublicSideImagesUploadRouteImport } from './routes/api/public/side-images/upload'
 import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
@@ -206,6 +209,23 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSideImagesIdRoute = ApiPublicSideImagesIdRouteImport.update({
+  id: '/api/public/side-images/$id',
+  path: '/api/public/side-images/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSideImagesReportRoute =
+  ApiPublicSideImagesReportRouteImport.update({
+    id: '/api/public/side-images/report',
+    path: '/api/public/side-images/report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicSideImagesUploadRoute =
+  ApiPublicSideImagesUploadRouteImport.update({
+    id: '/api/public/side-images/upload',
+    path: '/api/public/side-images/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSupportChatRoute = ApiPublicSupportChatRouteImport.update({
   id: '/api/public/support/chat',
   path: '/api/public/support/chat',
@@ -259,6 +279,9 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
+  '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
+  '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
@@ -296,6 +319,9 @@ export interface FileRoutesByTo {
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
+  '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
+  '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
@@ -335,6 +361,9 @@ export interface FileRoutesById {
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
+  '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
+  '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
@@ -374,6 +403,9 @@ export interface FileRouteTypes {
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
+    | '/api/public/side-images/$id'
+    | '/api/public/side-images/report'
+    | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
@@ -411,6 +443,9 @@ export interface FileRouteTypes {
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
+    | '/api/public/side-images/$id'
+    | '/api/public/side-images/report'
+    | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
@@ -449,6 +484,9 @@ export interface FileRouteTypes {
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
     | '/api/public/payments/webhook'
+    | '/api/public/side-images/$id'
+    | '/api/public/side-images/report'
+    | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
@@ -487,6 +525,9 @@ export interface RootRouteChildren {
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicSideImagesIdRoute: typeof ApiPublicSideImagesIdRoute
+  ApiPublicSideImagesReportRoute: typeof ApiPublicSideImagesReportRoute
+  ApiPublicSideImagesUploadRoute: typeof ApiPublicSideImagesUploadRoute
   ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
@@ -719,6 +760,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/side-images/$id': {
+      id: '/api/public/side-images/$id'
+      path: '/api/public/side-images/$id'
+      fullPath: '/api/public/side-images/$id'
+      preLoaderRoute: typeof ApiPublicSideImagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/side-images/report': {
+      id: '/api/public/side-images/report'
+      path: '/api/public/side-images/report'
+      fullPath: '/api/public/side-images/report'
+      preLoaderRoute: typeof ApiPublicSideImagesReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/side-images/upload': {
+      id: '/api/public/side-images/upload'
+      path: '/api/public/side-images/upload'
+      fullPath: '/api/public/side-images/upload'
+      preLoaderRoute: typeof ApiPublicSideImagesUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/support/chat': {
       id: '/api/public/support/chat'
       path: '/api/public/support/chat'
@@ -793,6 +855,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicSideImagesIdRoute: ApiPublicSideImagesIdRoute,
+  ApiPublicSideImagesReportRoute: ApiPublicSideImagesReportRoute,
+  ApiPublicSideImagesUploadRoute: ApiPublicSideImagesUploadRoute,
   ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
