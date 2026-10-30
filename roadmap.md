@@ -43,3 +43,9 @@
 - [x] IndexNow key set up; ping after each daily recap (only on tugg.lol)
 - [ ] Verify Share image on a real phone (Instagram Stories, TikTok, WhatsApp)
 - [ ] Publish so link previews and IndexNow use the live site
+
+## Share simplification
+- [x] Direct native sheet with quietly copied text/link and visibility/touch-preloaded story PNG; text-only sheet when files are unsupported; silent cancellation and saved-image fallback on errors.
+- [x] Desktop reduced to Copy link, X, WhatsApp, Facebook, LinkedIn, Save image (three sizes); removed country detection and obsolete platform helpers/counters.
+- [ ] Verify updated automated tests and simulated phone/desktop flows.
+- [ ] Real-phone native sheet and installed-app image/text handoff (requires a real phone).
