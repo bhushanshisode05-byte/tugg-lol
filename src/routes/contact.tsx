@@ -4,6 +4,7 @@ import { ContactForm } from "@/components/tugg/ContactForm";
 import { getPublicContact } from "@/lib/support.functions";
 import { pageHead } from "@/lib/policies";
 export const Route = createFileRoute("/contact")({
+  staticData: { sitemap: true },
   loader: () => getPublicContact(),
   head: () =>
     pageHead("Contact Tugg", "Contact Tugg about its rules, policies, or a payment error."),

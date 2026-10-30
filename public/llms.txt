@@ -1,0 +1,37 @@
+# Tugg
+
+> Tugg is a global pay-to-pull rivalry game: visitors pay $1–$1,000 (whole US dollars) to pull a virtual rope toward their side of a matchup such as Pizza vs Burgers. Each round closes daily at 00:00 UTC and the side with more money wins bragging rights. It is paid entertainment only: there are no prizes, payouts or winnings.
+
+All numbers on Tugg come from real, confirmed payments. Rounds that receive no pulls have no winner. Matchups are created by Tugg or by players ($9 standard, $29 featured for 7 days) and are checked by moderation; rejected matchups are refunded automatically. Payments are processed by Stripe.
+
+Every matchup and rivalry page starts with a short, dated factual summary (UTC) of the current round, recent results and all-time totals that can be quoted directly.
+
+## Pages
+
+- [Home](https://tugg.lol/): Live matchups with today's rope positions.
+- [How it works](https://tugg.lol/how-it-works): Pulls, rounds, tie-breaks and the 00:00 UTC close.
+- [Leaderboards](https://tugg.lol/leaderboards): Biggest ropes ever, longest win streaks, most pulled today, top countries.
+- [Hall of Fame](https://tugg.lol/hall-of-fame): Every past round winner with result cards.
+- [Yesterday on Tugg](https://tugg.lol/recap): Daily recap written from stored facts, with a dated summary; archive at /recap/YYYY-MM-DD.
+- [Stats](https://tugg.lol/stats): Site-wide totals.
+- [Example matchup](https://tugg.lol/m/pizza-vs-burgers): Live round, rope, history and countries for one matchup.
+- [Example rivalry](https://tugg.lol/rivalries/pizza-vs-burgers): "Who is winning?" page with live result, history and FAQ.
+- [FAQ](https://tugg.lol/faq): Straight answers about pulls, rounds, payments and refunds.
+- [Rules](https://tugg.lol/rules): What is and isn't allowed.
+
+## Public feeds
+
+- [Matchups (JSON)](https://tugg.lol/feeds/matchups.json): Every live matchup with current round totals.
+- [Matchups (RSS)](https://tugg.lol/feeds/matchups.rss): New matchups.
+- [Daily results (JSON)](https://tugg.lol/feeds/results.json): Winners and final totals of each closed round.
+- [Daily results (RSS)](https://tugg.lol/feeds/results.rss): Round winners as they are crowned.
+- [Leaderboard (JSON)](https://tugg.lol/feeds/leaderboard.json): Biggest ropes, streaks, today's most pulled, top countries.
+- [Leaderboard (RSS)](https://tugg.lol/feeds/leaderboard.rss): Biggest ropes ever.
+- [Sitemap](https://tugg.lol/sitemap.xml): All public pages.
+
+## Optional
+
+- [Terms](https://tugg.lol/terms): Plain-English terms of use.
+- [Refund policy](https://tugg.lol/refund-policy): Pulls are non-refundable; rejected matchups are refunded automatically.
+- [Privacy](https://tugg.lol/privacy): What Tugg stores.
+- [About / Legal](https://tugg.lol/about-legal): Business name and contact.

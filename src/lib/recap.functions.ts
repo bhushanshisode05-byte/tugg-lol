@@ -10,6 +10,8 @@ export type Recap = {
   summary: string;
   body: { headline?: string; paragraphs?: string[] };
   facts: import("./jobs.server").RecapFacts;
+  /** Closed round id per matchup slug, for result card images. */
+  resultIds?: Record<string, string>;
 };
 
 export const getRecap = createServerFn({ method: "GET" })
@@ -22,7 +24,19 @@ export const getRecap = createServerFn({ method: "GET" })
       q,
       db.from("recaps").select("day,summary").order("day", { ascending: false }).limit(90),
     ]);
-    return { recap: ((rows ?? [])[0] ?? null) as Recap | null, archive: (archive ?? []) as { day: string; summary: string }[], siteUrl: config().siteUrl };
+    const recap = ((rows ?? [])[0] ?? null) as Recap | null;
+    if (recap) {
+      const to = new Date(new Date(`${recap.day}T00:00:00Z`).getTime() + 86400000);
+      const { data: closed } = await db
+        .from("rounds")
+        .select("id,matchups!inner(slug)")
+        .eq("status", "closed")
+        .not("winner_side_id", "is", null)
+        .gte("ends_at", to.toISOString())
+        .lt("ends_at", new Date(to.getTime() + 3600000).toISOString());
+      recap.resultIds = Object.fromEntries((closed ?? []).map((r: any) => [r.matchups.slug as string, r.id as string]));
+    }
+    return { recap, archive: (archive ?? []) as { day: string; summary: string }[], siteUrl: config().siteUrl };
   });
 
 async function ipHash(ns: string) {

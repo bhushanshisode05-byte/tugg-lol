@@ -6,6 +6,7 @@ import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
 import { useLive } from "@/hooks/use-live";
 import { getMatchup } from "@/lib/tugg.functions";
+import { imageBucket, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
 
 const mq = (slug: string) => queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
 
@@ -38,6 +39,7 @@ function facts(d: Data) {
 }
 
 export const Route = createFileRoute("/rivalries/$slug")({
+  staticData: { sitemap: true },
   loader: async ({ context, params }) => {
     const d = await context.queryClient.ensureQueryData(mq(params.slug));
     if (!d) throw notFound();
@@ -55,7 +57,11 @@ export const Route = createFileRoute("/rivalries/$slug")({
         { property: "og:description", content: f.answer },
         { property: "og:type", content: "article" },
         { property: "og:url", content: `/rivalries/${params.slug}` },
-        { name: "twitter:card", content: "summary" },
+        { property: "og:image", content: `${loaderData.siteUrl || PUBLIC_SITE}${matchupImagePath(params.slug, "link")}&v=${imageBucket()}` },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:image", content: `${loaderData.siteUrl || PUBLIC_SITE}${matchupImagePath(params.slug, "link")}&v=${imageBucket()}` },
       ],
       links: [{ rel: "canonical", href: `/rivalries/${params.slug}` }],
       scripts: [{

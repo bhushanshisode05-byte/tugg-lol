@@ -1,30 +1,33 @@
 import { Link } from "@tanstack/react-router";
 import type { ResultCard } from "@/lib/tugg.functions";
-import { Rope, usd } from "./Rope";
+import { resultImagePath } from "@/lib/og/card";
+import { usd } from "./Rope";
 
+/** Round result card: the same generated image used for sharing, plus readable text for everyone. */
 export function ResultCardView({ c, big }: { c: ResultCard; big?: boolean }) {
-  const winnerIsA = c.winner.position === 0;
-  const sides = winnerIsA ? [c.winner, c.loser] : [c.loser, c.winner];
-  const a = winnerIsA ? c.winner_cents : c.loser_cents;
-  const b = winnerIsA ? c.loser_cents : c.winner_cents;
-  const date = new Date(c.ends_at).toISOString().slice(0, 10);
+  const date = new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10);
   return (
-    <div className={`rounded-2xl border-2 border-foreground bg-card shadow-pop ${big ? "p-6 sm:p-10" : "p-5"}`}>
-      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        <span>Round ending {date} UTC</span>
-        {c.note === "tie" && <span className="text-accent">Tie-break</span>}
-      </div>
-      <p className={`mt-2 font-display font-extrabold leading-none ${big ? "text-5xl sm:text-7xl" : "text-3xl"}`}>
-        {c.winner.emoji} {c.winner.name} <span className="text-primary">won</span>
-      </p>
-      <p className="mt-1 text-muted-foreground">
-        beat {c.loser.name} {usd(c.winner_cents)} to {usd(c.loser_cents)} · {c.pullers} pullers
-      </p>
-      <Rope size={big ? "lg" : "sm"} sides={sides} a={a} b={b} />
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <Link to="/m/$slug" params={{ slug: c.slug }} className="font-bold underline">{c.title}</Link>
-        {!big && <Link to="/results/$id" params={{ id: c.id }} className="rounded-full border border-border px-3 py-1 font-bold">Share card</Link>}
-      </div>
-    </div>
+    <figure className={`overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-pop ${big ? "" : ""}`}>
+      <img
+        src={resultImagePath(c.id, "link")}
+        alt={`${c.winner.name} beat ${c.loser.name} ${usd(c.winner_cents)} to ${usd(c.loser_cents)} in ${c.title}, round of ${date} UTC`}
+        width={1200}
+        height={630}
+        loading={big ? "eager" : "lazy"}
+        className="block aspect-[1200/630] w-full bg-background"
+      />
+      <figcaption className={`flex flex-wrap items-center justify-between gap-2 ${big ? "p-5" : "p-4"} text-sm`}>
+        <span>
+          <span className="font-bold">{c.winner.emoji} {c.winner.name} won</span>{" "}
+          <span className="text-muted-foreground">
+            {usd(c.winner_cents)}–{usd(c.loser_cents)} · {c.pullers} pullers · {date} UTC{c.note === "tie" ? " · tie-break" : ""}
+          </span>
+        </span>
+        <span className="flex gap-2">
+          <Link to="/m/$slug" params={{ slug: c.slug }} className="font-bold underline">{c.title}</Link>
+          {!big && <Link to="/results/$id" params={{ id: c.id }} className="rounded-full border border-border px-3 py-1 font-bold">Share card</Link>}
+        </span>
+      </figcaption>
+    </figure>
   );
 }

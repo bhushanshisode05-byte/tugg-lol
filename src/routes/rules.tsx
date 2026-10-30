@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/tugg/Shell";
 
 export const Route = createFileRoute("/rules")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Rules, rounds and refunds | Tugg" },

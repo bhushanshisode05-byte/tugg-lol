@@ -4,6 +4,7 @@ import { readSupportJson, BodyTooLarge } from "@/lib/support-input.server";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "@/lib/turnstile";
 import { verifyTurnstileForRequest, TurnstileError } from "@/lib/turnstile.server";
 export const Route = createFileRoute("/api/public/support/contact")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

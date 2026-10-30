@@ -7,6 +7,7 @@ import { RecapView } from "@/components/tugg/RecapView";
 const q = queryOptions({ queryKey: ["recap", "latest"], queryFn: () => getRecap({ data: {} }) });
 
 export const Route = createFileRoute("/recap/")({
+  staticData: { sitemap: true },
   loader: ({ context }) => context.queryClient.ensureQueryData(q),
   head: ({ loaderData }) => {
     const desc = loaderData?.recap?.summary ?? "A daily, data-only recap of every Tugg rope: winners, the biggest rope, top matchups and countries.";

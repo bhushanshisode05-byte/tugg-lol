@@ -257,5 +257,10 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
   }
   await db.from("recaps").upsert({ day, summary, body: body as any, facts: facts as any });
   await finish("recap", day, "done", { pulls: facts.pulls });
-  return { day, summary };
+  // Tell search engines what changed after the 00:00 UTC close (only on the public domain with a key).
+  const { pingIndexNow } = await import("./indexnow.server");
+  const changed = ["/", "/recap", `/recap/${day}`, "/leaderboards", "/hall-of-fame", "/stats", ...facts.rounds.flatMap((r) => [`/m/${r.slug}`, `/rivalries/${r.slug}`])];
+  const indexnow = await pingIndexNow(changed);
+  await db.from("events").insert({ kind: "indexnow_ping", detail: { day, ...indexnow } });
+  return { day, summary, indexnow };
 }

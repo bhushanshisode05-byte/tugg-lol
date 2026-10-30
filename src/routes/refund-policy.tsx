@@ -3,6 +3,7 @@ import { PolicyPage } from "@/components/tugg/PolicyPage";
 import { policySections, pageHead } from "@/lib/policies";
 import { getPublicContact } from "@/lib/support.functions";
 export const Route = createFileRoute("/refund-policy")({
+  staticData: { sitemap: true },
   loader: () => getPublicContact(),
   head: () =>
     pageHead(policySections["refund-policy"].title, policySections["refund-policy"].description),

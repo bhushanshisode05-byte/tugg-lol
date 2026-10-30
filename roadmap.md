@@ -30,3 +30,13 @@
 - [ ] X / Bluesky auto-posting (needs keys)
 - [ ] Generated share image
 - [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)
+
+## Discovery and share images
+- [x] Server-rendered share images (1200×630, 1080×1080, 1080×1920) for live matchups and round results; OG/Twitter tags per matchup, rivalry and result page; 5-minute cache
+- [x] Result cards use the same design on Hall of Fame and recap pages
+- [x] Share menu: Share image (phones with file sharing), Save image with Story/Square/Link preview sizes; image_share/image_save counters
+- [x] robots.txt AI bots, llms.txt, sitemap.xml with page-specific lastmod, WebSite/Organization/FAQPage/ItemList JSON-LD
+- [x] Public JSON + RSS feeds: matchups, results, leaderboard
+- [x] IndexNow key set up; ping after each daily recap (only on tugg.lol)
+- [ ] Verify Share image on a real phone (Instagram Stories, TikTok, WhatsApp)
+- [ ] Publish so link previews and IndexNow use the live site

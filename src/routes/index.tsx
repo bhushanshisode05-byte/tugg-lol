@@ -12,6 +12,7 @@ const homeQuery = queryOptions({ queryKey: ["home"], queryFn: () => getHome() })
 const CATEGORIES = ["All", "Tech", "Brands", "Cities", "Countries", "Sports", "Food", "Entertainment", "Other"];
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Tugg — Pay to pull. The world's rivalry rope." },
