@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
 import { z } from "zod";
 import { readSupportJson, BodyTooLarge } from "@/lib/support-input.server";
+import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "@/lib/turnstile";
+import { verifyTurnstileForRequest, TurnstileError } from "@/lib/turnstile.server";
 const schema = z.object({
   messages: z
     .array(
@@ -16,6 +18,7 @@ const schema = z.object({
     )
     .min(1)
     .max(30),
+  turnstileToken: turnstileTokenSchema,
 });
 export const Route = createFileRoute("/api/public/support/chat")({
   server: {
@@ -34,6 +37,8 @@ export const Route = createFileRoute("/api/public/support/chat")({
             .min(1)
             .max(3000)
             .parse(last.parts.map((p) => p.text).join("\n"));
+          // Verified before rate-limit bookkeeping, saving or AI. Fails closed.
+          await verifyTurnstileForRequest(input.turnstileToken, TURNSTILE_ACTIONS.chat, request);
           await limitSupport(request, "chat");
           const id = await saveMessage("chat", text);
           // One session conversation. Each question/reply is privately archived; previous browser turns cannot override the policies.
@@ -58,6 +63,8 @@ export const Route = createFileRoute("/api/public/support/chat")({
             headers: { "Cache-Control": "no-store" },
           });
         } catch (e) {
+          if (e instanceof TurnstileError)
+            return Response.json({ error: e.message, turnstile: e.reason }, { status: e.status });
           return Response.json(
             { error: e instanceof SupportError ? e.message : "Please enter a valid question." },
             {

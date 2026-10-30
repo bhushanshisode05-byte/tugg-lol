@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config } from "./server-utils.server";
 import { SHARE_CHANNELS } from "./share";
+import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 export { SHARE_CHANNELS } from "./share";
 
 export type Recap = {
@@ -32,8 +33,14 @@ async function ipHash(ns: string) {
 }
 
 export const subscribeDigest = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ email: z.string().trim().toLowerCase().email().max(254) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ email: z.string().trim().toLowerCase().email().max(254), turnstileToken: turnstileTokenSchema }).parse(d))
   .handler(async ({ data }) => {
+    const { verifyTurnstileForRequest, TurnstileError } = await import("./turnstile.server");
+    try {
+      await verifyTurnstileForRequest(data.turnstileToken, TURNSTILE_ACTIONS.digest);
+    } catch (e) {
+      return { ok: false, message: e instanceof TurnstileError ? e.message : "The security check failed. Please try again." };
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: ok } = await supabaseAdmin.rpc("take_checkout_slot", { p_ip: await ipHash("digest"), p_max: 5, p_window_minutes: 60 });
     if (!ok) return { ok: false, message: "Too many signups from your network. Try again later." };
