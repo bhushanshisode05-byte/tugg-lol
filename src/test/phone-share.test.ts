@@ -19,11 +19,11 @@ describe("phone picture sharing", () => {
     expect(input.copy).toHaveBeenCalledWith(`${input.text} ${input.url}`);
     expect(input.image).not.toHaveBeenCalled();
     expect(await pending).toBe("shared");
-    const file = input.canShare.mock.calls[0][0].files?.[0];
+    const file = input.canShare.mock.calls[0]?.[0].files?.[0];
     expect(file?.name).toBe("tugg-pizza-vs-burgers.png");
     expect(file?.type).toBe("image/png");
-    expect(input.share.mock.calls[0][0].files?.[0]).toBe(file);
-    expect(input.share.mock.calls[0][0].url).toBe(input.url);
+    expect(input.share.mock.calls[0]?.[0].files?.[0]).toBe(file);
+    expect(input.share.mock.calls[0]?.[0].url).toBe(input.url);
     expect(input.save).not.toHaveBeenCalled();
     expect(input.failure).not.toHaveBeenCalled();
   });
@@ -32,7 +32,7 @@ describe("phone picture sharing", () => {
     expect(await sharePhoneImage(input)).toBe("saved");
     expect(input.copy).toHaveBeenCalledWith(`${input.text} ${input.url}`);
     expect(input.share).not.toHaveBeenCalled();
-    expect(input.save).toHaveBeenCalledWith(await input.image.mock.results[0].value, "tugg-pizza-vs-burgers.png");
+    expect(input.save).toHaveBeenCalledWith(await input.image.mock.results[0]?.value, "tugg-pizza-vs-burgers.png");
     expect(input.failure).toHaveBeenCalledWith("NotSupportedError");
   });
   it("does nothing else and logs no failure after AbortError", async () => {

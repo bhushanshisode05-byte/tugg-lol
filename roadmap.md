@@ -32,7 +32,9 @@
 - [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)
 
 ## Discovery and share images
-- [ ] Fix phone Instagram/TikTok and Share image: copy first, share story PNG or save with steps; private error-name logs; simulated phone tests and PNG checks.
+- [x] Phone Instagram/TikTok and Share image copy text/link immediately, check actual PNG file support, share story file (tugg-[slug].png), silently stop on AbortError, otherwise save with platform instructions and an explicit Open app button. Desktop sharing and India restriction unchanged.
+- [x] Phone sharing checks: 37 automated tests passed; 12 simulated-phone flows (Instagram/TikTok/Share image × supported/unsupported/cancel/error) passed with no page errors; desktop menu unchanged. All six fallback downloads are 1080×1920 PNGs, Pizza vs Burgers $0/$0 visually verified. Private logs confirmed 3 NotSupportedError + 3 NotAllowedError, channel/errorName only; cancellations logged no errors.
+- [ ] Real Android Chrome follow-up: verify native share targets, Instagram/TikTok app handoff, saved image accessibility and pasted Link sticker/caption. Simulated checks cannot verify installed apps or the phone gallery.
 - [x] Server-rendered share images (1200×630, 1080×1080, 1080×1920) for live matchups and round results; OG/Twitter tags per matchup, rivalry and result page; 5-minute cache
 - [x] Result cards use the same design on Hall of Fame and recap pages
 - [x] Share menu: Share image (phones with file sharing), Save image with Story/Square/Link preview sizes; image_share/image_save counters
