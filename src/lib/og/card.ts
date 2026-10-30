@@ -20,6 +20,9 @@ export type CardInput = {
   pullers?: number;
 };
 
+/** Canonical public origin for absolute share-image URLs. */
+export const PUBLIC_SITE = "https://tugg.lol";
+
 /** Link-preview images refresh every 5 minutes: the bucket changes the URL crawlers see. */
 export const imageBucket = (now = Date.now()) => Math.floor(now / 300000).toString(36);
 

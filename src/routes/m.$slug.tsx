@@ -11,6 +11,7 @@ import { Countdown } from "@/components/tugg/Countdown";
 import { EmbeddedPay } from "@/components/tugg/EmbeddedPay";
 import { useLive } from "@/hooks/use-live";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { imageBucket, matchupImagePath } from "@/lib/og/card";
 
 const mq = (slug: string) => queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
 
@@ -26,13 +27,15 @@ export const Route = createFileRoute("/m/$slug")({
       title: m.title, slug: m.slug, a: m.sides[0]?.name, b: m.sides[1]?.name,
       aCents: m.round?.total_a_cents ?? 0, bCents: m.round?.total_b_cents ?? 0,
       siteUrl: d.siteUrl || "https://tugg.lol",
+      bucket: imageBucket(),
     };
   },
   head: ({ loaderData: l }) => {
     if (!l) return { meta: [{ title: "Matchup unavailable | Tugg" }, { name: "robots", content: "noindex" }] };
     const score = `${l.a} ${usd(l.aCents)} vs ${l.b} ${usd(l.bCents)}`;
     const url = `${l.siteUrl}/m/${l.slug}`;
-    const img = `${l.siteUrl}/og-default.jpg`;
+    // Own live image; the 5-minute bucket makes crawlers re-fetch a fresh score.
+    const img = `${l.siteUrl}${matchupImagePath(l.slug, "link")}&v=${l.bucket}`;
     const desc = `Live now: ${score} in today's round. Pull the rope for your side on Tugg. Rounds end at 00:00 UTC.`;
     return {
       meta: [
@@ -45,6 +48,8 @@ export const Route = createFileRoute("/m/$slug")({
         { property: "og:image", content: img },
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },
+        { property: "og:image:type", content: "image/png" },
+        { property: "og:image:alt", content: `${l.a} vs ${l.b}: ${score}` },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: `${l.title} on Tugg` },
         { name: "twitter:description", content: desc },
