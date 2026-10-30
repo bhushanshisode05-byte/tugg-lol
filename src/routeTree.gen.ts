@@ -35,6 +35,8 @@ import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
+import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
+import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -166,6 +168,16 @@ const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
   path: '/api/public/support/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOgMSlugRoute = ApiPublicOgMSlugRouteImport.update({
+  id: '/api/public/og/m/$slug',
+  path: '/api/public/og/m/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicOgRIdRoute = ApiPublicOgRIdRouteImport.update({
+  id: '/api/public/og/r/$id',
+  path: '/api/public/og/r/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -193,6 +205,8 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -220,6 +234,8 @@ export interface FileRoutesByTo {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -249,6 +265,8 @@ export interface FileRoutesById {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -278,6 +296,8 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/api/public/og/m/$slug'
+    | '/api/public/og/r/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -305,6 +325,8 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/api/public/og/m/$slug'
+    | '/api/public/og/r/$id'
   id:
     | '__root__'
     | '/'
@@ -333,6 +355,8 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/api/public/og/m/$slug'
+    | '/api/public/og/r/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -361,6 +385,8 @@ export interface RootRouteChildren {
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
+  ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
+  ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -547,6 +573,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSupportContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/og/m/$slug': {
+      id: '/api/public/og/m/$slug'
+      path: '/api/public/og/m/$slug'
+      fullPath: '/api/public/og/m/$slug'
+      preLoaderRoute: typeof ApiPublicOgMSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/og/r/$id': {
+      id: '/api/public/og/r/$id'
+      path: '/api/public/og/r/$id'
+      fullPath: '/api/public/og/r/$id'
+      preLoaderRoute: typeof ApiPublicOgRIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -587,6 +627,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
+  ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
+  ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
