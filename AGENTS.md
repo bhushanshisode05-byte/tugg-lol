@@ -24,3 +24,5 @@
 - Recap summaries are built in code from stored facts; AI only writes prose from those facts. Why: numbers can never be invented.
 - Share country is read by an uncached public server function and shared through a browser query; time zone is only a fallback. Why: country-aware menus must not reuse another visitor's location or change public matchup data.
 - Turnstile tokens are verified server-side (src/lib/turnstile.server.ts) with a per-operation action before any side effect, failing closed; the site key reaches the browser from VITE_TURNSTILE_SITE_KEY at build or a server-function fallback. Why: widget alone is not protection.
+- Share images are rendered server-side in pure JS (src/lib/og: opentype paths + custom PNG raster) at /api/public/og/*, with short cache. Why: the edge runtime has no native image libraries.
+- SEO surfaces (sitemap via route staticData.sitemap, /feeds/*, llms.txt, IndexNow after the daily recap) read only public data. Why: crawlers must never see private fields.
