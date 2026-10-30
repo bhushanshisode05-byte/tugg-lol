@@ -9,6 +9,7 @@
 
 ## Next
 - [x] Share menu: Instagram for everyone, TikTok hidden in India (server country first, browser zone fallback), optional native More apps. Verified 1280px desktop and 390px phone menus; India header, US header overriding Indian zone, Kolkata fallback, foreign/unknown country; clipboard, toasts, destination tabs, no page errors. Native share exercised with a browser stub (actual phone app handoff unverified). All 14 selected tests pass; private events confirmed: Instagram 5, TikTok 3, native 2.
+- [x] Instagram/TikTok notice is now "Copied. Paste it into your story, post, bio or message."; country from cf-ipcountry (tugg.lol is served by Cloudflare). Tests cover IN/other/unknown and clipboard text.
 - [x] Test pull lands via webhook and moves the rope live
 - [x] Leaderboards, Hall of Fame + result cards (/results/[id]), /rivalries/[slug]
 - [ ] Check Hall of Fame cards with real winners after the first 00:00 UTC close
