@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/policies";
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       ...pageHead("Owner sign in", "Sign in to private Tugg owner records.").meta,

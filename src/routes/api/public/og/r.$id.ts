@@ -4,6 +4,7 @@ import { isCardSize } from "@/lib/og/card";
 
 /** Public result card image for a closed round (final totals never change). */
 export const Route = createFileRoute("/api/public/og/r/$id")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ request, params }) => {

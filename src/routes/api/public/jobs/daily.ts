@@ -5,6 +5,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 const body = z.object({ task: z.enum(["generate", "recap"]) });
 
 export const Route = createFileRoute("/api/public/jobs/daily")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

@@ -4,6 +4,7 @@ import { isCardSize } from "@/lib/og/card";
 
 /** Public, login-free live share image for a matchup. Cached for 5 minutes so the score stays fresh. */
 export const Route = createFileRoute("/api/public/og/m/$slug")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ request, params }) => {

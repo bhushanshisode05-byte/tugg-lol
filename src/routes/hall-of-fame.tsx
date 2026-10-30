@@ -8,6 +8,7 @@ import { getHallOfFame } from "@/lib/tugg.functions";
 const hq = queryOptions({ queryKey: ["hall-of-fame"], queryFn: () => getHallOfFame() });
 
 export const Route = createFileRoute("/hall-of-fame")({
+  staticData: { sitemap: true },
   loader: ({ context }) => context.queryClient.ensureQueryData(hq),
   head: () => ({
     meta: [

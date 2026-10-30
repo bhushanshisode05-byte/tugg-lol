@@ -21,6 +21,7 @@ const schema = z.object({
   turnstileToken: turnstileTokenSchema,
 });
 export const Route = createFileRoute("/api/public/support/chat")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

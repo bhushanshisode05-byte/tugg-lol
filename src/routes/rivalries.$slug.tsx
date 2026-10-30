@@ -39,6 +39,7 @@ function facts(d: Data) {
 }
 
 export const Route = createFileRoute("/rivalries/$slug")({
+  staticData: { sitemap: true },
   loader: async ({ context, params }) => {
     const d = await context.queryClient.ensureQueryData(mq(params.slug));
     if (!d) throw notFound();

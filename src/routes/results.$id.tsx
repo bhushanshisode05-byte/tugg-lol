@@ -11,6 +11,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 const rq = (id: string) => queryOptions({ queryKey: ["result", id], queryFn: () => (UUID.test(id) ? getResult({ data: { id } }) : null) });
 
 export const Route = createFileRoute("/results/$id")({
+  staticData: { sitemap: true },
   loader: async ({ context, params }) => {
     const c = await context.queryClient.ensureQueryData(rq(params.id));
     if (!c) throw notFound();

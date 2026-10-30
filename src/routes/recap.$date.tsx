@@ -7,6 +7,7 @@ import { RecapView } from "@/components/tugg/RecapView";
 const q = (day: string) => queryOptions({ queryKey: ["recap", day], queryFn: () => getRecap({ data: { day } }) });
 
 export const Route = createFileRoute("/recap/$date")({
+  staticData: { sitemap: true },
   loader: async ({ context, params }) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(params.date)) throw notFound();
     const d = await context.queryClient.ensureQueryData(q(params.date));

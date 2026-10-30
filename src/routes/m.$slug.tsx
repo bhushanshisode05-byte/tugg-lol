@@ -16,6 +16,7 @@ import { imageBucket, matchupImagePath } from "@/lib/og/card";
 const mq = (slug: string) => queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
 
 export const Route = createFileRoute("/m/$slug")({
+  staticData: { sitemap: true },
   validateSearch: (s: Record<string, unknown>): { paid?: string | undefined } => ({
     paid: typeof s["paid"] === "string" ? s["paid"] : undefined,
   }),

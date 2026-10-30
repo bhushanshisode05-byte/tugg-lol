@@ -9,6 +9,7 @@ import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { getStripeEnvironment } from "@/lib/stripe";
 
 export const Route = createFileRoute("/create")({
+  staticData: { sitemap: true },
   validateSearch: (s: Record<string, unknown>): { session_id?: string | undefined } => ({
     session_id: typeof s["session_id"] === "string" ? s["session_id"] : undefined,
   }),

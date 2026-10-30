@@ -9,6 +9,7 @@ import { getLeaderboards } from "@/lib/tugg.functions";
 const lq = queryOptions({ queryKey: ["leaderboards"], queryFn: () => getLeaderboards() });
 
 export const Route = createFileRoute("/leaderboards")({
+  staticData: { sitemap: true },
   loader: ({ context }) => context.queryClient.ensureQueryData(lq),
   head: ({ loaderData }) => ({
     meta: [

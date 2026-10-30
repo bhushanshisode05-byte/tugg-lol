@@ -14,6 +14,7 @@ type AdminData = {
   support: Record<string, unknown>[];
 };
 export const Route = createFileRoute("/_authenticated/admin")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       ...pageHead("Owner records", "Private Tugg owner records.").meta,

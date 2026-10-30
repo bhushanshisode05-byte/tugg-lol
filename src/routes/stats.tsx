@@ -7,6 +7,7 @@ import { usd } from "@/components/tugg/Rope";
 const sq = queryOptions({ queryKey: ["stats"], queryFn: () => getStats() });
 
 export const Route = createFileRoute("/stats")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Live stats | Tugg" },

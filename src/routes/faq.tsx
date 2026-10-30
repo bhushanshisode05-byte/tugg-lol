@@ -3,6 +3,7 @@ import { PolicyPage } from "@/components/tugg/PolicyPage";
 import { policySections, pageHead } from "@/lib/policies";
 import { getPublicContact } from "@/lib/support.functions";
 export const Route = createFileRoute("/faq")({
+  staticData: { sitemap: true },
   loader: () => getPublicContact(),
   head: () => pageHead(policySections["faq"].title, policySections["faq"].description),
   component: Page,
