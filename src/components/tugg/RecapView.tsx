@@ -5,6 +5,7 @@ import { subscribeDigest, type Recap } from "@/lib/recap.functions";
 import { Turnstile, type TurnstileHandle } from "@/components/tugg/Turnstile";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { usd } from "./Rope";
+import { resultImagePath } from "@/lib/og/card";
 
 const longDate = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -53,7 +54,22 @@ function Facts({ recap }: { recap: Recap }) {
   const f = recap.facts;
   const active = (f.rounds ?? []).filter((r) => r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
   if (!f.pulls) return null;
+  const cards = active.filter((r) => r.winner && recap.resultIds?.[r.slug]).slice(0, 6);
   return (
+    <>
+    {cards.length > 0 && (
+      <section className="mt-8">
+        <h2 className="mb-3 font-display text-2xl font-extrabold">Result cards</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {cards.map((r) => (
+            <Link key={r.slug} to="/results/$id" params={{ id: recap.resultIds![r.slug]! }} className="block overflow-hidden rounded-xl border border-border">
+              <img src={resultImagePath(recap.resultIds![r.slug]!, "link")} width={1200} height={630} loading="lazy" className="block aspect-[1200/630] w-full"
+                alt={`${r.winner} won ${r.title}: ${r.a} ${usd(r.a_cents)}, ${r.b} ${usd(r.b_cents)}`} />
+            </Link>
+          ))}
+        </div>
+      </section>
+    )}
     <div className="mt-8 grid gap-6 md:grid-cols-2">
       <section className="rounded-xl border border-border p-4">
         <h2 className="mb-2 font-bold">Results</h2>

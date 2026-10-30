@@ -104,7 +104,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   r.rect(W / 2, 0, W / 2, Math.max(8, m.rope / 3), [...cb.slice(0, 3), 1] as RGBA);
 
   const inner = W - m.pad * 2;
-  const header = input.kind === "live" ? `LIVE ROUND · ${fmtDay(input.day)} · UTC` : `FINAL RESULT · ROUND ENDED ${fmtDay(input.day)}`;
+  const header = input.kind === "live" ? `LIVE ROUND · ${fmtDay(input.day)} · UTC` : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
   const hd = fit(mono, header, inner, m.header, m.header * 0.6);
   text(r, mono, hd.text, m.centered ? (W - hd.w) / 2 : m.pad, m.headerY, hd.size, hex(MUTED));
 
