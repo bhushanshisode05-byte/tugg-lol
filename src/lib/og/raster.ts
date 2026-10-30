@@ -213,7 +213,7 @@ function crc32(buf: Uint8Array) {
 }
 
 async function zlib(data: Uint8Array, mode: "compress" | "decompress") {
-  const stream = new Blob([data as BlobPart]).stream().pipeThrough(
+  const stream = new Response(data as BodyInit).body!.pipeThrough(
     mode === "compress" ? new CompressionStream("deflate") : new DecompressionStream("deflate"),
   );
   return new Uint8Array(await new Response(stream).arrayBuffer());
