@@ -65,7 +65,7 @@ const width = (f: Font, text: string, size: number) => f.getAdvanceWidth(text, s
 export function fit(f: Font, text: string, maxW: number, max: number, min: number) {
   let size = max;
   const w = width(f, text, max);
-  if (w > maxW) size = Math.max(min, (max * maxW) / w);
+  if (w > maxW) size = Math.max(min, ((max * maxW) / w) * 0.98);
   let t = text;
   while (t.length > 1 && width(f, t, size) > maxW) t = t.slice(0, -2).trimEnd() + "…";
   return { text: t, size, w: width(f, t, size) };
