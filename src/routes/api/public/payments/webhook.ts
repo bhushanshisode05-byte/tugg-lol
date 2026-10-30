@@ -9,7 +9,11 @@ async function fulfill(session: any, env: StripeEnv) {
   const md = session.metadata ?? {};
   if (md.kind === "pull") {
     // Duplicate check before spending an AI call.
-    const { data: dup } = await supabaseAdmin.from("pulls").select("id").eq("stripe_session_id", session.id).maybeSingle();
+    const { data: dup } = await supabaseAdmin
+      .from("pulls")
+      .select("id")
+      .eq("stripe_session_id", session.id)
+      .maybeSingle();
     if (dup) return;
     let shout: string = (md.shout || "").slice(0, 80);
     let name: string = (md.name || "").slice(0, 40);
@@ -51,11 +55,19 @@ async function fulfill(session: any, env: StripeEnv) {
     if (!m) return;
     await supabaseAdmin
       .from("creators")
-      .update({ email: session.customer_details?.email ?? null, payment_intent: session.payment_intent })
+      .update({
+        email: session.customer_details?.email ?? null,
+        payment_intent: session.payment_intent,
+      })
       .eq("stripe_session_id", session.id);
     const sides = (m as any).sides.sort((a: any, b: any) => a.position - b.position);
     const text = `Title: ${m.title}\nSide A: ${sides[0]?.name}\nSide B: ${sides[1]?.name}\nDescription: ${m.description}`;
-    const v = await moderate("matchup", text);
+    let v = await moderate("matchup", text);
+    if (v.allowed) {
+      const { reviewMatchupImages } = await import("@/lib/side-images.server");
+      const pictures = await reviewMatchupImages(m.id);
+      if (!pictures.allowed) v = pictures;
+    }
     await supabaseAdmin.from("moderation_log").insert({
       subject_type: "matchup",
       subject_id: session.id,
@@ -68,7 +80,8 @@ async function fulfill(session: any, env: StripeEnv) {
         .from("matchups")
         .update({
           status: "active",
-          featured_until: md.tier === "featured" ? new Date(Date.now() + 7 * 864e5).toISOString() : null,
+          featured_until:
+            md.tier === "featured" ? new Date(Date.now() + 7 * 864e5).toISOString() : null,
         })
         .eq("id", m.id);
       await supabaseAdmin.rpc("ensure_open_round", { p_matchup: m.id });
@@ -76,10 +89,18 @@ async function fulfill(session: any, env: StripeEnv) {
       await supabaseAdmin.from("matchups").update({ status: "rejected" }).eq("id", m.id);
       try {
         const stripe = createStripeClient(env);
-        await stripe.refunds.create({ payment_intent: session.payment_intent, reason: "requested_by_customer" });
-        await supabaseAdmin.from("creators").update({ refunded: true }).eq("stripe_session_id", session.id);
+        await stripe.refunds.create({
+          payment_intent: session.payment_intent,
+          reason: "requested_by_customer",
+        });
+        await supabaseAdmin
+          .from("creators")
+          .update({ refunded: true })
+          .eq("stripe_session_id", session.id);
       } catch (e) {
-        await supabaseAdmin.from("events").insert({ kind: "refund_error", detail: { session: session.id, error: String(e) } });
+        await supabaseAdmin
+          .from("events")
+          .insert({ kind: "refund_error", detail: { session: session.id, error: String(e) } });
       }
     }
   }
@@ -91,10 +112,12 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
     handlers: {
       POST: async ({ request }) => {
         const rawEnv = new URL(request.url).searchParams.get("env");
-        if (rawEnv !== "sandbox" && rawEnv !== "live") return Response.json({ received: true, ignored: "invalid env" });
+        if (rawEnv !== "sandbox" && rawEnv !== "live")
+          return Response.json({ received: true, ignored: "invalid env" });
         const env: StripeEnv = rawEnv;
         // In live mode, test-mode events never touch the rope or matchups.
-        if (config().paymentsEnv === "live" && env === "sandbox") return Response.json({ received: true, ignored: "sandbox event in live mode" });
+        if (config().paymentsEnv === "live" && env === "sandbox")
+          return Response.json({ received: true, ignored: "sandbox event in live mode" });
         let event;
         try {
           event = await verifyWebhook(request, env);
@@ -115,7 +138,9 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           console.error("Webhook handling error:", e);
           try {
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-            await supabaseAdmin.from("events").insert({ kind: "webhook_error", detail: { type: event.type, error: String(e) } });
+            await supabaseAdmin
+              .from("events")
+              .insert({ kind: "webhook_error", detail: { type: event.type, error: String(e) } });
           } catch {}
           return new Response("Webhook error", { status: 500 });
         }

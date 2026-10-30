@@ -380,6 +380,77 @@ export type Database = {
           },
         ]
       }
+      side_image_reports: {
+        Row: {
+          created_at: string
+          id: string
+          image_id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_id: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_id?: string
+          ip_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "side_image_reports_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "side_image_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      side_image_uploads: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          ip_hash: string
+          matchup_id: string | null
+          png_path: string
+          reason: string | null
+          renderer_failed: boolean
+          rights_confirmed: boolean
+          status: string
+          webp_path: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          ip_hash: string
+          matchup_id?: string | null
+          png_path: string
+          reason?: string | null
+          renderer_failed?: boolean
+          rights_confirmed?: boolean
+          status?: string
+          webp_path: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          ip_hash?: string
+          matchup_id?: string | null
+          png_path?: string
+          reason?: string | null
+          renderer_failed?: boolean
+          rights_confirmed?: boolean
+          status?: string
+          webp_path?: string
+        }
+        Relationships: []
+      }
       sides: {
         Row: {
           all_time_cents: number
@@ -388,6 +459,9 @@ export type Database = {
           current_streak: number
           emoji: string
           id: string
+          image_id: string | null
+          image_report_count: number | null
+          image_status: string | null
           matchup_id: string
           name: string
           position: number
@@ -400,6 +474,9 @@ export type Database = {
           current_streak?: number
           emoji?: string
           id?: string
+          image_id?: string | null
+          image_report_count?: number | null
+          image_status?: string | null
           matchup_id: string
           name: string
           position: number
@@ -412,6 +489,9 @@ export type Database = {
           current_streak?: number
           emoji?: string
           id?: string
+          image_id?: string | null
+          image_report_count?: number | null
+          image_status?: string | null
           matchup_id?: string
           name?: string
           position?: number
@@ -510,6 +590,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attach_side_images: {
+        Args: { p_a: string; p_b: string; p_ip: string; p_matchup: string }
+        Returns: boolean
+      }
       claim_tugg_owner: {
         Args: { p_email: string; p_user: string }
         Returns: boolean
@@ -529,6 +613,10 @@ export type Database = {
           p_shout: string
           p_side: string
         }
+        Returns: Json
+      }
+      report_side_image: {
+        Args: { p_image: string; p_ip: string }
         Returns: Json
       }
       retire_idle_ai_matchups: { Args: { p_live: boolean }; Returns: number }

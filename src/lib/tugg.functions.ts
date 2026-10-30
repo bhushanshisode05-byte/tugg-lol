@@ -5,13 +5,19 @@ import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./str
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 
 /** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
-async function turnstileGate(token: string | undefined, action: (typeof TURNSTILE_ACTIONS)[keyof typeof TURNSTILE_ACTIONS]) {
+async function turnstileGate(
+  token: string | undefined,
+  action: (typeof TURNSTILE_ACTIONS)[keyof typeof TURNSTILE_ACTIONS],
+) {
   const { verifyTurnstileForRequest, TurnstileError } = await import("./turnstile.server");
   try {
     await verifyTurnstileForRequest(token, action);
     return null;
   } catch (e) {
-    return { error: e instanceof TurnstileError ? e.message : "The security check failed. Please try again." };
+    return {
+      error:
+        e instanceof TurnstileError ? e.message : "The security check failed. Please try again.",
+    };
   }
 }
 
@@ -25,6 +31,10 @@ export type Side = {
   wins: number;
   current_streak: number;
   best_streak: number;
+  image_id?: string | null;
+  image_status?: string | null;
+  image_report_count?: number | null;
+  image_preview?: string | undefined;
 };
 export type Round = {
   id: string;
@@ -71,24 +81,42 @@ async function loadMatchups(filter?: { slug?: string }) {
   if (error) throw new Error(error.message);
   const ids = (data ?? []).map((m) => m.id);
   const { data: rounds } = ids.length
-    ? await db.from("rounds").select("id,matchup_id,ends_at,starts_at,total_a_cents,total_b_cents,pullers,extensions").eq("status", "open").in("matchup_id", ids)
+    ? await db
+        .from("rounds")
+        .select("id,matchup_id,ends_at,starts_at,total_a_cents,total_b_cents,pullers,extensions")
+        .eq("status", "open")
+        .in("matchup_id", ids)
     : { data: [] as any[] };
   const live = liveOnly();
   const [rt, st] = await Promise.all([
-    rounds?.length ? db.rpc("tugg_round_totals", { p_live: live, p_rounds: rounds.map((r: any) => r.id) }) : Promise.resolve({ data: [] as any[] }),
-    ids.length ? db.rpc("tugg_side_totals", { p_live: live, p_matchups: ids }) : Promise.resolve({ data: [] as any[] }),
+    rounds?.length
+      ? db.rpc("tugg_round_totals", { p_live: live, p_rounds: rounds.map((r: any) => r.id) })
+      : Promise.resolve({ data: [] as any[] }),
+    ids.length
+      ? db.rpc("tugg_side_totals", { p_live: live, p_matchups: ids })
+      : Promise.resolve({ data: [] as any[] }),
   ]);
   const rtot = new Map((rt.data ?? []).map((t: any) => [t.round_id, t]));
   const stot = new Map((st.data ?? []).map((t: any) => [t.side_id, Number(t.cents)]));
   const byM = new Map(
     (rounds ?? []).map((r: any) => {
       const t: any = rtot.get(r.id);
-      return [r.matchup_id, { ...r, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0), pullers: t?.pullers ?? 0 }];
+      return [
+        r.matchup_id,
+        {
+          ...r,
+          total_a_cents: Number(t?.total_a_cents ?? 0),
+          total_b_cents: Number(t?.total_b_cents ?? 0),
+          pullers: t?.pullers ?? 0,
+        },
+      ];
     }),
   );
   return (data ?? []).map((m: any) => ({
     ...m,
-    sides: [...m.sides].map((s: Side) => ({ ...s, all_time_cents: stot.get(s.id) ?? 0 })).sort((a: Side, b: Side) => a.position - b.position),
+    sides: [...m.sides]
+      .map((s: Side) => ({ ...s, all_time_cents: stot.get(s.id) ?? 0 }))
+      .sort((a: Side, b: Side) => a.position - b.position),
     round: byM.get(m.id) ?? null,
   })) as Matchup[];
 }
@@ -124,26 +152,45 @@ export const getMatchup = createServerFn({ method: "GET" })
     const db = publicDb();
     const live = liveOnly();
     const [topRows, recent, countries, history] = await Promise.all([
-      m.round ? db.rpc("tugg_top_pullers", { p_live: live, p_round: m.round.id, p_limit: 5 }) : Promise.resolve({ data: [] as any[] }),
+      m.round
+        ? db.rpc("tugg_top_pullers", { p_live: live, p_round: m.round.id, p_limit: 5 })
+        : Promise.resolve({ data: [] as any[] }),
       db.rpc("tugg_recent_pulls", { p_live: live, p_matchup: m.id, p_limit: 25 }),
       db.rpc("tugg_countries", { p_live: live, p_matchup: m.id, p_limit: 10 }),
-      db.from("rounds").select("id,starts_at,ends_at,total_a_cents,total_b_cents,winner_side_id,result_note").eq("matchup_id", m.id).eq("status", "closed").order("ends_at", { ascending: false }).limit(30),
+      db
+        .from("rounds")
+        .select("id,starts_at,ends_at,total_a_cents,total_b_cents,winner_side_id,result_note")
+        .eq("matchup_id", m.id)
+        .eq("status", "closed")
+        .order("ends_at", { ascending: false })
+        .limit(30),
     ]);
     const top: Record<string, { name: string; cents: number }[]> = {};
     for (const s of m.sides) top[s.id] = [];
-    for (const r of topRows.data ?? []) top[r.side_id]?.push({ name: r.name, cents: Number(r.cents) });
+    for (const r of topRows.data ?? [])
+      top[r.side_id]?.push({ name: r.name, cents: Number(r.cents) });
     const hist = history.data ?? [];
-    const ht = hist.length ? (await db.rpc("tugg_round_totals", { p_live: live, p_rounds: hist.map((h) => h.id) })).data ?? [] : [];
+    const ht = hist.length
+      ? ((await db.rpc("tugg_round_totals", { p_live: live, p_rounds: hist.map((h) => h.id) }))
+          .data ?? [])
+      : [];
     const hmap = new Map(ht.map((t: any) => [t.round_id, t]));
     const historyOut = hist.map((h) => {
       const t: any = hmap.get(h.id);
-      return { ...h, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0) };
+      return {
+        ...h,
+        total_a_cents: Number(t?.total_a_cents ?? 0),
+        total_b_cents: Number(t?.total_b_cents ?? 0),
+      };
     });
     return {
       matchup: m,
       top,
       recent: (recent.data ?? []) as PullRow[],
-      countries: (countries.data ?? []).map((c: any) => ({ country: c.country as string, cents: Number(c.cents) })),
+      countries: (countries.data ?? []).map((c: any) => ({
+        country: c.country as string,
+        cents: Number(c.cents),
+      })),
       history: historyOut,
       paused: config().pausePulls,
       siteUrl: config().siteUrl,
@@ -188,14 +235,20 @@ export const createPullCheckout = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<CheckoutResult> => {
-    if (config().pausePulls) return { error: "Pulls are paused right now. Please try again later." };
+    if (config().pausePulls)
+      return { error: "Pulls are paused right now. Please try again later." };
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
     const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.pull);
     if (ts) return ts;
     const db = publicDb();
-    const { data: side } = await db.from("sides").select("id,name,matchup_id,matchups(title,status)").eq("id", data.sideId).maybeSingle();
-    if (!side || (side as any).matchups?.status !== "active") return { error: "This matchup is not open for pulls." };
+    const { data: side } = await db
+      .from("sides")
+      .select("id,name,matchup_id,matchups(title,status)")
+      .eq("id", data.sideId)
+      .maybeSingle();
+    if (!side || (side as any).matchups?.status !== "active")
+      return { error: "This matchup is not open for pulls." };
     try {
       const stripe = createStripeClient(se.env);
       const prices = await stripe.prices.list({ lookup_keys: ["rope_pull_1usd"] });
@@ -207,7 +260,9 @@ export const createPullCheckout = createServerFn({ method: "POST" })
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
         billing_address_collection: "required",
-        payment_intent_data: { description: `Tugg pull: ${side.name} in ${(side as any).matchups.title}` },
+        payment_intent_data: {
+          description: `Tugg pull: ${side.name} in ${(side as any).matchups.title}`,
+        },
         metadata: {
           kind: "pull",
           side_id: side.id,
@@ -226,6 +281,7 @@ const sideSchema = z.object({
   name: z.string().trim().min(1).max(40),
   emoji: z.string().trim().max(8).default(""),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  imageId: z.string().uuid().optional(),
 });
 
 export const MATCHUP_CHECKOUTS_PER_HOUR = 5;
@@ -236,7 +292,16 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       .object({
         title: z.string().trim().min(3).max(80),
         description: z.string().trim().max(280).default(""),
-        category: z.enum(["Tech", "Brands", "Cities", "Countries", "Sports", "Food", "Entertainment", "Other"]),
+        category: z.enum([
+          "Tech",
+          "Brands",
+          "Cities",
+          "Countries",
+          "Sports",
+          "Food",
+          "Entertainment",
+          "Other",
+        ]),
         a: sideSchema,
         b: sideSchema,
         tier: z.enum(["standard", "featured"]),
@@ -254,26 +319,71 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getRequestIP } = await import("@tanstack/react-start/server");
     const ip = getRequestIP({ xForwardedFor: true }) || "unknown";
-    const ipHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip))))
-      .map((b) => b.toString(16).padStart(2, "0")).join("");
-    const { data: allowed, error: rlErr } = await supabaseAdmin.rpc("take_checkout_slot", { p_ip: ipHash, p_max: MATCHUP_CHECKOUTS_PER_HOUR, p_window_minutes: 60 });
+    const ipHash = Array.from(
+      new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip))),
+    )
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const { data: allowed, error: rlErr } = await supabaseAdmin.rpc("take_checkout_slot", {
+      p_ip: ipHash,
+      p_max: MATCHUP_CHECKOUTS_PER_HOUR,
+      p_window_minutes: 60,
+    });
     if (rlErr) return { error: "Could not start checkout. Please try again." };
-    if (!allowed) return { error: "Too many matchup checkouts from your network. Please try again in an hour." };
+    if (!allowed)
+      return {
+        error: "Too many matchup checkouts from your network. Please try again in an hour.",
+      };
     let slug = slugify(`${data.a.name} vs ${data.b.name}`) || "matchup";
-    const { data: existing } = await supabaseAdmin.from("matchups").select("slug,status").eq("slug", slug).maybeSingle();
+    const { data: existing } = await supabaseAdmin
+      .from("matchups")
+      .select("slug,status")
+      .eq("slug", slug)
+      .maybeSingle();
     if (existing && existing.status !== "pending_payment" && existing.status !== "rejected")
       return { error: "That matchup already exists on Tugg. Go pull on it instead!" };
     if (existing) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
     const { data: m, error } = await supabaseAdmin
       .from("matchups")
-      .insert({ slug, title: data.title, description: data.description, category: data.category, source: "user", status: "pending_payment" })
+      .insert({
+        slug,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        source: "user",
+        status: "pending_payment",
+      })
       .select("id")
       .single();
     if (error || !m) return { error: "Could not create matchup" };
     await supabaseAdmin.from("sides").insert([
-      { matchup_id: m.id, position: 0, ...data.a },
-      { matchup_id: m.id, position: 1, ...data.b },
+      {
+        matchup_id: m.id,
+        position: 0,
+        name: data.a.name,
+        emoji: data.a.emoji,
+        color: data.a.color,
+      },
+      {
+        matchup_id: m.id,
+        position: 1,
+        name: data.b.name,
+        emoji: data.b.emoji,
+        color: data.b.color,
+      },
     ]);
+    if (data.a.imageId || data.b.imageId) {
+      const { imageIpHash } = await import("./side-images.server");
+      const { getRequest } = await import("@tanstack/react-start/server");
+      const attached = await supabaseAdmin.rpc("attach_side_images", {
+        p_matchup: m.id,
+        p_a: data.a.imageId ?? "00000000-0000-0000-0000-000000000000",
+        p_b: data.b.imageId ?? "00000000-0000-0000-0000-000000000000",
+        p_ip: await imageIpHash(getRequest()),
+      });
+      if (attached.error || !attached.data)
+        return { error: "Picture expired or already used. Add it again before checkout." };
+    }
     try {
       const stripe = createStripeClient(se.env);
       const lookup = data.tier === "featured" ? "matchup_featured_once" : "matchup_standard_once";
@@ -302,14 +412,33 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
   });
 
 export const getCreationStatus = createServerFn({ method: "GET" })
-  .inputValidator((d: { sessionId: string }) => z.object({ sessionId: z.string().min(5).max(200) }).parse(d))
+  .inputValidator((d: { sessionId: string }) =>
+    z.object({ sessionId: z.string().min(5).max(200) }).parse(d),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: c } = await supabaseAdmin.from("creators").select("refunded,matchups(slug,status,title)").eq("stripe_session_id", data.sessionId).maybeSingle();
+    const { data: c } = await supabaseAdmin
+      .from("creators")
+      .select("refunded,matchups(slug,status,title)")
+      .eq("stripe_session_id", data.sessionId)
+      .maybeSingle();
     if (!c) return null;
     const m = (c as any).matchups;
-    const { data: log } = await supabaseAdmin.from("moderation_log").select("reason,verdict").eq("subject_type", "matchup").eq("subject_id", data.sessionId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    return { slug: m?.slug as string, status: m?.status as string, title: m?.title as string, refunded: c.refunded, reason: log?.reason ?? null };
+    const { data: log } = await supabaseAdmin
+      .from("moderation_log")
+      .select("reason,verdict")
+      .eq("subject_type", "matchup")
+      .eq("subject_id", data.sessionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return {
+      slug: m?.slug as string,
+      status: m?.status as string,
+      title: m?.title as string,
+      refunded: c.refunded,
+      reason: log?.reason ?? null,
+    };
   });
 
 // ---------- Leaderboards / Hall of Fame / Results ----------
@@ -321,7 +450,15 @@ async function matchupMap() {
     .select("id,slug,title,status,sides(*)")
     .in("status", ["active", "retired"]);
   return new Map(
-    (data ?? []).map((m: any) => [m.id, { slug: m.slug, title: m.title, status: m.status, sides: [...m.sides].sort((a: Side, b: Side) => a.position - b.position) } as Lite]),
+    (data ?? []).map((m: any) => [
+      m.id,
+      {
+        slug: m.slug,
+        title: m.title,
+        status: m.status,
+        sides: [...m.sides].sort((a: Side, b: Side) => a.position - b.position),
+      } as Lite,
+    ]),
   );
 }
 
@@ -334,29 +471,74 @@ export const getLeaderboards = createServerFn({ method: "GET" }).handler(async (
     db.rpc("tugg_round_leaders", { p_live: live, p_open_only: false, p_limit: 15 }),
     db.rpc("tugg_round_leaders", { p_live: live, p_open_only: true, p_limit: 15 }),
     ids.length
-      ? db.from("sides").select("id,matchup_id,name,emoji,best_streak,current_streak,wins").in("matchup_id", ids).gt("best_streak", 0).order("best_streak", { ascending: false }).limit(20)
+      ? db
+          .from("sides")
+          .select(
+            "id,matchup_id,name,emoji,color,image_id,image_status,image_report_count,best_streak,current_streak,wins",
+          )
+          .in("matchup_id", ids)
+          .gt("best_streak", 0)
+          .order("best_streak", { ascending: false })
+          .limit(20)
       : Promise.resolve({ data: [] as any[] }),
     db.rpc("tugg_countries", { p_live: live, p_limit: 20 }),
   ]);
   const withM = (r: any) => {
     const m = mm.get(r.matchup_id)!;
-    return { id: r.round_id as string, slug: m.slug, title: m.title, a: m.sides[0]!, b: m.sides[1]!, total_a: Number(r.total_a_cents), total_b: Number(r.total_b_cents), pullers: r.pullers as number, ends_at: r.ends_at as string, open: r.status === "open" };
+    return {
+      id: r.round_id as string,
+      slug: m.slug,
+      title: m.title,
+      a: m.sides[0]!,
+      b: m.sides[1]!,
+      total_a: Number(r.total_a_cents),
+      total_b: Number(r.total_b_cents),
+      pullers: r.pullers as number,
+      ends_at: r.ends_at as string,
+      open: r.status === "open",
+    };
   };
   const list = (d: any[] | null) => (d ?? []).filter((r: any) => mm.has(r.matchup_id)).map(withM);
   return {
     biggest: list(biggest.data),
     today: list(today.data),
-    streaks: (sides.data ?? []).filter((s: any) => mm.has(s.matchup_id)).map((s: any) => {
-      const m = mm.get(s.matchup_id)!;
-      return { id: s.id as string, name: s.name as string, emoji: s.emoji as string, best: s.best_streak as number, current: s.current_streak as number, wins: s.wins as number, slug: m.slug, title: m.title };
-    }),
-    countries: (countries.data ?? []).map((c: any) => ({ country: c.country as string, cents: Number(c.cents), pulls: Number(c.pulls) })),
+    streaks: (sides.data ?? [])
+      .filter((s: any) => mm.has(s.matchup_id))
+      .map((s: any) => {
+        const m = mm.get(s.matchup_id)!;
+        return {
+          id: s.id as string,
+          name: s.name as string,
+          emoji: s.emoji as string,
+          color: s.color as string,
+          image_id: s.image_id as string | null,
+          image_status: s.image_status as string | null,
+          best: s.best_streak as number,
+          current: s.current_streak as number,
+          wins: s.wins as number,
+          slug: m.slug,
+          title: m.title,
+        };
+      }),
+    countries: (countries.data ?? []).map((c: any) => ({
+      country: c.country as string,
+      cents: Number(c.cents),
+      pulls: Number(c.pulls),
+    })),
   };
 });
 
 export type ResultCard = {
-  id: string; slug: string; title: string; ends_at: string; note: string | null;
-  winner: Side; loser: Side; winner_cents: number; loser_cents: number; pullers: number;
+  id: string;
+  slug: string;
+  title: string;
+  ends_at: string;
+  note: string | null;
+  winner: Side;
+  loser: Side;
+  winner_cents: number;
+  loser_cents: number;
+  pullers: number;
 };
 
 function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
@@ -366,8 +548,13 @@ function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
   if (!a || !b) return null;
   const aWon = r.winner_side_id === a.id;
   return {
-    id: r.id, slug: m.slug, title: m.title, ends_at: r.ends_at, note: r.result_note,
-    winner: aWon ? a : b, loser: aWon ? b : a,
+    id: r.id,
+    slug: m.slug,
+    title: m.title,
+    ends_at: r.ends_at,
+    note: r.result_note,
+    winner: aWon ? a : b,
+    loser: aWon ? b : a,
     winner_cents: Number(aWon ? r.total_a_cents : r.total_b_cents),
     loser_cents: Number(aWon ? r.total_b_cents : r.total_a_cents),
     pullers: r.pullers,
@@ -376,11 +563,19 @@ function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
 
 async function withLiveTotals<T extends { id: string }>(rows: T[]) {
   if (!rows.length) return rows;
-  const { data } = await publicDb().rpc("tugg_round_totals", { p_live: liveOnly(), p_rounds: rows.map((r) => r.id) });
+  const { data } = await publicDb().rpc("tugg_round_totals", {
+    p_live: liveOnly(),
+    p_rounds: rows.map((r) => r.id),
+  });
   const m = new Map((data ?? []).map((t: any) => [t.round_id, t]));
   return rows.map((r) => {
     const t: any = m.get(r.id);
-    return { ...r, total_a_cents: Number(t?.total_a_cents ?? 0), total_b_cents: Number(t?.total_b_cents ?? 0), pullers: t?.pullers ?? 0 };
+    return {
+      ...r,
+      total_a_cents: Number(t?.total_a_cents ?? 0),
+      total_b_cents: Number(t?.total_b_cents ?? 0),
+      pullers: t?.pullers ?? 0,
+    };
   });
 }
 
@@ -391,9 +586,16 @@ export const getHallOfFame = createServerFn({ method: "GET" }).handler(async () 
   const { data } = await publicDb()
     .from("rounds")
     .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
-    .eq("status", "closed").not("winner_side_id", "is", null).in("matchup_id", ids)
-    .order("ends_at", { ascending: false }).limit(60);
-  return { cards: (await withLiveTotals(data ?? [])).map((r) => toCard(r, mm)).filter((c): c is ResultCard => !!c) };
+    .eq("status", "closed")
+    .not("winner_side_id", "is", null)
+    .in("matchup_id", ids)
+    .order("ends_at", { ascending: false })
+    .limit(60);
+  return {
+    cards: (await withLiveTotals(data ?? []))
+      .map((r) => toCard(r, mm))
+      .filter((c): c is ResultCard => !!c),
+  };
 });
 
 export const getResult = createServerFn({ method: "GET" })
@@ -401,8 +603,12 @@ export const getResult = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: r } = await publicDb()
       .from("rounds")
-      .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
-      .eq("id", data.id).eq("status", "closed").maybeSingle();
+      .select(
+        "id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note",
+      )
+      .eq("id", data.id)
+      .eq("status", "closed")
+      .maybeSingle();
     if (!r) return null;
     const [rr] = await withLiveTotals([r]);
     return toCard(rr, await matchupMap());

@@ -1,5 +1,12 @@
 # Tugg roadmap
 
+## Optional side pictures (do not publish)
+- [ ] Add optional circle-cropped browser uploads and rights consent.
+- [ ] Validate bytes, decoded dimensions and limits on server; private upload records, public-read files, server-only writes.
+- [ ] Add post-payment image moderation, private reports, automatic hiding, orphan cleanup and read-only owner status.
+- [ ] Show side pictures with emoji fallback across pages and all share-image sizes, without altering ropes or sharing.
+- [ ] Test invalid files, metadata stripping, moderation/refund, reports, cleanup, fallback, three share sizes and phone layout; document additive schema and limitations.
+
 ## Done (phase 1 — core)
 - [x] Database, 30 seed matchups at zero, round engine (ties, empty rounds, Final-Hour, streaks)
 - [x] Home, matchup page (live rope, summary, top pullers, shout-outs, countries, history), create, rules, stats
