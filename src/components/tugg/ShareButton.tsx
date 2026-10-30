@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
@@ -7,6 +8,8 @@ import { CARD_SIZES, CARD_SIZE_LABELS, matchupImagePath, type CardSize } from "@
 import { trackShare, SHARE_CHANNELS } from "@/lib/recap.functions";
 import { shareText, shareUrl, shareLinks, APP_COPY_NOTICE, APP_DESTINATIONS, type ShareInput } from "@/lib/share";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { sharePhoneImage, PHONE_SAVE_NOTICES, shareFailureName, isShareCancelled, type PhonePlatform } from "@/lib/phone-share";
 import { getShareCountry } from "@/lib/share-country.functions";
 import { showTikTok } from "@/lib/share-country";
 
@@ -17,62 +20,74 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
   const [nativeAvailable, setNativeAvailable] = useState(false);
   const [timeZone, setTimeZone] = useState<string>();
   const [isPhone, setIsPhone] = useState(false);
-  const [canShareFiles, setCanShareFiles] = useState(false);
-  const story = useRef<Promise<Blob> | null>(null);
+  const [savedNotice, setSavedNotice] = useState<"image" | PhonePlatform | null>(null);
+  const story = useRef<Promise<Blob | null> | null>(null);
+  const trackShareFn = useServerFn(trackShare);
   useEffect(() => {
     setNativeAvailable(typeof navigator.share === "function");
     setIsPhone(window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(max-width: 1024px)").matches);
-    try {
-      const probe = new File([new Uint8Array([137, 80, 78, 71])], "probe.png", { type: "image/png" });
-      setCanShareFiles(typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] }));
-    } catch { setCanShareFiles(false); }
     try { setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch { /* unknown */ }
   }, []);
   const countryQuery = useQuery({ queryKey: ["share-country"], queryFn: () => getShareCountry(), enabled: open, staleTime: Infinity, retry: false });
   const url = shareUrl(siteUrl || (typeof window !== "undefined" ? window.location.origin : ""), m.slug);
   const text = shareText(m);
-  const track = (channel: Channel) => void trackShare({ data: { slug: m.slug, channel } }).catch(() => {});
+  const track = (channel: Channel) => void trackShareFn({ data: { slug: m.slug, channel } }).catch(() => {});
+  const logFailure = (errorName: string) => void trackShareFn({ data: { slug: m.slug, channel: "share_error", errorName: shareFailureName({ name: errorName }) } }).catch(() => {});
 
   const fetchImage = (size: CardSize) =>
     fetch(matchupImagePath(m.slug, size)).then((r) => {
-      if (!r.ok) throw new Error("image");
+      if (!r.ok) throw new DOMException("Image unavailable", "NetworkError");
       return r.blob();
     });
   // Fetch the story image as soon as the menu opens so the share sheet opens within the tap.
   useEffect(() => {
-    if (open && isPhone && canShareFiles && !story.current) story.current = fetchImage("story").catch((e) => { story.current = null; throw e; });
-  }, [open, isPhone, canShareFiles]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (open && isPhone && !story.current) story.current = fetchImage("story").catch(() => null);
+    if (!open) story.current = null;
+  }, [open, isPhone]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shareImage = async () => {
-    try {
-      const blob = await (story.current ?? fetchImage("story"));
-      const file = new File([blob], `tugg-${m.slug}-story.png`, { type: "image/png" });
-      await navigator.share({ files: [file], title: m.title, text: `${text} ${url}` });
-      track("image_share");
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      toast.error("Couldn't open the share sheet. Try Save image instead.");
+  const download = (blob: Blob, filename: string) => {
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 10000);
+  };
+
+  const shareImage = async (platform?: PhonePlatform) => {
+    if (platform) track(platform);
+    const result = await sharePhoneImage({
+      slug: m.slug, title: m.title, text, url,
+      copy: (value) => navigator.clipboard.writeText(value),
+      image: async () => (await story.current) ?? fetchImage("story"),
+      canShare: (data) => typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare(data),
+      share: (data) => navigator.share(data),
+      save: download,
+      failure: logFailure,
+    });
+    if (result === "shared") track("image_share");
+    if (result === "saved") {
+      track("image_save");
+      setSavedNotice(platform ?? "image");
     }
+    if (result === "failed") toast.error("Couldn't copy the link or save the image. Please try again.");
   };
 
   const saveImage = async (size: CardSize) => {
     try {
       const blob = await fetchImage(size);
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = `tugg-${m.slug}-${size}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(href), 10000);
+      download(blob, `tugg-${m.slug}-${size}.png`);
       track("image_save");
       toast.success(
         isPhone
           ? "Image saved. Open Instagram, TikTok or any app and add it from your photos or files."
           : "Image saved. Upload it to any post, story or message.",
       );
-    } catch {
+    } catch (error) {
+      if (isShareCancelled(error)) return;
+      logFailure(shareFailureName(error));
       toast.error("Couldn't create the image. Please try again.");
     }
   };
@@ -92,6 +107,7 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
   );
 
   const copyForApp = async (channel: "instagram" | "tiktok") => {
+    if (isPhone) { await shareImage(channel); return; }
     // Reserve a tab during the click so awaiting the clipboard cannot trigger popup blocking.
     const tab = window.open("", "_blank");
     if (tab) tab.opener = null;
@@ -102,14 +118,17 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
       const destination = APP_DESTINATIONS[channel];
       if (tab) tab.location.replace(destination);
       else window.open(destination, "_blank", "noopener,noreferrer");
-    } catch {
+    } catch (error) {
       tab?.close();
+      if (isShareCancelled(error)) return;
+      logFailure(shareFailureName(error));
       toast.error("Couldn't copy. Please try again.");
     }
   };
 
   const links = shareLinks(text, url);
   return (
+    <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
@@ -123,18 +142,17 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
-        {isPhone && canShareFiles && (
+        {isPhone && (
           <DropdownMenuItem className="cursor-pointer py-2 font-bold" onSelect={() => void shareImage()}>
             Share image
           </DropdownMenuItem>
         )}
-        {isPhone && !canShareFiles && saveMenu}
         {nativeAvailable && (
           <DropdownMenuItem className="cursor-pointer py-2" onSelect={async () => {
             try {
               await navigator.share({ title: m.title, text, url });
               track("native");
-            } catch { /* user cancelled or share unavailable */ }
+            } catch (error) { if (!isShareCancelled(error)) logFailure(shareFailureName(error)); }
           }}>
             More apps...
           </DropdownMenuItem>
@@ -160,7 +178,9 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
             try {
               await navigator.clipboard.writeText(`${text} ${url}`);
               toast.success("Link copied");
-            } catch {
+            } catch (error) {
+              if (isShareCancelled(error)) return;
+              logFailure(shareFailureName(error));
               toast.error("Couldn't copy. Long-press the address bar instead.");
             }
             track("copy");
@@ -168,8 +188,19 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
         >
           Copy link
         </DropdownMenuItem>
-        {!(isPhone && !canShareFiles) && saveMenu}
+        {saveMenu}
       </DropdownMenuContent>
     </DropdownMenu>
+    <Dialog open={savedNotice !== null} onOpenChange={(value) => { if (!value) setSavedNotice(null); }}>
+      <DialogContent className="max-w-sm">
+        <DialogTitle>Image saved and link copied</DialogTitle>
+        <DialogDescription>{savedNotice ? PHONE_SAVE_NOTICES[savedNotice] : ""}</DialogDescription>
+        <Button onClick={() => {
+          if (savedNotice && savedNotice !== "image") window.open(APP_DESTINATIONS[savedNotice], "_blank", "noopener,noreferrer");
+          setSavedNotice(null);
+        }}>{savedNotice === "instagram" ? "Open Instagram" : savedNotice === "tiktok" ? "Open TikTok" : "Done"}</Button>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

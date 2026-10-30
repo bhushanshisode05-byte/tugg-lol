@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config } from "./server-utils.server";
 import { SHARE_CHANNELS } from "./share";
+import { shareEventSchema } from "./phone-share";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 export { SHARE_CHANNELS } from "./share";
 
@@ -63,13 +64,13 @@ export const subscribeDigest = createServerFn({ method: "POST" })
     return { ok: true, message: "You're on the list for the daily Tugg digest." };
   });
 
-/** Anonymous share counter: stores only matchup slug + channel. */
+/** Anonymous share counter; failures store only channel and a standard error name. */
 export const trackShare = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/), channel: z.enum(SHARE_CHANNELS) }).parse(d))
+  .inputValidator((d: unknown) => shareEventSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: ok } = await supabaseAdmin.rpc("take_checkout_slot", { p_ip: await ipHash("share"), p_max: 60, p_window_minutes: 60 });
     if (!ok) return { ok: false };
-    await supabaseAdmin.from("events").insert({ kind: "share_click", detail: { slug: data.slug, channel: data.channel } });
+    await supabaseAdmin.from("events").insert({ kind: "share_click", detail: data.channel === "share_error" ? { channel: data.channel, errorName: data.errorName } : { slug: data.slug, channel: data.channel } });
     return { ok: true };
   });
