@@ -54,7 +54,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         }));
         const add = (to: string, routeId: string, params: Record<string, string>, lastmod?: string) => {
           if (!isSitemapRouteIncluded(router.routesById[routeId as keyof typeof router.routesById] as never)) return;
-          const location = router.buildLocation({ to: to as never, params: params as never, search: () => ({}), hash: "" });
+          const location = router.buildLocation({ to: to as never, params: params as never, search: (() => ({})) as never, hash: "" });
           const path = sitemapPathForLocation(router, location, routeId);
           if (path) entries.push({ path, ...(lastmod ? { lastmod } : {}) });
         };
