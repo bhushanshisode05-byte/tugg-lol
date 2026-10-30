@@ -151,9 +151,11 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
       const label = "WINNER";
       const ls = m.name * 0.5;
       const lw = width(mono, label, ls) + ls * 1.4;
-      const lx = side.e ? (side.align === "left" && !m.centered ? side.x + m.emoji + ls : ax(lw)) : ax(lw);
-      const ly = side.e && !m.centered ? m.emojiY + m.emoji / 2 - ls : m.emojiY + (side.e ? m.emoji + ls * 0.3 : 0);
-      const bx = side.align === "right" && !m.centered && side.e ? side.x + colW - m.emoji - ls - lw : lx;
+      let bx = ax(lw), ly = m.emojiY + (side.e ? m.emoji - ls * 1.2 : 0);
+      if (side.e && !m.centered) {
+        ly = m.emojiY + m.emoji / 2 - ls;
+        bx = side.align === "left" ? side.x + m.emoji + ls : side.x + colW - m.emoji - ls - lw;
+      }
       r.roundRect(bx, ly, lw, ls * 2, ls, hex(LIME));
       text(r, mono, label, bx + ls * 0.7, ly + ls * 1.38, ls, hex(BG));
     }
