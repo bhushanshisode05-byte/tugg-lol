@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
+import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
+
+/** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
+async function turnstileGate(token: string | undefined, action: (typeof TURNSTILE_ACTIONS)[keyof typeof TURNSTILE_ACTIONS]) {
+  const { verifyTurnstileForRequest, TurnstileError } = await import("./turnstile.server");
+  try {
+    await verifyTurnstileForRequest(token, action);
+    return null;
+  } catch (e) {
+    return { error: e instanceof TurnstileError ? e.message : "The security check failed. Please try again." };
+  }
+}
 
 export type Side = {
   id: string;
@@ -171,6 +183,7 @@ export const createPullCheckout = createServerFn({ method: "POST" })
         shout: z.string().trim().max(80).optional(),
         returnUrl: z.string().url().max(500),
         environment: envSchema,
+        turnstileToken: turnstileTokenSchema,
       })
       .parse(d),
   )
@@ -178,6 +191,8 @@ export const createPullCheckout = createServerFn({ method: "POST" })
     if (config().pausePulls) return { error: "Pulls are paused right now. Please try again later." };
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
+    const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.pull);
+    if (ts) return ts;
     const db = publicDb();
     const { data: side } = await db.from("sides").select("id,name,matchup_id,matchups(title,status)").eq("id", data.sideId).maybeSingle();
     if (!side || (side as any).matchups?.status !== "active") return { error: "This matchup is not open for pulls." };
@@ -227,12 +242,15 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         tier: z.enum(["standard", "featured"]),
         returnUrl: z.string().url().max(500),
         environment: envSchema,
+        turnstileToken: turnstileTokenSchema,
       })
       .parse(d),
   )
   .handler(async ({ data }): Promise<CheckoutResult> => {
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
+    const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.matchup);
+    if (ts) return ts;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getRequestIP } = await import("@tanstack/react-start/server");
     const ip = getRequestIP({ xForwardedFor: true }) || "unknown";

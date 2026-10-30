@@ -4,6 +4,8 @@ import { Shell } from "@/components/tugg/Shell";
 import { EmbeddedPay } from "@/components/tugg/EmbeddedPay";
 import { Rope } from "@/components/tugg/Rope";
 import { createMatchupCheckout, getCreationStatus } from "@/lib/tugg.functions";
+import { Turnstile } from "@/components/tugg/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { getStripeEnvironment } from "@/lib/stripe";
 
 export const Route = createFileRoute("/create")({
@@ -41,6 +43,7 @@ function CreateForm() {
   const [tier, setTier] = useState<"standard" | "featured">("standard");
   const [pay, setPay] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const autoTitle = a.name && b.name ? `${a.name} vs ${b.name}` : "";
   const finalTitle = title || autoTitle;
   const ok = a.name.trim() && b.name.trim() && finalTitle.length >= 3;
@@ -52,7 +55,7 @@ function CreateForm() {
 
       {pay ? (
         <div className="mt-8">
-          <button onClick={() => setPay(false)} className="mb-3 text-sm text-muted-foreground underline">← Edit matchup</button>
+          <button onClick={() => { setToken(null); setPay(false); }} className="mb-3 text-sm text-muted-foreground underline">← Edit matchup</button>
           <EmbeddedPay
             fetchClientSecret={async () => {
               const r = await createMatchupCheckout({
@@ -60,9 +63,10 @@ function CreateForm() {
                   title: finalTitle, description: desc, category: cat, a, b, tier,
                   returnUrl: `${window.location.origin}/create?session_id={CHECKOUT_SESSION_ID}`,
                   environment: getStripeEnvironment(),
+                  turnstileToken: token ?? undefined,
                 },
               });
-              if ("error" in r) { setErr(r.error); setPay(false); throw new Error(r.error); }
+              if ("error" in r) { setErr(r.error); setToken(null); setPay(false); throw new Error(r.error); }
               return r.clientSecret;
             }}
           />
@@ -103,8 +107,9 @@ function CreateForm() {
               <Rope size="sm" a={0} b={0} sides={[{ ...a, id: "a", position: 0, all_time_cents: 0, wins: 0, current_streak: 0, best_streak: 0 }, { ...b, id: "b", position: 1, all_time_cents: 0, wins: 0, current_streak: 0, best_streak: 0 }]} />
             </div>
           )}
-          {err && <p className="text-sm text-destructive">{err}</p>}
-          <button disabled={!ok} onClick={() => { setErr(null); setPay(true); }} className="w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop disabled:opacity-50">
+          <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
+          {err && <p role="alert" className="text-sm text-destructive">{err}</p>}
+          <button disabled={!ok || !token} onClick={() => { setErr(null); setPay(true); }} className="w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop disabled:opacity-50">
             Pay {tier === "featured" ? "$29" : "$9"} and submit
           </button>
         </div>

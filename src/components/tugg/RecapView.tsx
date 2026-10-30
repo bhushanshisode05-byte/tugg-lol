@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { subscribeDigest, type Recap } from "@/lib/recap.functions";
+import { Turnstile, type TurnstileHandle } from "@/components/tugg/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { usd } from "./Rope";
 
 const longDate = (d: string) =>
@@ -85,19 +87,23 @@ function DigestForm() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const ts = useRef<TurnstileHandle>(null);
   return (
     <form
       className="mt-10 rounded-2xl border-2 border-foreground bg-card p-5"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (!token) return setMsg("Please complete the security check.");
         setBusy(true);
         try {
-          const r = await subscribe({ data: { email } });
+          const r = await subscribe({ data: { email, turnstileToken: token } });
           setMsg(r.message);
           if (r.ok) setEmail("");
         } catch {
           setMsg("Please enter a valid email address.");
         } finally {
+          ts.current?.reset();
           setBusy(false);
         }
       }}
@@ -106,8 +112,9 @@ function DigestForm() {
       <p className="text-sm text-muted-foreground">One short email a day with yesterday's results. Unsubscribe anytime.</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" aria-label="Email address" className="flex-1 rounded-full border border-input bg-background px-4 py-2" />
-        <button disabled={busy} className="rounded-full bg-primary px-5 py-2 font-bold text-primary-foreground disabled:opacity-60">{busy ? "Saving…" : "Subscribe"}</button>
+        <button disabled={busy || !token} className="rounded-full bg-primary px-5 py-2 font-bold text-primary-foreground disabled:opacity-60">{busy ? "Saving…" : "Subscribe"}</button>
       </div>
+      <Turnstile ref={ts} action={TURNSTILE_ACTIONS.digest} onToken={setToken} className="mt-3" />
       {msg && <p className="mt-2 text-sm" role="status">{msg}</p>}
     </form>
   );

@@ -23,3 +23,4 @@
 - Daily jobs (recap, AI generator) run through the managed-schedule route /api/public/jobs/daily and lock once per UTC day in job_runs; AI 402/403 pauses them in job_state. Why: no duplicate runs or runaway AI spend.
 - Recap summaries are built in code from stored facts; AI only writes prose from those facts. Why: numbers can never be invented.
 - Share country is read by an uncached public server function and shared through a browser query; time zone is only a fallback. Why: country-aware menus must not reuse another visitor's location or change public matchup data.
+- Turnstile tokens are verified server-side (src/lib/turnstile.server.ts) with a per-operation action before any side effect, failing closed; the site key reaches the browser from VITE_TURNSTILE_SITE_KEY at build or a server-function fallback. Why: widget alone is not protection.

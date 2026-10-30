@@ -24,7 +24,8 @@
 - [x] Confirmed the 00:00 UTC close ran on 2026-10-29
 - [ ] Emails: rejection notice, payment-error escalation, weekly owner summary, digest signup (needs email domain)
 - [ ] GEO: robots.txt, llms.txt, sitemap, JSON-LD, JSON/RSS feeds, OG images, IndexNow, SITE_URL everywhere
-- [ ] Turnstile bot protection + rate limits (needs Turnstile keys)
+- [x] Turnstile on pull/matchup checkout, contact, chat, digest (server-verified)
+- [ ] Add public Turnstile site key (VITE_TURNSTILE_SITE_KEY) and publish
 - [ ] X / Bluesky auto-posting (needs keys)
 - [ ] Generated share image
 - [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)
