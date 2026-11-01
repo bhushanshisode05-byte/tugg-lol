@@ -23,7 +23,7 @@ describe("wallet recovery and one-tap UI", () => {
   await screen.findByText("9 pulls remaining"); expect(pulled).toHaveBeenCalledTimes(1);
   expect(mocks.spendPulls).toHaveBeenCalledWith({ data: expect.objectContaining({ token: credential, quantity: 1, sideId: sides[0].id, turnstileToken: "public-turnstile-fixture" }) });
   expect(screen.queryByRole("button", { name: "×10 · $10" })).toBeNull();
-  expect(screen.getByRole("textbox", { name: "Wallet recovery link" })).toHaveValue(expect.stringContaining("#wallet="));
+  expect((screen.getByRole("textbox", { name: "Wallet recovery link" }) as HTMLInputElement).value).toBe(`${location.origin}/m/pizza-vs-burgers# wallet=${credential}`.replace("# wallet", "#wallet"));
  });
  it("missing Dodo setup disables all three pack purchases", async () => {
   mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", ready: false });
