@@ -30,7 +30,7 @@ export const buyImmediateBundle = createServerFn({ method: "POST" })
       const order = await db.from("payglocal_orders").insert({ id, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
       if (order.error) throw new Error("Could not start checkout.");
       const session=await provider.checkout({ productId: `pull_${data.pack}`, orderId: id, returnUrl: returnUrl.toString(), cents: data.pack*100, billing: data.billing });
-      const saved=await db.from("payglocal_orders").update({ gid: session.sessionId }).eq("id", id).is("gid", null);
+      const saved=await db.from("payglocal_orders").update({ gid: session.sessionId, status_url: session.statusUrl || null }).eq("id", id).is("gid", null);
       if (saved.error) throw new Error("Checkout confirmation pending. Please do not pay again.");
       return { url: session.url };
     } catch(e) { return { error: e instanceof Error ? e.message : "Checkout could not open. No unverified pulls applied." }; }

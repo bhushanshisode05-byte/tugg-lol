@@ -354,7 +354,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         const creator = await supabaseAdmin.from("creators").insert({ matchup_id: m.id, tier: data.tier, payglocal_order_id: id, environment: se.env });
         if (creator.error) throw new Error("Could not start checkout.");
         const session = await provider.checkout({ productId: product, orderId: id, returnUrl: returnUrl.toString(), cents: PRODUCTS[data.tier].cents, ...(data.billing ? { billing: data.billing } : {}) });
-        const saved = await supabaseAdmin.from("payglocal_orders").update({ gid: session.sessionId }).eq("id", id).is("gid", null);
+        const saved = await supabaseAdmin.from("payglocal_orders").update({ gid: session.sessionId, status_url: session.statusUrl || null }).eq("id", id).is("gid", null);
         if (saved.error) throw new Error("Payment confirmation pending. Please do not pay again.");
         return { url: session.url };
       }

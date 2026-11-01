@@ -20,7 +20,7 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
     const result = await db.from("payglocal_orders").select("*").eq("id", id).eq("environment", provider.environment).single(); checked(result);
     const o = result.data; if (!o) throw new Error("Payment order unavailable");
     if (o.status === "paid" && (o.quantity > 0 || o.review_allowed === true || o.refund_status)) return { status: "paid", duplicate: true };
-    const payment = verified ?? await provider.payment(o.gid || o.merchant_unique_id);
+    const payment = verified ?? await provider.payment(o.gid || o.merchant_unique_id, o.status_url);
     // Status by merchant ID recovers an initiation whose response was lost. Never retry initiate.
     if (!o.gid && payment.payment_id && (payment.metadata["merchantTxnId"] === o.merchant_unique_id || payment.metadata["merchantUniqueId"] === o.merchant_unique_id)) {
       checked(await db.from("payglocal_orders").update({ gid: payment.payment_id }).eq("id", id).is("gid", null));
@@ -110,7 +110,7 @@ export async function reconcilePayglocal() {
   if (config().paymentProvider !== "payglocal") return { skipped: "provider dormant" };
   const provider = createPayglocalProvider();
   const rows = await db.from("payglocal_orders").select("id").eq("environment", provider.environment)
-    .or("status.eq.pending,and(status.eq.paid,quantity.eq.0,refund_status.is.null)")
+    .or("status.eq.pending,and(status.eq.paid,quantity.eq.0,refund_status.is.null,review_allowed.is.null),and(status.eq.paid,quantity.eq.0,refund_status.is.null,review_allowed.eq.false)")
     .lt("created_at", new Date(Date.now()-5*60000).toISOString()).order("created_at").limit(50); checked(rows);
   let finalized=0, expired=0, errors=0;
   for (const row of rows.data ?? []) {

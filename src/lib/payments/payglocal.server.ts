@@ -48,11 +48,22 @@ export function createPayglocalProvider(fetchImpl: typeof fetch = fetch): Paymen
       const gid = z.string().min(1).max(200).parse(raw["gid"]);
       const url = z.string().url().parse(data?.["redirectUrl"]);
       if (new URL(url).protocol !== "https:") throw new Error("Invalid payment address");
-      return { sessionId: gid, url };
+      const statusUrl = typeof data?.["statusUrl"] === "string" ? data["statusUrl"] : undefined;
+      if (statusUrl) {
+        const status = new URL(statusUrl);
+        if (status.origin !== s.base || !status.pathname.startsWith("/gl/v1/payments/")) throw new Error("Invalid payment status address");
+      }
+      return { sessionId: gid, url, ...(statusUrl ? { statusUrl } : {}) };
     },
-    async payment(id) {
+    async payment(id, statusUrl) {
       if (!/^[A-Za-z0-9_-]{1,200}$/.test(id)) throw new Error("Invalid payment reference");
-      const raw = await request(`/gl/v1/payments/${encodeURIComponent(id)}/status`, "GET");
+      let path = `/gl/v1/payments/${encodeURIComponent(id)}/status`;
+      if (statusUrl) {
+        const status = new URL(statusUrl);
+        if (status.origin !== s.base || !status.pathname.startsWith("/gl/v1/payments/") || !status.pathname.endsWith("/status")) throw new Error("Invalid payment status address");
+        path = status.pathname + status.search;
+      }
+      const raw = await request(path, "GET");
       return normalizePayglocal(raw, s.environment);
     },
     async refund(gid, orderId) {
