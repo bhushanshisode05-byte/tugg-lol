@@ -9,9 +9,19 @@ export function dodoSettings(env: PaymentsEnv = config().paymentsEnv) {
   const secret = process.env[`${prefix}_WEBHOOK_SECRET`] || "";
   const other = env === "sandbox" ? "DODO_LIVE" : "DODO_TEST";
   // Reject swapped known credentials. Dodo's mode-specific host is the authoritative key validator.
-  if (!key || !secret || key === process.env[`${other}_API_KEY`] || secret === process.env[`${other}_WEBHOOK_SECRET`])
+  if (
+    !key ||
+    !secret ||
+    key === process.env[`${other}_API_KEY`] ||
+    secret === process.env[`${other}_WEBHOOK_SECRET`]
+  )
     throw new Error(DODO_NOT_READY);
-  return { key, secret, base: env === "sandbox" ? "https://test.dodopayments.com" : "https://live.dodopayments.com", prefix };
+  return {
+    key,
+    secret,
+    base: env === "sandbox" ? "https://test.dodopayments.com" : "https://live.dodopayments.com",
+    prefix,
+  };
 }
 export function productId(kind: ProductKind) {
   const { prefix } = dodoSettings();
@@ -20,13 +30,26 @@ export function productId(kind: ProductKind) {
   return id;
 }
 const paymentSchema = z.object({
-  payment_id: z.string().min(1).max(200), status: z.string(), currency: z.string(),
-  total_amount: z.number().int().nonnegative(), metadata: z.record(z.unknown()).default({}),
+  payment_id: z.string().min(1).max(200),
+  status: z.string(),
+  currency: z.string(),
+  total_amount: z.number().int().nonnegative(),
+  metadata: z.record(z.unknown()).default({}),
   product_cart: z.array(z.object({ product_id: z.string(), quantity: z.number().int() })).max(20),
   billing: z.object({ country: z.string().max(2).optional() }).optional(),
   checkout_session_id: z.string().nullable().optional(),
-  customer: z.object({ email: z.string() }).optional(), created_at: z.string().optional(),
-  refunds: z.array(z.object({ refund_id: z.string(), status: z.string(), amount: z.number().nullable().optional(), currency: z.string().nullable().optional() })).optional(),
+  customer: z.object({ email: z.string() }).optional(),
+  created_at: z.string().optional(),
+  refunds: z
+    .array(
+      z.object({
+        refund_id: z.string(),
+        status: z.string(),
+        amount: z.number().nullable().optional(),
+        currency: z.string().nullable().optional(),
+      }),
+    )
+    .optional(),
 });
 export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProvider {
   const environment = config().paymentsEnv;
@@ -34,10 +57,20 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProv
   async function api(path: string, body?: unknown, idempotency?: string) {
     const response = await fetchImpl(`${settings.base}${path}`, {
       method: body === undefined ? "GET" : "POST",
-      headers: { Authorization: `Bearer ${settings.key}`, "Content-Type": "application/json", ...(idempotency ? { "Idempotency-Key": idempotency } : {}) },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(15000),
+      headers: {
+        Authorization: `Bearer ${settings.key}`,
+        "Content-Type": "application/json",
+        ...(idempotency ? { "Idempotency-Key": idempotency } : {}),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: AbortSignal.timeout(15000),
     });
-    if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? DODO_NOT_READY : "Dodo is unavailable. Please try again shortly.");
+    if (!response.ok)
+      throw new Error(
+        response.status === 401 || response.status === 403
+          ? DODO_NOT_READY
+          : "Dodo is unavailable. Please try again shortly.",
+      );
     return response.json();
   }
   return {
@@ -45,24 +78,62 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProv
     async validateProduct(id, cents) {
       const product = await api(`/products/${encodeURIComponent(id)}`);
       const p = product.price;
-      if (!p || p.type !== "one_time_price" || p.currency !== "USD" || p.price !== cents || p.pay_what_you_want || p.purchasing_power_parity || p.discount || p.discount_bps || p.tax_inclusive !== true)
-        throw new Error("Dodo product must have the exact tax-inclusive one-time USD price. No payment has been taken.");
+      if (
+        !p ||
+        p.type !== "one_time_price" ||
+        p.currency !== "USD" ||
+        p.price !== cents ||
+        p.pay_what_you_want ||
+        p.purchasing_power_parity ||
+        p.discount ||
+        p.discount_bps ||
+        p.tax_inclusive !== true
+      )
+        throw new Error(
+          "Dodo product must have the exact tax-inclusive one-time USD price. No payment has been taken.",
+        );
     },
     async checkout(input) {
-      const result = await api("/checkouts", {
-        product_cart: [{ product_id: input.productId, quantity: 1 }], billing_currency: "USD",
-        allowed_payment_method_types: ["credit", "debit", "apple_pay", "google_pay", "cashapp"],
-        feature_flags: { allow_currency_selection: false, allow_discount_code: false, allow_tax_id: false },
-        metadata: { tugg_order_id: input.orderId, tugg_environment: environment }, return_url: input.returnUrl,
-      }, `checkout-${input.orderId}`);
-      const parsed = z.object({ session_id: z.string().min(1), checkout_url: z.string().url() }).parse(result);
+      const result = await api(
+        "/checkouts",
+        {
+          product_cart: [{ product_id: input.productId, quantity: 1 }],
+          billing_currency: "USD",
+          allowed_payment_method_types: ["credit", "debit", "apple_pay", "google_pay", "cashapp"],
+          feature_flags: {
+            allow_currency_selection: false,
+            allow_discount_code: false,
+            allow_tax_id: false,
+          },
+          metadata: { tugg_order_id: input.orderId, tugg_environment: environment },
+          return_url: input.returnUrl,
+        },
+        `checkout-${input.orderId}`,
+      );
+      const parsed = z
+        .object({ session_id: z.string().min(1), checkout_url: z.string().url() })
+        .parse(result);
       const host = new URL(parsed.checkout_url);
-      if (host.protocol !== "https:" || !(host.hostname === "dodopayments.com" || host.hostname.endsWith(".dodopayments.com"))) throw new Error("Invalid Dodo checkout destination.");
+      if (
+        host.protocol !== "https:" ||
+        !(host.hostname === "dodopayments.com" || host.hostname.endsWith(".dodopayments.com"))
+      )
+        throw new Error("Invalid Dodo checkout destination.");
       return { sessionId: parsed.session_id, url: parsed.checkout_url };
     },
-    async payment(id) { return paymentSchema.parse(await api(`/payments/${encodeURIComponent(id)}`)); },
+    async payment(id) {
+      return paymentSchema.parse(await api(`/payments/${encodeURIComponent(id)}`));
+    },
     async refund(paymentId, orderId) {
-      const result = await api("/refunds", { payment_id: paymentId, reason: "Tugg matchup rejected by moderation", metadata: { tugg_order_id: orderId } }, `refund-${orderId}`);
+      const result = await api(
+        "/refunds",
+        {
+          payment_id: paymentId,
+          reason: "Tugg matchup rejected by moderation",
+          metadata: { tugg_order_id: orderId },
+        },
+        `refund-${orderId}`,
+      );
       const parsed = z.object({ refund_id: z.string(), status: z.string() }).parse(result);
       return { refundId: parsed.refund_id, status: parsed.status };
     },

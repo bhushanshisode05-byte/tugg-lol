@@ -6,7 +6,17 @@ type AdminData = {
     pullRevenue: { environment: string; cents: string; pulls: number }[];
     sources: { source: string; count: number }[];
   };
-  dodo: { environments: { environment: string; revenue_cents: number; packs_sold: number; pulls_sold: number; pulls_used: number; refunds: number; flagged_wallets: number }[] };
+  dodo: {
+    environments: {
+      environment: string;
+      revenue_cents: number;
+      packs_sold: number;
+      pulls_sold: number;
+      pulls_used: number;
+      refunds: number;
+      flagged_wallets: number;
+    }[];
+  };
   flaggedWallets: Record<string, unknown>[];
   creationRevenue: { live: number; sandbox: number };
   pulls: Record<string, unknown>[];
@@ -52,10 +62,12 @@ function Admin() {
               <div key={env}>
                 <h3 className="font-bold">{env === "live" ? "Live money" : "Test money"}</h3>
                 <p className="mt-2 font-mono text-3xl">
-                  ${((Number(dodo?.revenue_cents ?? 0)) / 100).toFixed(2)}
+                  ${(Number(dodo?.revenue_cents ?? 0) / 100).toFixed(2)}
                 </p>
                 <p className="text-muted-foreground">
-                  Packs sold: {dodo?.packs_sold ?? 0} · Pulls sold: {dodo?.pulls_sold ?? 0} · Pulls used: {dodo?.pulls_used ?? 0}<br />
+                  Packs sold: {dodo?.packs_sold ?? 0} · Pulls sold: {dodo?.pulls_sold ?? 0} · Pulls
+                  used: {dodo?.pulls_used ?? 0}
+                  <br />
                   Refunds: {dodo?.refunds ?? 0} · Flagged wallets: {dodo?.flagged_wallets ?? 0}
                 </p>
               </div>
@@ -63,7 +75,8 @@ function Admin() {
           })}
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          Dodo confirmed purchase revenue, before refunds and fees; not settlement balances. Historical purchases remain in the records below.
+          Dodo confirmed purchase revenue, before refunds and fees; not settlement balances.
+          Historical purchases remain in the records below.
         </p>
       </section>
       <section className="py-6">

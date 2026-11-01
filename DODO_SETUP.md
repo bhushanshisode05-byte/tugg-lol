@@ -64,7 +64,7 @@ US Visa success: 4242 4242 4242 4242, expiry 06/32, CVV 123. India Visa success:
 - Side image gate remains false; sharing/OG/round artwork untouched. Stripe inactive modules retained, old writer endpoint returns 410.
 
 ## Tests completed
-- Automated Dodo/provider, HMAC signatures, mocked fulfillment/approval/rejection/refund/disputes, pause/Turnstile, wallet-recovery UI, plus existing sharing/OG/security regression suites.
+- 102 automated tests passed across 11 files: Dodo/provider, actual HMAC signatures (valid/tampered/expired/future/wrong secret/ID binding), mocked fulfillment/approval/rejection/refund/disputes, pause/Turnstile, wallet-recovery UI, plus unchanged sharing/OG/security regressions.
 - Real PostgreSQL in a disposable local database loaded from the actual migrations/core functions: all three credits, duplicate payment credit, 1/5/10 spends, duplicate spend, wrong environment, zero-balance rejection, flagged-wallet rejection, durable duplicate webhook ID/lease replay. Fixtures rolled back; no fake public totals were stored.
 - 10 simultaneous SQL spends against a balance of 5: exactly 5 succeeded, 5 rejected, 5 ledger debits, balance 0. Local fixtures deleted.
 - Desktop 1280×1800 and phone 390×844 preview: three correct disabled pack buttons, missing-key message, no image uploads, six-item Share menu unchanged, Dodo policy pages, no page errors or horizontal overflow. Endpoint returns 503 without credentials, 403 for wrong environment; old Stripe webhook 410.

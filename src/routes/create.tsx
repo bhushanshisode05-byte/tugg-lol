@@ -70,7 +70,11 @@ function CreateForm() {
   const checkout = useServerFn(createMatchupCheckout);
   const getPayments = useServerFn(getPaymentStatus);
   const [ready, setReady] = useState(false);
-  useEffect(() => { getPayments().then((s) => setReady(s.ready)).catch(() => setReady(false)); }, [getPayments]);
+  useEffect(() => {
+    getPayments()
+      .then((s) => setReady(s.ready))
+      .catch(() => setReady(false));
+  }, [getPayments]);
   const [a, setA] = useState<SideIn>({ name: "", emoji: "🔥", color: "#e8ff3a" });
   const [b, setB] = useState<SideIn>({ name: "", emoji: "🧊", color: "#ff2e88" });
   const [images, setImages] = useState<{ a?: DraftSideImage; b?: DraftSideImage }>({});
@@ -98,7 +102,9 @@ function CreateForm() {
         Rejected matchups are refunded automatically.
       </p>
 
-      {pay ? <p className="mt-8 text-muted-foreground">Opening Dodo checkout…</p> : (
+      {pay ? (
+        <p className="mt-8 text-muted-foreground">Opening Dodo checkout…</p>
+      ) : (
         <div className="mt-8 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             {(
@@ -134,12 +140,14 @@ function CreateForm() {
                     className="h-12 w-16 rounded-xl border border-input bg-background"
                   />
                 </div>
-                {SIDE_IMAGES_ENABLED && <SideImageField
-                  label={label}
-                  color={v.color}
-                  value={images[key]}
-                  onChange={(image) => setImages((prev) => ({ ...prev, [key]: image }))}
-                />}
+                {SIDE_IMAGES_ENABLED && (
+                  <SideImageField
+                    label={label}
+                    color={v.color}
+                    value={images[key]}
+                    onChange={(image) => setImages((prev) => ({ ...prev, [key]: image }))}
+                  />
+                )}
               </fieldset>
             ))}
           </div>
@@ -224,12 +232,14 @@ function CreateForm() {
               />
             </div>
           )}
-          {SIDE_IMAGES_ENABLED && <p className="text-xs leading-relaxed text-muted-foreground">
-            Optional pictures: JPG, PNG or WebP, up to 5 MB. Use only pictures you have the right to
-            use. No identifiable people, minors, sexual or violent content, hate symbols or scams.
-            Pictures are checked after payment; rejected submissions are refunded. Pictures may be
-            removed after reports.
-          </p>}
+          {SIDE_IMAGES_ENABLED && (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Optional pictures: JPG, PNG or WebP, up to 5 MB. Use only pictures you have the right
+              to use. No identifiable people, minors, sexual or violent content, hate symbols or
+              scams. Pictures are checked after payment; rejected submissions are refunded. Pictures
+              may be removed after reports.
+            </p>
+          )}
           {!ready && <p className="text-sm text-muted-foreground">{DODO_NOT_READY}</p>}
           {ready && <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />}
           {err && (
@@ -240,12 +250,31 @@ function CreateForm() {
           <Button
             disabled={!ok || !token || !ready}
             onClick={async () => {
-              setErr(null); setPay(true);
+              setErr(null);
+              setPay(true);
               try {
-                const r = await checkout({ data: { title: finalTitle, description: desc, category: cat, a, b, tier, returnUrl: `${window.location.origin}/create`, turnstileToken: token ?? undefined } });
-                if ("error" in r) { setErr(r.error); setPay(false); setToken(null); }
-                else window.location.assign(r.url);
-              } catch { setErr("Could not open Dodo checkout."); setPay(false); setToken(null); }
+                const r = await checkout({
+                  data: {
+                    title: finalTitle,
+                    description: desc,
+                    category: cat,
+                    a,
+                    b,
+                    tier,
+                    returnUrl: `${window.location.origin}/create`,
+                    turnstileToken: token ?? undefined,
+                  },
+                });
+                if ("error" in r) {
+                  setErr(r.error);
+                  setPay(false);
+                  setToken(null);
+                } else window.location.assign(r.url);
+              } catch {
+                setErr("Could not open Dodo checkout.");
+                setPay(false);
+                setToken(null);
+              }
             }}
             className="h-auto w-full whitespace-normal py-4 font-display text-xl font-extrabold"
           >
@@ -282,7 +311,8 @@ function CreationStatus({ sessionId }: { sessionId: string }) {
         <>
           <h1 className="font-display text-4xl font-extrabold">Checking your matchup…</h1>
           <p className="mt-2 text-muted-foreground">
-            Waiting for confirmed payment and moderation. A return from checkout is not payment confirmation.
+            Waiting for confirmed payment and moderation. A return from checkout is not payment
+            confirmation.
           </p>
         </>
       ) : s.status === "active" ? (

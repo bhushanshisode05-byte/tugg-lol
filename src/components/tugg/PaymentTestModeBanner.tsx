@@ -5,7 +5,11 @@ import { getPaymentStatus } from "@/lib/payments.functions";
 export function PaymentTestModeBanner() {
   const getStatus = useServerFn(getPaymentStatus);
   const [status, setStatus] = useState<Awaited<ReturnType<typeof getPaymentStatus>> | null>(null);
-  useEffect(() => { getStatus().then(setStatus).catch(() => setStatus(null)); }, [getStatus]);
+  useEffect(() => {
+    getStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
+  }, [getStatus]);
   if (!status?.ready) {
     return (
       <div className="w-full border-b border-destructive bg-destructive/20 px-4 py-2 text-center text-sm">

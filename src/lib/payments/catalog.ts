@@ -7,5 +7,6 @@ export const PRODUCTS = {
   featured: { name: "Tugg — Featured Matchup", cents: 2900, pulls: 0 },
 } as const;
 export type ProductKind = keyof typeof PRODUCTS;
-export const DODO_NOT_READY = "Dodo checkout is not configured yet. No payment has been taken. Please try again later.";
+export const DODO_NOT_READY =
+  "Dodo checkout is not configured yet. No payment has been taken. Please try again later.";
 export const spendOptions = (balance: number) => [1, 5, 10].filter((n) => n <= balance);

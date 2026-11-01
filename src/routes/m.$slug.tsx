@@ -90,7 +90,6 @@ function MatchupPage() {
   useLive(() => qc.invalidateQueries({ queryKey: ["matchup", slug] }), data?.matchup.id);
   const [celebrate, setCelebrate] = useState(false);
 
-
   if (!data) return null;
   const { matchup: m, top, recent, countries, history } = data;
   const A = m.sides[0]!,
@@ -195,7 +194,15 @@ function MatchupPage() {
         </div>
 
         {m.status === "active" ? (
-          <PullPanel sides={m.sides} slug={m.slug} paused={data.paused} onPulled={() => { setCelebrate(true); qc.invalidateQueries({ queryKey: ["matchup", slug] }); }} />
+          <PullPanel
+            sides={m.sides}
+            slug={m.slug}
+            paused={data.paused}
+            onPulled={() => {
+              setCelebrate(true);
+              qc.invalidateQueries({ queryKey: ["matchup", slug] });
+            }}
+          />
         ) : (
           <p className="mt-8 rounded-xl border border-border p-4 text-muted-foreground">
             This matchup is retired and no longer takes pulls.
@@ -327,4 +334,3 @@ function Panel({ title, children }: { title: React.ReactNode; children: React.Re
 const Empty = ({ text = "Nothing yet." }: { text?: string }) => (
   <p className="text-sm text-muted-foreground">{text}</p>
 );
-

@@ -178,12 +178,26 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
       return " Payment confirmation may still be processing; a delay alone does not establish an error.";
     const orderId = payment.metadata["tugg_order_id"];
     if (typeof orderId !== "string") return " This reference is not a Tugg purchase.";
-    const order = await db.from("dodo_orders").select("status").eq("id", orderId).eq("environment", config().paymentsEnv).maybeSingle();
+    const order = await db
+      .from("dodo_orders")
+      .select("status")
+      .eq("id", orderId)
+      .eq("environment", config().paymentsEnv)
+      .maybeSingle();
     if (order.error) throw new Error("Could not verify purchase");
-    if (order.data?.status === "paid") return " This payment is already recorded; the published refund policy applies.";
-    const logged = await db.from("support_threads").update({ payment_error: true, status: "payment_error_logged" }).eq("id", threadId);
+    if (order.data?.status === "paid")
+      return " This payment is already recorded; the published refund policy applies.";
+    const logged = await db
+      .from("support_threads")
+      .update({ payment_error: true, status: "payment_error_logged" })
+      .eq("id", threadId);
     if (logged.error) throw new Error("Could not log payment error");
-    await db.from("events").insert({ kind: "support_payment_error_email_unavailable", detail: { support_thread_id: threadId, reason: "Email escalation is not configured" } });
+    await db
+      .from("events")
+      .insert({
+        kind: "support_payment_error_email_unavailable",
+        detail: { support_thread_id: threadId, reason: "Email escalation is not configured" },
+      });
     return " A verified payment recording error has been logged for the owner. This does not authorize a refund outside the published policy.";
   } catch {
     return " We could not verify this payment reference. No payment-error escalation or refund has been promised.";
