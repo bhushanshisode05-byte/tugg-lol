@@ -52,7 +52,7 @@ Dodo says methods are preconfigured and availability depends on billing country,
 - UPI: upi_intent; requires Indian billing country and INR billing. It cannot be promised with the current USD-only requirement. Do not silently add INR/adaptive conversion; ask for a separate currency decision first.
 
 ## Official test card
-US Visa success: 4242 4242 4242 4242, expiry 06/32, CVV 123. India Visa success: 4576 2389 1277 1450, same expiry/CVV. Test only. The existing banner has not been changed because Dodo is not active.
+US Visa success: 4242 4242 4242 4242, expiry 06/32, CVV 123. India Visa success: 4576 2389 1277 1450, same expiry/CVV. Test only. The banner displays these US test details only when server-selected sandbox configuration is ready; otherwise it shows the missing-setup message.
 
 ## Implemented
 - Fetch-based PaymentProvider interface; Dodo POST /checkouts, GET /products/{id}, GET /payments/{id}, POST /refunds. Exact USD/tax-inclusive price and payment/cart/order/checkout validation.

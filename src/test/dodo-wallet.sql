@@ -32,5 +32,12 @@ BEGIN
  IF public.claim_dodo_event('sql-duplicate-fixture') THEN RAISE EXCEPTION 'Concurrent event claim accepted'; END IF;
  UPDATE public.dodo_webhook_events SET status='done',lease_until=null WHERE id='sql-duplicate-fixture';
  IF public.claim_dodo_event('sql-duplicate-fixture') THEN RAISE EXCEPTION 'Completed webhook replay accepted'; END IF;
+ UPDATE public.pull_wallets SET balance=24,flagged=false WHERE id=w;
+ PERFORM public.refund_dodo_wallet(o,'refund-sql-fixture',500);
+ PERFORM public.refund_dodo_wallet(o,'refund-sql-fixture',500);
+ IF (SELECT balance FROM public.pull_wallets WHERE id=w)<>19 THEN RAISE EXCEPTION 'Refund duplicate reversed twice'; END IF;
+ BEGIN PERFORM public.refund_dodo_wallet(o,'refund-over-fixture',2500); RAISE EXCEPTION 'Excess refund accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='Excess refund accepted' THEN RAISE; END IF; END;
+ IF NOT public.claim_dodo_order(o,'fixture-'||o,'sandbox') THEN RAISE EXCEPTION 'Order processing claim failed'; END IF;
+ IF public.claim_dodo_order(o,'fixture-'||o,'sandbox') THEN RAISE EXCEPTION 'Concurrent order review accepted'; END IF;
 END $$;
 ROLLBACK;
