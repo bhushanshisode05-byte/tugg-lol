@@ -30,3 +30,4 @@
 - Optional side images use metadata-free browser WebP, a full bounded pure-JS server decode and PNG derivative; upload/report records are service-only, and nullable side references preserve old code compatibility. Why: untrusted images must never bypass moderation or break emoji-only rows.
 - Side image files stay in private storage and only approved active/retired side references are served by a public route. Why: workspace policy blocks public buckets and pending or hidden pictures must not be exposed.
 - Image reports count distinct hashed networks atomically and never restore a hidden image during concurrent AI re-checks. Why: unauthenticated visitors have no provable person identity.
+- Optional side-picture entry points, display, moderation, cleanup and renderer use the shared SIDE_IMAGES_ENABLED gate. Why: unfinished pictures must remain dormant without deleting rollback-safe schema.

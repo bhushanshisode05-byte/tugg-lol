@@ -4,6 +4,7 @@ import monoFontUrl from "@/assets/fonts/mono-800.ttf?inline";
 import { Raster, hex, flattenCommands, encodePng, decodePng, type RGBA } from "./raster";
 import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
 // Brand palette (matches the site's dark theme tokens).
 const BG = "#111218";
@@ -58,7 +59,7 @@ async function loadEmoji(emoji: string) {
 }
 
 async function loadSide(side: import("./card").CardSide) {
-  if (side.image_id && side.image_status === "ok") {
+  if (SIDE_IMAGES_ENABLED && side.image_id && side.image_status === "ok") {
     try {
       const { loadRendererSideImage } = await import("../side-image-render.server");
       const img = await loadRendererSideImage(side.image_id);

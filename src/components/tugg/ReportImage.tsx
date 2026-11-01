@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { imageVisible } from "@/lib/side-image";
 import type { Side } from "@/lib/tugg.functions";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 export function ReportImage({ side }: { side: Side }) {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
-  if (!imageVisible(side)) return null;
+  if (!SIDE_IMAGES_ENABLED || !imageVisible(side)) return null;
   return (
     <div className="mt-1 text-xs">
       <Button
