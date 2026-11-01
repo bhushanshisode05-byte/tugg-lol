@@ -20,6 +20,8 @@ vi.mock("@/lib/payments/dodo.server", () => ({
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { rpc: mocks.rpc } }));
 import { buyPullPack, spendPulls } from "@/lib/payments.functions";
 beforeEach(() => {
+  vi.stubEnv("PAYMENT_PROVIDER", "dodo");
+  vi.stubEnv("PULL_MODE", "wallet");
   vi.stubEnv("PAUSE_PULLS", "false");
   mocks.verify.mockReset();
   mocks.rpc.mockReset();
