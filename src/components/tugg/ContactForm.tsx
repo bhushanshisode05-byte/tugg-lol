@@ -61,7 +61,7 @@ export function ContactForm() {
       </label>
       <label className="block space-y-2">
         <span>
-          Dodo payment reference <span className="text-muted-foreground">(optional)</span>
+          Payment reference <span className="text-muted-foreground">(optional)</span>
         </span>
         <Input name="sessionId" maxLength={200} placeholder="Payment reference" />
       </label>

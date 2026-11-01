@@ -14,15 +14,17 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
   const [side,setSide]=useState(sides[0]?.id || ""),[pack,setPack]=useState<5|10|25>(5),[name,setName]=useState(""),[shout,setShout]=useState("");
   const [billing,setBilling]=useState(emptyBilling),[token,setToken]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[confirmation,setConfirmation]=useState("");
   const ts=useRef<TurnstileHandle>(null);
+  const pulledRef=useRef(onPulled);
+  useEffect(()=>{pulledRef.current=onPulled;},[onPulled]);
   useEffect(()=>{
     const id=new URLSearchParams(window.location.search).get("payment"); if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
     let stop=false, n=0, timer: ReturnType<typeof setTimeout>|undefined;
     const tick=async()=> { const r=await read({data:{orderId:id}}); if(stop)return;
-      if(r?.status === "paid") {setConfirmation(`${r.quantity} pulls applied to your chosen side.`);onPulled();}
+      if(r?.status === "paid") {setConfirmation(`${r.quantity} pulls applied to your chosen side.`);pulledRef.current();}
       else if(r?.status === "failed" || r?.status === "expired") setConfirmation("Payment failed or expired. No pulls were applied.");
       else {setConfirmation("Payment confirmation pending. Please do not pay again.");if(n++<30)timer=setTimeout(tick,4000);}
     };tick().catch(()=>setConfirmation("Payment confirmation pending."));return()=>{stop=true;if(timer)clearTimeout(timer);};
-  },[read,onPulled]);
+  },[read]);
   if(paused)return <p className="mt-8 border-y border-border py-5 text-muted-foreground">Pulls are paused for a moment. Check back soon.</p>;
   return <section className="mt-8 border-y-2 border-foreground py-6"><h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
     <p className="mt-2 text-muted-foreground">One-time bundles. $1 per pull, applied to your side after confirmed payment. No stored balance.</p>

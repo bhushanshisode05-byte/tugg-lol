@@ -168,6 +168,12 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
   if (!input.sessionId) return "";
   const db = await supportDb();
   try {
+    if (config().paymentProvider === "payglocal") {
+      // Never reveal purchase details on an anonymous support form. Provider callbacks
+      // contain no trusted payer email in every documented response, so owner review
+      // must establish ownership before any payment-error promise is made.
+      return " Your payment reference has been saved privately with your message for review. Ownership and payment status must be verified before any payment-error escalation or refund is promised.";
+    }
     const { createDodoProvider } = await import("./payments/dodo.server");
     const payment = await createDodoProvider().payment(input.sessionId);
     const email = payment.customer?.email;

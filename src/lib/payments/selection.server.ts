@@ -2,6 +2,7 @@ import { config } from "../server-utils.server";
 import { createDodoProvider, dodoSettings, productId } from "./dodo.server";
 import { createPayglocalProvider, payglocalSettings } from "./payglocal.server";
 import type { ProductKind } from "./catalog";
+import { z } from "zod";
 export function selectedProvider() {
   const p = config().paymentProvider;
   if (p === "payglocal") return createPayglocalProvider();
@@ -14,7 +15,7 @@ export function paymentReadiness() {
   if (c.paymentProvider === "payglocal") {
     if (c.pullMode !== "immediate") throw new Error("PayGlocal requires immediate bundles.");
     payglocalSettings();
-    if (!c.ownerName || !c.ownerEmail) throw new Error("Checkout is unavailable while merchant contact details are being configured. No payment has been taken.");
+    if (!c.ownerName || !z.string().email().safeParse(c.ownerEmail).success) throw new Error("Checkout is unavailable while merchant contact details are being configured. No payment has been taken.");
   } else if (c.paymentProvider === "dodo" && c.pullMode === "wallet") {
     dodoSettings(); for (const kind of ["pull_5","pull_10","pull_25","standard","featured"] as const) productId(kind);
   } else throw new Error("Payment provider and pull mode are unavailable. No payment has been taken.");
