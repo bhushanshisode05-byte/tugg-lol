@@ -48,6 +48,7 @@ import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/su
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
 import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
+import { Route as ApiPublicPaymentsDodoWebhookRouteImport } from './routes/api/public/payments/dodo/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -246,6 +247,12 @@ const ApiPublicOgRIdRoute = ApiPublicOgRIdRouteImport.update({
   path: '/api/public/og/r/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsDodoWebhookRoute =
+  ApiPublicPaymentsDodoWebhookRouteImport.update({
+    id: '/api/public/payments/dodo/webhook',
+    path: '/api/public/payments/dodo/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
+  '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -326,6 +334,7 @@ export interface FileRoutesByTo {
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
+  '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -368,6 +377,7 @@ export interface FileRoutesById {
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
+  '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
+    | '/api/public/payments/dodo/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
+    | '/api/public/payments/dodo/webhook'
   id:
     | '__root__'
     | '/'
@@ -491,6 +503,7 @@ export interface FileRouteTypes {
     | '/api/public/support/contact'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
+    | '/api/public/payments/dodo/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -532,6 +545,7 @@ export interface RootRouteChildren {
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
   ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
+  ApiPublicPaymentsDodoWebhookRoute: typeof ApiPublicPaymentsDodoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -809,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOgRIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/dodo/webhook': {
+      id: '/api/public/payments/dodo/webhook'
+      path: '/api/public/payments/dodo/webhook'
+      fullPath: '/api/public/payments/dodo/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsDodoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -862,6 +883,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
   ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
+  ApiPublicPaymentsDodoWebhookRoute: ApiPublicPaymentsDodoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
