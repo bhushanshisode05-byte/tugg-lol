@@ -9,7 +9,7 @@ import { verifyTurnstileForRequest } from "./turnstile.server";
 const tokenSchema = z.string().regex(walletTokenPattern);
 export const getPaymentStatus = createServerFn({ method: "GET" }).handler(async () => {
   let ready = false;
-  try { dodoSettings(); ready = true; } catch { /* no secrets returned */ }
+  try { dodoSettings(); for (const kind of ["pull_5", "pull_10", "pull_25", "standard", "featured"] as const) productId(kind); ready = true; } catch { /* no secrets returned */ }
   return { environment: config().paymentsEnv, ready, paused: config().pausePulls };
 });
 export const getWallet = createServerFn({ method: "POST" }).inputValidator((d: unknown) => z.object({ token: tokenSchema, orderId: z.string().uuid().optional() }).parse(d)).handler(async ({ data }) => {
@@ -44,7 +44,11 @@ export const buyPullPack = createServerFn({ method: "POST" }).inputValidator((d:
     if (wallet.error || wallet.data?.flagged || (wallet.data && wallet.data.environment !== provider.environment)) return { error: "This wallet is unavailable for purchases in this payment environment." };
     if (!walletId) {
       const created = await db.from("pull_wallets").insert({ token_hash: hash, environment: provider.environment }).select("id").single();
-      if (created.error || !created.data) throw new Error("Could not create wallet."); walletId = created.data.id;
+      if (created.error || !created.data) {
+        const retry = await db.from("pull_wallets").select("id,flagged").eq("token_hash", hash).eq("environment", provider.environment).single();
+        if (retry.error || !retry.data || retry.data.flagged) throw new Error("Could not create wallet.");
+        walletId = retry.data.id;
+      } else walletId = created.data.id;
     }
     const order = await db.from("dodo_orders").insert({ kind, environment: provider.environment, expected_cents: PRODUCTS[kind].cents, product_id: product, wallet_id: walletId }).select("id").single();
     if (order.error || !order.data) throw new Error("Could not start checkout.");

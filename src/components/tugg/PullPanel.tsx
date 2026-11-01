@@ -7,7 +7,7 @@ import { SideAvatar } from "./SideAvatar";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { buyPullPack, getWallet, spendPulls, getPaymentStatus } from "@/lib/payments.functions";
 import { spendOptions, DODO_NOT_READY } from "@/lib/payments/catalog";
-import { walletTokenPattern } from "@/lib/payments/wallet";
+import { walletTokenPattern, newWalletToken } from "@/lib/payments/wallet";
 import type { Side } from "@/lib/tugg.functions";
 import { Copy } from "lucide-react";
 
@@ -23,10 +23,11 @@ export function PullPanel({ sides, slug, paused, onPulled }: { sides: Side[]; sl
   useEffect(() => {
     let stopped = false, timer: ReturnType<typeof setTimeout> | undefined;
     let n = 0;
+    const fragment = new URLSearchParams(window.location.hash.slice(1)).get("wallet");
+    if (fragment) history.replaceState(null, "", window.location.pathname + window.location.search);
     const boot = async () => {
       const configuration = await status(); if (stopped) return; setReady(configuration.ready);
       const key = `tugg-wallet-${configuration.environment}`;
-      const fragment = new URLSearchParams(window.location.hash.slice(1)).get("wallet");
       let stored = "";
       try { stored = localStorage.getItem(key) || ""; } catch { /* browser may disable storage */ }
       const current = fragment && walletTokenPattern.test(fragment) ? fragment : stored;
@@ -34,7 +35,6 @@ export function PullPanel({ sides, slug, paused, onPulled }: { sides: Side[]; sl
       setWallet(current);
       if (fragment) {
         try { localStorage.setItem(key, current); } catch { /* recovery still works for this visit */ }
-        history.replaceState(null, "", window.location.pathname + window.location.search);
       }
       const link = `${window.location.origin}/m/${slug}#wallet=${current}`;
       setRecovery(link);
@@ -54,11 +54,13 @@ export function PullPanel({ sides, slug, paused, onPulled }: { sides: Side[]; sl
   async function purchase(pack: 5 | 10 | 25) {
     setBusy(true); setError("");
     try {
-      const r = await buy({ data: { pack, ...(wallet ? { token: wallet } : {}), returnUrl: `${window.location.origin}/m/${slug}`, turnstileToken: token ?? undefined } });
-      if ("error" in r) { setError(r.error); return; }
       const configuration = await status();
-      try { localStorage.setItem(`tugg-wallet-${configuration.environment}`, r.token); }
+      const current = wallet || newWalletToken();
+      try { localStorage.setItem(`tugg-wallet-${configuration.environment}`, current); }
       catch { setError("Your browser cannot save your wallet. Enable browser storage before paying."); return; }
+      setWallet(current);
+      const r = await buy({ data: { pack, token: current, returnUrl: `${window.location.origin}/m/${slug}`, turnstileToken: token ?? undefined } });
+      if ("error" in r) { setError(r.error); return; }
       window.location.assign(r.url);
     } catch { setError("Dodo checkout could not open. No pulls have been credited."); }
     finally { ts.current?.reset(); setBusy(false); }
@@ -85,7 +87,7 @@ export function PullPanel({ sides, slug, paused, onPulled }: { sides: Side[]; sl
       {ready === false && <p className="mt-3 text-sm text-muted-foreground">{DODO_NOT_READY}</p>}
       <div className="mt-4 grid grid-cols-3 gap-2">{([5, 10, 25] as const).map((p) => <Button key={p} variant="outline" disabled={busy || !token || flagged || ready !== true} onClick={() => purchase(p)} className="h-auto flex-col py-4"><span className="font-mono text-xl">${p}</span><span>{p} pulls</span></Button>)}</div>
     </>}
-    <Turnstile ref={ts} action={TURNSTILE_ACTIONS.pull} onToken={setToken} className="mt-4" />
+    {(ready || balance > 0) && <Turnstile ref={ts} action={TURNSTILE_ACTIONS.pull} onToken={setToken} className="mt-4" />}
     {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
     {confirmed && recovery && <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4"><p className="text-sm text-muted-foreground">Save this link to restore your pulls on another device.</p><Button variant="outline" onClick={() => navigator.clipboard.writeText(recovery).catch(() => setError("Clipboard unavailable. Copy the recovery link below."))}><Copy />Copy recovery link</Button><Input readOnly value={recovery} aria-label="Wallet recovery link" /></div>}
     <p className="mt-4 text-xs text-muted-foreground">Packs are non-refundable except where required by law. No prizes or payouts. Dodo Payments is the merchant of record.</p>
