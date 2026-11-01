@@ -9,6 +9,7 @@ import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { SideImageField, type DraftSideImage } from "@/components/tugg/SideImageField";
 import { SideAvatar } from "@/components/tugg/SideAvatar";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -104,7 +105,7 @@ function CreateForm() {
           <EmbeddedPay
             fetchClientSecret={async () => {
               const upload = async (image?: DraftSideImage) => {
-                if (!image) return undefined;
+                if (!SIDE_IMAGES_ENABLED || !image) return undefined;
                 const form = new FormData();
                 form.append("image", image.blob, "side.webp");
                 form.append("rights", String(image.rights));
@@ -183,12 +184,12 @@ function CreateForm() {
                     className="h-12 w-16 rounded-xl border border-input bg-background"
                   />
                 </div>
-                <SideImageField
+                {SIDE_IMAGES_ENABLED && <SideImageField
                   label={label}
                   color={v.color}
                   value={images[key]}
                   onChange={(image) => setImages((prev) => ({ ...prev, [key]: image }))}
-                />
+                />}
               </fieldset>
             ))}
           </div>
@@ -273,12 +274,12 @@ function CreateForm() {
               />
             </div>
           )}
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          {SIDE_IMAGES_ENABLED && <p className="text-xs leading-relaxed text-muted-foreground">
             Optional pictures: JPG, PNG or WebP, up to 5 MB. Use only pictures you have the right to
             use. No identifiable people, minors, sexual or violent content, hate symbols or scams.
             Pictures are checked after payment; rejected submissions are refunded. Pictures may be
             removed after reports.
-          </p>
+          </p>}
           <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
           {err && (
             <p role="alert" className="text-sm text-destructive">

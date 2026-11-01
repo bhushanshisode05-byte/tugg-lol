@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
 const body = z.object({ task: z.enum(["generate", "recap", "cleanup_images"]) });
 
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/api/public/jobs/daily")({
         if (authFailure) return authFailure;
         const parsed = body.safeParse(await request.json().catch(() => null));
         if (!parsed.success) return Response.json({ error: "bad body" }, { status: 400 });
+        if (parsed.data.task === "cleanup_images" && !SIDE_IMAGES_ENABLED)
+          return Response.json({ ok: true, skipped: "feature dormant" });
         const { runGenerator, runRecap } = await import("@/lib/jobs.server");
         try {
           const out =

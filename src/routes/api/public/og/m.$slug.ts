@@ -26,16 +26,12 @@ export const Route = createFileRoute("/api/public/og/m/$slug")({
               kind: "live",
               day: (d.matchup.round?.starts_at ?? new Date().toISOString()).slice(0, 10),
               a: {
-                image_id: a.image_id,
-                image_status: a.image_status,
                 name: a.name,
                 emoji: a.emoji,
                 color: a.color,
                 cents: d.matchup.round?.total_a_cents ?? 0,
               },
               b: {
-                image_id: b.image_id,
-                image_status: b.image_status,
                 name: b.name,
                 emoji: b.emoji,
                 color: b.color,

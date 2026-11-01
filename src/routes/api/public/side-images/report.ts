@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 export const Route = createFileRoute("/api/public/side-images/report")({
   staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!SIDE_IMAGES_ENABLED) return new Response("Not found", { status: 404 });
         if (Number(request.headers.get("content-length")) > 1000)
           return new Response("Too large", { status: 413 });
         const parsed = z

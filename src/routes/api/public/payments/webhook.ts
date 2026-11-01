@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook, createStripeClient } from "@/lib/stripe.server";
 import { moderate, config } from "@/lib/server-utils.server";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
 const SHOUT_PLACEHOLDER = "📣 (shout-out removed)";
 
@@ -63,7 +64,7 @@ async function fulfill(session: any, env: StripeEnv) {
     const sides = (m as any).sides.sort((a: any, b: any) => a.position - b.position);
     const text = `Title: ${m.title}\nSide A: ${sides[0]?.name}\nSide B: ${sides[1]?.name}\nDescription: ${m.description}`;
     let v = await moderate("matchup", text);
-    if (v.allowed) {
+    if (v.allowed && SIDE_IMAGES_ENABLED) {
       const { reviewMatchupImages } = await import("@/lib/side-images.server");
       const pictures = await reviewMatchupImages(m.id);
       if (!pictures.allowed) v = pictures;

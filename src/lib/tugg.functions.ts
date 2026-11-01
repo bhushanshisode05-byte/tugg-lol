@@ -3,6 +3,7 @@ import { z } from "zod";
 import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
+import { SIDE_IMAGES_ENABLED } from "./feature-flags";
 
 /** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
 async function turnstileGate(
@@ -372,7 +373,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         color: data.b.color,
       },
     ]);
-    if (data.a.imageId || data.b.imageId) {
+    if (SIDE_IMAGES_ENABLED && (data.a.imageId || data.b.imageId)) {
       const { imageIpHash } = await import("./side-images.server");
       const { getRequest } = await import("@tanstack/react-start/server");
       const attached = await supabaseAdmin.rpc("attach_side_images", {

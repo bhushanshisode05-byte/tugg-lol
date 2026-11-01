@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { imageVisible, sideImagePath } from "@/lib/side-image";
+import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 export function SideAvatar({
   side,
   size = "sm",
@@ -19,8 +20,8 @@ export function SideAvatar({
   const [failed, setFailed] = useState<string | null>(null);
   if (!side) return null;
   const src =
-    side.image_preview ||
-    (imageVisible(side) && side.image_id ? sideImagePath(side.image_id) : null);
+    SIDE_IMAGES_ENABLED && (side.image_preview ||
+    (imageVisible(side) && side.image_id ? sideImagePath(side.image_id) : null));
   const dimensions = size === "lg" ? "h-10 w-10 text-4xl" : "h-7 w-7 text-xl";
   return (
     <span className={`inline-flex shrink-0 items-center justify-center align-middle ${dimensions}`}>
