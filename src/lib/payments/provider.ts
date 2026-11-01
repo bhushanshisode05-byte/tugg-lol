@@ -26,6 +26,8 @@ export interface PaymentProvider {
     productId: string;
     orderId: string;
     returnUrl: string;
+    cents?: number;
+    billing?: { firstName: string; lastName: string; emailId: string; addressCountry: string; addressStreet1: string; addressCity: string; addressState: string; addressPostalCode: string };
   }): Promise<{ sessionId: string; url: string }>;
   payment(id: string): Promise<VerifiedPayment>;
   refund(paymentId: string, orderId: string): Promise<{ refundId: string; status: string }>;
