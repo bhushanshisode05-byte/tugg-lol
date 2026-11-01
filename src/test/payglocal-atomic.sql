@@ -17,7 +17,7 @@ BEGIN
   IF (SELECT count(*) FROM payglocal_ledger WHERE order_id=o)<>2 THEN RAISE EXCEPTION 'Credit/debit mismatch'; END IF;
  END LOOP;
  IF (SELECT all_time_cents FROM sides WHERE id=a)<>4000 THEN RAISE EXCEPTION 'Bundle total incorrect'; END IF;
- IF (SELECT coalesce(sum(CASE WHEN entry_type='credit' THEN quantity ELSE -quantity END),0) FROM payglocal_ledger l JOIN payglocal_orders po ON po.id=l.order_id WHERE po.side_id=a)<>0 THEN RAISE EXCEPTION 'Unspent credit'; END IF;
+ IF (SELECT coalesce(sum(CASE WHEN entry_type='credit' THEN l.quantity ELSE -l.quantity END),0) FROM payglocal_ledger l JOIN payglocal_orders po ON po.id=l.order_id WHERE po.side_id=a)<>0 THEN RAISE EXCEPTION 'Unspent credit'; END IF;
  IF (SELECT coalesce(sum(total_a_cents+total_b_cents),0) FROM tugg_round_totals(true,ARRAY[(SELECT id FROM rounds WHERE matchup_id=m AND status='open')]))<>0 THEN RAISE EXCEPTION 'Sandbox leaked into live totals'; END IF;
  bad:=gen_random_uuid();
  INSERT INTO payglocal_orders(id,environment,merchant_unique_id,kind,expected_cents,quantity,side_id,gid,return_path)
