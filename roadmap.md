@@ -1,15 +1,17 @@
 # Tugg roadmap
 
 ## Dodo payments and pull wallets (do not publish)
-- [ ] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements.
-- [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later.
+- [x] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements; recorded in DODO_SETUP.md.
+- [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later. Blocker: user must add test credentials in Secrets.
+- [ ] Resolve custom Dodo payment setup availability. Blocker: session payment guidance prohibits payment implementation before setup is enabled; setup tools are unavailable. Never reconnect Stripe or enable managed Stripe/Paddle as a workaround.
 - [ ] Add provider interface, isolated test/live configuration, pull packs and Dodo matchup checkout.
 - [ ] Add private hash-token wallets, idempotent credit ledger and atomic spending through the round engine.
 - [ ] Add balance, pack purchase, recovery link, Turnstile/paused protections and read-only owner reporting.
 - [ ] Update the shared policy catalog, footer and test-mode details.
-- [ ] Keep unfinished side pictures dormant and repair any preview errors.
+- [x] Keep unfinished side pictures dormant and repair OG optional-field errors; preview build OK, 51 tests pass, phone-sized browser checked.
 - [ ] Test verified Dodo pack purchases, duplicate webhooks, spends/concurrency/recovery, protections, matchup approval/refund and environment isolation.
-- [ ] Remove legacy Stripe code only after Dodo test-mode end-to-end success; report dashboard setup and blockers.
+- [ ] Remove legacy Stripe code only after Dodo test-mode end-to-end success. Blocker: Dodo implementation and real test purchases not available yet; legacy code retained without reconnection.
+- [x] Report proposed dashboard products, future webhook URLs, official test credentials, method eligibility and blockers in DODO_SETUP.md. No Dodo webhook is ready to register yet.
 
 ## Optional side pictures (do not publish)
 - [ ] Add optional circle-cropped browser uploads and rights consent.
