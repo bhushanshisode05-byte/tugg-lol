@@ -36,5 +36,12 @@ BEGIN
   RAISE EXCEPTION 'Wrong environment accepted';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='Wrong environment accepted' THEN RAISE; END IF;
  END;
+ UPDATE payglocal_orders SET status='expired' WHERE id=bad;
+ BEGIN
+  UPDATE payglocal_orders SET status='paid' WHERE id=bad;
+  RAISE EXCEPTION 'Expired order became paid';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM='Expired order became paid' THEN RAISE; END IF;
+ END;
+ IF (SELECT status FROM payglocal_orders WHERE id=bad)<>'expired' THEN RAISE EXCEPTION 'Terminal guard failed'; END IF;
 END $$;
 ROLLBACK;

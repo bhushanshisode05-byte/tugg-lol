@@ -31,11 +31,11 @@ export function normalizePayglocal(raw: Record<string, unknown>, environment: "s
     product_cart: [], billing: { country: String(value("country") ?? d["Country"] ?? value("addressCountry") ?? "") },
   };
 }
-export function createPayglocalProvider(fetchImpl: typeof fetch = fetch): PaymentProvider {
+export function createPayglocalProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 20000): PaymentProvider {
   const s = payglocalSettings();
   async function request(path: string, method: "GET" | "POST", data?: unknown) {
     const body = data === undefined ? "" : JSON.stringify(data);
-    const response = await fetchImpl(`${s.base}${path}`, { method, headers: { "Content-Type": "application/json", "x-gl-merchantid": s.merchantId, "x-gl-kid": s.keyId, "x-gl-token-external": signPayglocalRequest(body, s) }, ...(method === "POST" ? { body } : {}), signal: AbortSignal.timeout(20000), redirect: "error" });
+    const response = await fetchImpl(`${s.base}${path}`, { method, headers: { "Content-Type": "application/json", "x-gl-merchantid": s.merchantId, "x-gl-kid": s.keyId, "x-gl-token-external": signPayglocalRequest(body, s) }, ...(method === "POST" ? { body } : {}), signal: AbortSignal.timeout(timeoutMs), redirect: "error" });
     if (!response.ok) throw new Error("PayGlocal could not confirm the payment request. Please try again later.");
     const json = await response.json() as Record<string, unknown>;
     return json;
