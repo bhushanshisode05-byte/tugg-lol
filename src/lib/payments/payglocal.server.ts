@@ -16,14 +16,14 @@ export function payglocalSettings() {
 export function normalizePayglocal(raw: Record<string, unknown>, environment: "sandbox" | "live"): VerifiedPayment {
   const d = raw["data"] && typeof raw["data"] === "object" ? raw["data"] as Record<string, unknown> : {};
   const value = (key: string) => raw[key] ?? d[key];
-  const amount = value("amount") ?? value("totalAmount") ?? (d["paymentData"] as Record<string, unknown> | undefined)?.["totalAmount"];
-  const currency = value("currency") ?? value("txnCurrency") ?? (d["paymentData"] as Record<string, unknown> | undefined)?.["txnCurrency"];
+  const amount = value("amount") ?? d["Amount"] ?? value("totalAmount") ?? (d["paymentData"] as Record<string, unknown> | undefined)?.["totalAmount"];
+  const currency = value("txnCurrency") ?? value("currency") ?? (d["paymentData"] as Record<string, unknown> | undefined)?.["txnCurrency"];
   const cents = Number(amount) * 100;
   return {
     payment_id: String(value("gid") ?? value("x-gl-gid") ?? ""),
     status: String(value("status") ?? ""), currency: String(currency ?? ""), total_amount: Number.isFinite(cents) && Math.abs(cents - Math.round(cents)) < .00001 ? Math.round(cents) : -1,
     metadata: { tugg_environment: environment, merchantTxnId: value("merchantTxnId"), merchantUniqueId: value("merchantUniqueId"), merchantId: value("merchantId") ?? value("x-gl-merchantId") },
-    product_cart: [], billing: { country: String(value("country") ?? value("addressCountry") ?? "") },
+    product_cart: [], billing: { country: String(value("country") ?? d["Country"] ?? value("addressCountry") ?? "") },
   };
 }
 export function createPayglocalProvider(fetchImpl: typeof fetch = fetch): PaymentProvider {

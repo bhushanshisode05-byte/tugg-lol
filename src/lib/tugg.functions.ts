@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
-import { createDodoProvider, productId } from "./payments/dodo.server";
+import { selectedProvider, selectedProduct, paymentReadiness } from "./payments/selection.server";
+import { billingSchema } from "./payments/billing";
 import { PRODUCTS } from "./payments/catalog";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { SIDE_IMAGES_ENABLED } from "./feature-flags";
@@ -249,6 +250,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         a: sideSchema,
         b: sideSchema,
         tier: z.enum(["standard", "featured"]),
+        billing: billingSchema.optional(),
         returnUrl: z.string().url().max(500),
         environment: envSchema,
         turnstileToken: turnstileTokenSchema,
@@ -258,12 +260,15 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CheckoutResult> => {
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
-    let provider: ReturnType<typeof createDodoProvider>;
+    if (config().pausePulls) return { error: "Pulls are paused right now. Please try again later." };
+    let provider: ReturnType<typeof selectedProvider>;
     let product: string;
     try {
-      provider = createDodoProvider(); product = productId(data.tier);
+      paymentReadiness();
+      if (config().paymentProvider === "payglocal" && !data.billing) return { error: "Billing details are required for digital purchases." };
+      provider = selectedProvider(); product = selectedProduct(data.tier);
       await provider.validateProduct(product, PRODUCTS[data.tier].cents);
-    } catch (e) { return { error: e instanceof Error ? e.message : "Dodo checkout is unavailable." }; }
+    } catch (e) { return { error: e instanceof Error ? e.message : "Checkout is unavailable." }; }
     const { getRequest } = await import("@tanstack/react-start/server");
     if (new URL(data.returnUrl).origin !== new URL(getRequest().url).origin) return { error: "Invalid return address." };
     const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.matchup);
@@ -337,6 +342,22 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         return { error: "Picture expired or already used. Add it again before checkout." };
     }
     try {
+      if (config().paymentProvider === "payglocal") {
+        const id = crypto.randomUUID(), returnUrl = new URL(data.returnUrl);
+        returnUrl.searchParams.set("session_id", id);
+        const order = await supabaseAdmin.from("payglocal_orders").insert({
+          id, environment: se.env, kind: data.tier, expected_cents: PRODUCTS[data.tier].cents,
+          merchant_unique_id: `${se.env === "live" ? "L" : "S"}${id.replaceAll("-", "")}`,
+          matchup_id: m.id, billing_country: data.billing?.addressCountry || "", return_path: returnUrl.pathname + returnUrl.search,
+        }).select("id").single();
+        if (order.error) throw new Error("Could not start checkout.");
+        const creator = await supabaseAdmin.from("creators").insert({ matchup_id: m.id, tier: data.tier, payglocal_order_id: id, environment: se.env });
+        if (creator.error) throw new Error("Could not start checkout.");
+        const session = await provider.checkout({ productId: product, orderId: id, returnUrl: returnUrl.toString(), cents: PRODUCTS[data.tier].cents, ...(data.billing ? { billing: data.billing } : {}) });
+        const saved = await supabaseAdmin.from("payglocal_orders").update({ gid: session.sessionId }).eq("id", id).is("gid", null);
+        if (saved.error) throw new Error("Payment confirmation pending. Please do not pay again.");
+        return { url: session.url };
+      }
       const order = await supabaseAdmin.from("dodo_orders").insert({
         environment: se.env, kind: data.tier, product_id: product,
         expected_cents: PRODUCTS[data.tier].cents, matchup_id: m.id,
@@ -351,7 +372,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       if (creator.error) throw new Error("Could not start checkout.");
       return { url: session.url };
     } catch (e) {
-      return { error: e instanceof Error ? e.message : "Dodo checkout is unavailable." };
+      return { error: e instanceof Error ? e.message : "Checkout is unavailable." };
     }
   });
 
@@ -359,6 +380,11 @@ export const getCreationStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ sessionId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (config().paymentProvider === "payglocal") {
+      const result = await supabaseAdmin.from("payglocal_orders").select("status,refund_status,review_reason,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
+      const o=result.data; if (!o?.matchups) return null;
+      return { slug:o.matchups.slug,status:o.matchups.status,title:o.matchups.title,refunded:o.refund_status === "succeeded",reason:o.review_reason,paymentStatus:o.status };
+    }
     const result = await supabaseAdmin.from("dodo_orders").select("status,refund_status,review_reason,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
     const o = result.data; if (!o || !o.matchups) return null;
     return { slug: o.matchups.slug, status: o.matchups.status, title: o.matchups.title, refunded: o.refund_status === "succeeded", reason: o.review_reason, paymentStatus: o.status };
