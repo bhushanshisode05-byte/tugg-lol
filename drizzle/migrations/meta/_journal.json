@@ -57,6 +57,13 @@
       "when": 1793400684129,
       "tag": "0007_optional_image_attachment_null_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793503591242,
+      "tag": "0008_dodo_wallets_orders_and_atomic_ledger",
+      "breakpoints": true
     }
   ]
 }

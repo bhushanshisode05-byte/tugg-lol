@@ -1,0 +1,82 @@
+CREATE TABLE public.pull_wallets (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), token_hash text NOT NULL UNIQUE CHECK(length(token_hash)=64), environment text NOT NULL CHECK(environment IN ('sandbox','live')), balance integer NOT NULL DEFAULT 0 CHECK(balance>=0), billing_country text, flagged boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.pull_wallets TO service_role;
+ALTER TABLE public.pull_wallets ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.dodo_orders (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), environment text NOT NULL CHECK(environment IN ('sandbox','live')), kind text NOT NULL CHECK(kind IN ('pull_5','pull_10','pull_25','standard','featured')), expected_cents integer NOT NULL, product_id text NOT NULL, wallet_id uuid REFERENCES public.pull_wallets(id), matchup_id uuid REFERENCES public.matchups(id) ON DELETE SET NULL, checkout_id text UNIQUE, payment_id text UNIQUE, status text NOT NULL DEFAULT 'pending', refund_id text UNIQUE, refund_status text, review_allowed boolean, review_reason text, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.dodo_orders TO service_role;
+ALTER TABLE public.dodo_orders ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.pull_wallet_ledger (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), wallet_id uuid NOT NULL REFERENCES public.pull_wallets(id), environment text NOT NULL, kind text NOT NULL CHECK(kind IN ('credit','debit','refund')), delta integer NOT NULL, payment_id text UNIQUE, request_id uuid UNIQUE, refund_id text UNIQUE, pull_id uuid REFERENCES public.pulls(id), order_id uuid REFERENCES public.dodo_orders(id), amount_cents integer NOT NULL DEFAULT 0, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.pull_wallet_ledger TO service_role;
+ALTER TABLE public.pull_wallet_ledger ENABLE ROW LEVEL SECURITY;
+CREATE INDEX wallet_ledger_wallet_idx ON public.pull_wallet_ledger(wallet_id,created_at);
+CREATE TABLE public.dodo_webhook_events (id text PRIMARY KEY, environment text NOT NULL, event_type text NOT NULL, payload jsonb NOT NULL, status text NOT NULL DEFAULT 'pending', attempts integer NOT NULL DEFAULT 0, lease_until timestamptz, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.dodo_webhook_events TO service_role;
+ALTER TABLE public.dodo_webhook_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.creators ADD COLUMN dodo_order_id uuid REFERENCES public.dodo_orders(id);
+ALTER TABLE public.creators ADD COLUMN dodo_payment_id text;
+ALTER TABLE public.pulls ADD COLUMN wallet_ledger_id uuid;
+CREATE OR REPLACE FUNCTION public.credit_dodo_wallet(p_order uuid,p_payment text,p_country text,p_env text,p_cents integer) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE o dodo_orders; n integer; b integer;
+BEGIN
+ SELECT * INTO o FROM dodo_orders WHERE id=p_order FOR UPDATE;
+ IF NOT FOUND OR o.environment<>p_env OR o.expected_cents<>p_cents OR o.wallet_id IS NULL THEN RAISE EXCEPTION 'Invalid payment order'; END IF;
+ n:=CASE o.kind WHEN 'pull_5' THEN 5 WHEN 'pull_10' THEN 10 WHEN 'pull_25' THEN 25 ELSE 0 END;
+ IF n=0 OR p_cents<>n*100 THEN RAISE EXCEPTION 'Invalid pack'; END IF;
+ IF o.status='paid' THEN IF o.payment_id=p_payment THEN RETURN jsonb_build_object('duplicate',true); ELSE RAISE EXCEPTION 'Order already paid'; END IF; END IF;
+ IF o.status NOT IN ('pending','failed') THEN RAISE EXCEPTION 'Invalid order state'; END IF;
+ PERFORM 1 FROM pull_wallets WHERE id=o.wallet_id AND environment=p_env FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Invalid wallet'; END IF;
+ INSERT INTO pull_wallet_ledger(wallet_id,environment,kind,delta,payment_id,order_id,amount_cents) VALUES(o.wallet_id,p_env,'credit',n,p_payment,p_order,p_cents);
+ UPDATE pull_wallets SET balance=balance+n,billing_country=nullif(upper(p_country),'') WHERE id=o.wallet_id RETURNING balance INTO b;
+ UPDATE dodo_orders SET status='paid',payment_id=p_payment WHERE id=p_order;
+ RETURN jsonb_build_object('balance',b,'duplicate',false);
+END $$;
+REVOKE ALL ON FUNCTION public.credit_dodo_wallet(uuid,text,text,text,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.credit_dodo_wallet(uuid,text,text,text,integer) TO service_role;
+CREATE OR REPLACE FUNCTION public.spend_wallet_pull(p_hash text,p_env text,p_side uuid,p_quantity integer,p_request uuid,p_name text,p_shout text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE w pull_wallets; result jsonb; pid uuid; lid uuid; previous pull_wallet_ledger;
+BEGIN
+ IF p_quantity NOT IN (1,5,10) THEN RAISE EXCEPTION 'Invalid pull quantity'; END IF;
+ SELECT * INTO w FROM pull_wallets WHERE token_hash=p_hash AND environment=p_env FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Wallet not found'; END IF;
+ SELECT * INTO previous FROM pull_wallet_ledger WHERE request_id=p_request;
+ IF FOUND THEN IF previous.wallet_id<>w.id OR previous.delta<>-p_quantity THEN RAISE EXCEPTION 'Invalid repeated spend'; END IF; RETURN jsonb_build_object('balance',w.balance,'duplicate',true); END IF;
+ IF w.flagged THEN RAISE EXCEPTION 'This wallet is under payment review'; END IF;
+ IF w.balance<p_quantity THEN RAISE EXCEPTION 'Not enough pulls'; END IF;
+ PERFORM 1 FROM matchups m JOIN sides s ON s.matchup_id=m.id WHERE s.id=p_side AND m.status='active' FOR SHARE OF m;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Matchup not active'; END IF;
+ result:=record_pull('wallet:'||p_request::text,p_side,p_quantity*100,left(p_name,40),left(p_shout,80),w.billing_country,p_env);
+ IF coalesce((result->>'duplicate')::boolean,false) THEN RAISE EXCEPTION 'Pull reference already used'; END IF;
+ SELECT id INTO pid FROM pulls WHERE stripe_session_id='wallet:'||p_request::text;
+ INSERT INTO pull_wallet_ledger(wallet_id,environment,kind,delta,request_id,pull_id) VALUES(w.id,p_env,'debit',-p_quantity,p_request,pid) RETURNING id INTO lid;
+ UPDATE pulls SET wallet_ledger_id=lid WHERE id=pid;
+ UPDATE pull_wallets SET balance=balance-p_quantity WHERE id=w.id RETURNING balance INTO w.balance;
+ RETURN result||jsonb_build_object('balance',w.balance,'pullId',pid);
+END $$;
+REVOKE ALL ON FUNCTION public.spend_wallet_pull(text,text,uuid,integer,uuid,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.spend_wallet_pull(text,text,uuid,integer,uuid,text,text) TO service_role;
+CREATE OR REPLACE FUNCTION public.claim_dodo_event(p_id text) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+ UPDATE dodo_webhook_events SET status='processing',attempts=attempts+1,lease_until=now()+interval '2 minutes' WHERE id=p_id AND status<>'done' AND (lease_until IS NULL OR lease_until<now()); RETURN FOUND;
+END $$;
+REVOKE ALL ON FUNCTION public.claim_dodo_event(text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_dodo_event(text) TO service_role;
+CREATE OR REPLACE FUNCTION public.refund_dodo_wallet(p_order uuid,p_refund text,p_cents integer) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE o dodo_orders; w pull_wallets; n integer; credits integer; reversed integer;
+BEGIN
+ SELECT * INTO o FROM dodo_orders WHERE id=p_order FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+ IF o.wallet_id IS NULL THEN RETURN; END IF;
+ IF p_cents<=0 OR p_cents%100<>0 THEN RAISE EXCEPTION 'Refund must be whole USD pulls'; END IF;
+ SELECT * INTO w FROM pull_wallets WHERE id=o.wallet_id FOR UPDATE;
+ IF EXISTS(SELECT 1 FROM pull_wallet_ledger WHERE refund_id=p_refund) THEN RETURN; END IF;
+ SELECT coalesce(sum(delta),0) INTO credits FROM pull_wallet_ledger WHERE order_id=p_order AND kind='credit';
+ SELECT coalesce(-sum(delta),0) INTO reversed FROM pull_wallet_ledger WHERE order_id=p_order AND kind='refund';
+ n:=p_cents/100;
+ IF n+reversed>credits THEN RAISE EXCEPTION 'Refund exceeds credited purchase'; END IF;
+ INSERT INTO pull_wallet_ledger(wallet_id,environment,kind,delta,refund_id,order_id,amount_cents) VALUES(w.id,o.environment,'refund',-n,p_refund,p_order,p_cents);
+ UPDATE pull_wallets SET balance=greatest(0,balance-n),flagged=flagged OR balance<n WHERE id=w.id;
+END $$;
+REVOKE ALL ON FUNCTION public.refund_dodo_wallet(uuid,text,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.refund_dodo_wallet(uuid,text,integer) TO service_role;
+CREATE OR REPLACE FUNCTION public.tugg_dodo_summary() RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$ SELECT jsonb_build_object('environments',coalesce((SELECT jsonb_agg(x) FROM (SELECT e.environment,coalesce(sum(o.expected_cents) FILTER(WHERE o.status='paid'),0) revenue_cents,count(o.id) FILTER(WHERE o.status='paid' AND o.wallet_id IS NOT NULL) packs_sold,coalesce(sum(CASE o.kind WHEN 'pull_5' THEN 5 WHEN 'pull_10' THEN 10 WHEN 'pull_25' THEN 25 ELSE 0 END) FILTER(WHERE o.status='paid'),0) pulls_sold,coalesce((SELECT -sum(l.delta) FROM pull_wallet_ledger l WHERE l.environment=e.environment AND l.kind='debit'),0) pulls_used,(SELECT count(*) FROM dodo_orders r WHERE r.environment=e.environment AND r.refund_status='succeeded') refunds,(SELECT count(*) FROM pull_wallets w WHERE w.environment=e.environment AND w.flagged) flagged_wallets FROM (VALUES('live'),('sandbox')) e(environment) LEFT JOIN dodo_orders o ON o.environment=e.environment GROUP BY e.environment) x),'[]'::jsonb)); $$;
+REVOKE ALL ON FUNCTION public.tugg_dodo_summary() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.tugg_dodo_summary() TO service_role;

@@ -35,6 +35,8 @@ export type Database = {
       creators: {
         Row: {
           created_at: string
+          dodo_order_id: string | null
+          dodo_payment_id: string | null
           email: string | null
           environment: string
           id: string
@@ -46,6 +48,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dodo_order_id?: string | null
+          dodo_payment_id?: string | null
           email?: string | null
           environment?: string
           id?: string
@@ -57,6 +61,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dodo_order_id?: string | null
+          dodo_payment_id?: string | null
           email?: string | null
           environment?: string
           id?: string
@@ -67,6 +73,13 @@ export type Database = {
           tier?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "creators_dodo_order_id_fkey"
+            columns: ["dodo_order_id"]
+            isOneToOne: false
+            referencedRelation: "dodo_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "creators_matchup_id_fkey"
             columns: ["matchup_id"]
@@ -91,6 +104,108 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+        }
+        Relationships: []
+      }
+      dodo_orders: {
+        Row: {
+          checkout_id: string | null
+          created_at: string
+          environment: string
+          expected_cents: number
+          id: string
+          kind: string
+          matchup_id: string | null
+          payment_id: string | null
+          product_id: string
+          refund_id: string | null
+          refund_status: string | null
+          review_allowed: boolean | null
+          review_reason: string | null
+          status: string
+          wallet_id: string | null
+        }
+        Insert: {
+          checkout_id?: string | null
+          created_at?: string
+          environment: string
+          expected_cents: number
+          id?: string
+          kind: string
+          matchup_id?: string | null
+          payment_id?: string | null
+          product_id: string
+          refund_id?: string | null
+          refund_status?: string | null
+          review_allowed?: boolean | null
+          review_reason?: string | null
+          status?: string
+          wallet_id?: string | null
+        }
+        Update: {
+          checkout_id?: string | null
+          created_at?: string
+          environment?: string
+          expected_cents?: number
+          id?: string
+          kind?: string
+          matchup_id?: string | null
+          payment_id?: string | null
+          product_id?: string
+          refund_id?: string | null
+          refund_status?: string | null
+          review_allowed?: boolean | null
+          review_reason?: string | null
+          status?: string
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dodo_orders_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dodo_orders_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "pull_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dodo_webhook_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          environment: string
+          event_type: string
+          id: string
+          lease_until: string | null
+          payload: Json
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          environment: string
+          event_type: string
+          id: string
+          lease_until?: string | null
+          payload: Json
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          environment?: string
+          event_type?: string
+          id?: string
+          lease_until?: string | null
+          payload?: Json
+          status?: string
         }
         Relationships: []
       }
@@ -232,6 +347,103 @@ export type Database = {
         }
         Relationships: []
       }
+      pull_wallet_ledger: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          delta: number
+          environment: string
+          id: string
+          kind: string
+          order_id: string | null
+          payment_id: string | null
+          pull_id: string | null
+          refund_id: string | null
+          request_id: string | null
+          wallet_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          delta: number
+          environment: string
+          id?: string
+          kind: string
+          order_id?: string | null
+          payment_id?: string | null
+          pull_id?: string | null
+          refund_id?: string | null
+          request_id?: string | null
+          wallet_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          delta?: number
+          environment?: string
+          id?: string
+          kind?: string
+          order_id?: string | null
+          payment_id?: string | null
+          pull_id?: string | null
+          refund_id?: string | null
+          request_id?: string | null
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pull_wallet_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "dodo_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pull_wallet_ledger_pull_id_fkey"
+            columns: ["pull_id"]
+            isOneToOne: false
+            referencedRelation: "pulls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pull_wallet_ledger_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "pull_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pull_wallets: {
+        Row: {
+          balance: number
+          billing_country: string | null
+          created_at: string
+          environment: string
+          flagged: boolean
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          balance?: number
+          billing_country?: string | null
+          created_at?: string
+          environment: string
+          flagged?: boolean
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          balance?: number
+          billing_country?: string | null
+          created_at?: string
+          environment?: string
+          flagged?: boolean
+          id?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
       pulls: {
         Row: {
           amount_cents: number
@@ -245,6 +457,7 @@ export type Database = {
           shout_out: string | null
           side_id: string
           stripe_session_id: string
+          wallet_ledger_id: string | null
         }
         Insert: {
           amount_cents: number
@@ -258,6 +471,7 @@ export type Database = {
           shout_out?: string | null
           side_id: string
           stripe_session_id: string
+          wallet_ledger_id?: string | null
         }
         Update: {
           amount_cents?: number
@@ -271,6 +485,7 @@ export type Database = {
           shout_out?: string | null
           side_id?: string
           stripe_session_id?: string
+          wallet_ledger_id?: string | null
         }
         Relationships: [
           {
@@ -594,6 +809,7 @@ export type Database = {
         Args: { p_a: string; p_b: string; p_ip: string; p_matchup: string }
         Returns: boolean
       }
+      claim_dodo_event: { Args: { p_id: string }; Returns: boolean }
       claim_tugg_owner: {
         Args: { p_email: string; p_user: string }
         Returns: boolean
@@ -601,6 +817,16 @@ export type Database = {
       cleanup_stale_matchups: { Args: never; Returns: number }
       close_due_rounds: { Args: never; Returns: number }
       close_round: { Args: { p_round: string }; Returns: undefined }
+      credit_dodo_wallet: {
+        Args: {
+          p_cents: number
+          p_country: string
+          p_env: string
+          p_order: string
+          p_payment: string
+        }
+        Returns: Json
+      }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
       next_utc_midnight: { Args: never; Returns: string }
       record_pull: {
@@ -615,11 +841,27 @@ export type Database = {
         }
         Returns: Json
       }
+      refund_dodo_wallet: {
+        Args: { p_cents: number; p_order: string; p_refund: string }
+        Returns: undefined
+      }
       report_side_image: {
         Args: { p_image: string; p_ip: string }
         Returns: Json
       }
       retire_idle_ai_matchups: { Args: { p_live: boolean }; Returns: number }
+      spend_wallet_pull: {
+        Args: {
+          p_env: string
+          p_hash: string
+          p_name: string
+          p_quantity: number
+          p_request: string
+          p_shout: string
+          p_side: string
+        }
+        Returns: Json
+      }
       take_checkout_slot: {
         Args: { p_ip: string; p_max: number; p_window_minutes: number }
         Returns: boolean
@@ -638,6 +880,7 @@ export type Database = {
         Args: { p_from: string; p_live: boolean; p_to: string }
         Returns: Json
       }
+      tugg_dodo_summary: { Args: never; Returns: Json }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {
