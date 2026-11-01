@@ -114,13 +114,13 @@ export async function handlePayglocalCallback(request: Request) {
 export async function reconcilePayglocal() {
   if (config().paymentProvider !== "payglocal") return { skipped: "provider dormant" };
   const provider = createPayglocalProvider(fetch, 3000);
-  const rows = await db.from("payglocal_orders").select("id").eq("environment", provider.environment)
+  const rows = await db.from("payglocal_orders").select("id,reconcile_count").eq("environment", provider.environment)
     .or("status.eq.pending,and(status.eq.paid,quantity.eq.0,refund_status.is.null,review_allowed.is.null),and(status.eq.paid,quantity.eq.0,refund_status.is.null,review_allowed.eq.false)")
     .lt("created_at", new Date(Date.now()-5*60000).toISOString()).order("reconciled_at", { ascending: true, nullsFirst: true }).order("created_at").limit(10); checked(rows);
   let finalized=0, expired=0, errors=0;
   await Promise.all((rows.data ?? []).map(async (row) => {
     try { const r = await processPayglocalOrder(row.id, provider, undefined, true); if (r.status === "paid") finalized++; if (r.status === "expired") expired++; }
-    catch { errors++; checked(await db.from("events").insert({ kind: "payglocal_reconcile_error", detail: { orderId: row.id } })); }
+    catch { errors++; checked(await db.from("payglocal_orders").update({ reconciled_at: new Date().toISOString(), reconcile_count: row.reconcile_count+1, reconcile_result: "error" }).eq("id", row.id)); checked(await db.from("events").insert({ kind: "payglocal_reconcile_error", detail: { orderId: row.id } })); }
   }));
   checked(await db.from("events").insert({ kind: "payglocal_reconcile", detail: { environment: provider.environment, checked: rows.data?.length ?? 0, finalized, expired, errors } }));
   return { checked: rows.data?.length ?? 0, finalized, expired, errors };
