@@ -3,7 +3,7 @@ export const supportAnswers = [
   {
     id: "pulls",
     title: "What does a pull buy?",
-    text: "Each pull costs exactly $1. Buy prepaid packs of 5 pulls for $5, 10 for $10, or 25 for $25, in US dollars only. Unused pulls never expire. Packs are non-refundable except where required by law. Choose a side and spend your pulls to move its rope. There are no prizes, payouts, or winnings. Losing a round does not qualify for a refund. Save your private recovery link to restore your balance on another device; anyone with that link can spend your pulls.",
+    text: "Each pull costs exactly $1. Buy a one-time bundle of 5 pulls for $5, 10 for $10, or 25 for $25, in US dollars only. Choose a side before paying. After verified payment, the entire bundle is applied immediately to that side; there are no credits, stored balances or unused pulls to carry over. Bundles are non-refundable except where required by law. Failed or expired payments apply nothing. There are no prizes, payouts, or winnings. Losing a round does not qualify for a refund.",
   },
   {
     id: "rounds",
@@ -18,12 +18,12 @@ export const supportAnswers = [
   {
     id: "rejected",
     title: "What if moderation rejects my matchup?",
-    text: "Matchups rejected by moderation are refunded automatically and in full to the original payment method through Dodo Payments. The time it takes to appear depends on Dodo Payments and your bank. Support cannot promise a refund for an approved matchup or an ordinary pull.",
+    text: "Matchups rejected by moderation are refunded automatically and in full to the original payment method through PayGlocal. The time it takes to appear depends on PayGlocal and your bank. Support cannot promise a refund for an approved matchup or an ordinary pull.",
   },
   {
     id: "payment",
     title: "What if I have a payment error?",
-    text: "Dodo Payments processes payments as merchant of record. Packs are credited only after a verified payment webhook; returning from checkout does not confirm payment. A pull counts when its wallet debit and rope update succeed together. Use the contact form with your checkout email and Dodo payment reference for a genuine payment error. Verified technical errors are reviewed under the published policy and applicable law; support cannot invent refund exceptions. A pending payment or short confirmation delay is not proof of an error.",
+    text: "PayGlocal (RBI-authorised) processes payments through a hosted checkout. Bundles are applied only after a verified payment callback or a server-side status check; returning from checkout does not confirm payment. All pulls in the bundle and the matching accounting entries succeed together. Use the contact form with your checkout email and PayGlocal payment reference for a genuine payment error. Verified technical errors are reviewed under the published policy and applicable law; support cannot invent refund exceptions. A pending payment or short confirmation delay is not proof of an error.",
   },
   {
     id: "moderation",
@@ -33,7 +33,7 @@ export const supportAnswers = [
   {
     id: "privacy",
     title: "What information does Tugg store?",
-    text: "Tugg stores payment references, wallet token hashes, balances and ledger entries, pull amounts, optional public display names and shout-outs, billing country information, matchup submissions, and support messages and replies. Dodo Payments handles payment details; Tugg does not store full card numbers. Your wallet token is saved in browser storage; only its hash is stored on the server. Support records are private and accessible only to the owner. Hashed network identifiers limit abuse. Support text is sent to an AI service to match questions to published policies; do not include card numbers, passwords, recovery links, or sensitive personal information.",
+    text: "Tugg stores payment references, purchase and ledger entries, pull amounts, optional public display names and shout-outs, billing country information, matchup submissions, and support messages and replies. Billing name, email and address are sent securely to PayGlocal to process digital purchases and risk checks. PayGlocal handles card details on its hosted checkout; card data never touches Tugg servers. Legacy wallet records are retained privately but wallets are dormant in immediate-bundle mode. Support records are private and accessible only to the owner. Hashed network identifiers limit abuse. Support text is sent to an AI service to match questions to published policies; do not include card numbers, passwords, recovery links, or sensitive personal information.",
   },
   { id: "images", title: "Side pictures and takedowns", text: IMAGE_POLICY },
   {
@@ -117,7 +117,7 @@ export const policySections = {
       { title: "Genuine payment errors", text: supportAnswers[4].text },
       {
         title: "Payment processing",
-        text: "Dodo Payments is the merchant of record and processes payments and refunds. Refunds go to the original payment method. Applicable statutory consumer rights remain unchanged.",
+        text: "PayGlocal (RBI-authorised) processes payments and refunds for Tugg. Refunds go to the original payment method. Applicable statutory consumer rights remain unchanged.",
       },
     ],
   },
@@ -131,7 +131,7 @@ export const policySections = {
       },
       {
         title: "Payments and content",
-        text: "Dodo Payments processes payments as merchant of record. Brands, teams, and places named in matchups are not sponsors or partners unless explicitly stated. Tugg does not claim ownership of their names.",
+        text: "PayGlocal (RBI-authorised) processes payments for Tugg. Brands, teams, and places named in matchups are not sponsors or partners unless explicitly stated. Tugg does not claim ownership of their names.",
       },
     ],
   },

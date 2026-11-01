@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Shell } from "./Shell";
 import { policySections, type PolicyPageId } from "@/lib/policies";
-export function PolicyPage({ id, email }: { id: PolicyPageId; email?: string | null }) {
+export function PolicyPage({ id, email, operator }: { id: PolicyPageId; email?: string | null; operator?: string | null }) {
   const page = policySections[id];
   return (
     <Shell>
@@ -19,7 +19,8 @@ export function PolicyPage({ id, email }: { id: PolicyPageId; email?: string | n
         </div>
         {id === "about-legal" && (
           <section className="border-t border-border py-6">
-            <h2 className="text-2xl font-bold">Contact Tugg</h2>
+            <h2 className="text-2xl font-bold">Operator and contact</h2>
+            <p className="mt-3 text-muted-foreground">{operator ? `Operated by ${operator}.` : "Operator identity is being configured; checkout remains unavailable."}</p>
             {email ? (
               <a className="mt-3 block text-primary" href={`mailto:${email}`}>
                 {email}

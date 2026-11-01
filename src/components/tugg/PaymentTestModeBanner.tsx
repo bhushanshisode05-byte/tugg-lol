@@ -13,16 +13,16 @@ export function PaymentTestModeBanner() {
   if (!status?.ready) {
     return (
       <div className="w-full border-b border-destructive bg-destructive/20 px-4 py-2 text-center text-sm">
-        Dodo checkout is not configured yet. No new payments can be taken.
+        {status?.message || "PayGlocal checkout is not configured yet. No new payments can be taken."}
       </div>
     );
   }
   if (status.environment === "sandbox") {
     return (
       <div className="w-full border-b border-primary/40 bg-primary/15 px-4 py-2 text-center text-xs font-semibold">
-        Dodo test mode: 4242 4242 4242 4242 · expiry 06/32 · CVV 123. No real money moves.{" "}
+        {status.provider === "payglocal" ? "PayGlocal test mode: 4111 1111 1111 1111 · any future expiry · any 3-digit CVV. Reference card—confirm for your merchant account. No real money moves." : "Dodo test mode: 4242 4242 4242 4242 · expiry 06/32 · CVV 123. No real money moves."}{" "}
         <a
-          href="https://docs.dodopayments.com/miscellaneous/testing-process"
+          href={status.provider === "payglocal" ? "https://payglocal.in/docs/guides/testing" : "https://docs.dodopayments.com/miscellaneous/testing-process"}
           target="_blank"
           rel="noopener noreferrer"
           className="underline"
