@@ -4,6 +4,10 @@ export type VerifiedPayment = {
   metadata: Record<string, unknown>;
   product_cart: { product_id: string; quantity: number }[];
   billing?: { country?: string | undefined } | undefined;
+  checkout_session_id?: string | null | undefined;
+  customer?: { email: string } | undefined;
+  created_at?: string | undefined;
+  refunds?: { refund_id: string; status: string; amount?: number | null | undefined; currency?: string | null | undefined }[] | undefined;
 };
 export interface PaymentProvider {
   environment: PaymentsEnv;

@@ -24,6 +24,9 @@ const paymentSchema = z.object({
   total_amount: z.number().int().nonnegative(), metadata: z.record(z.unknown()).default({}),
   product_cart: z.array(z.object({ product_id: z.string(), quantity: z.number().int() })).max(20),
   billing: z.object({ country: z.string().max(2).optional() }).optional(),
+  checkout_session_id: z.string().nullable().optional(),
+  customer: z.object({ email: z.string() }).optional(), created_at: z.string().optional(),
+  refunds: z.array(z.object({ refund_id: z.string(), status: z.string(), amount: z.number().nullable().optional(), currency: z.string().nullable().optional() })).optional(),
 });
 export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProvider {
   const environment = config().paymentsEnv;
@@ -42,7 +45,7 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProv
     async validateProduct(id, cents) {
       const product = await api(`/products/${encodeURIComponent(id)}`);
       const p = product.price;
-      if (!p || p.type !== "one_time_price" || p.currency !== "USD" || p.price !== cents || p.pay_what_you_want || p.tax_inclusive !== true)
+      if (!p || p.type !== "one_time_price" || p.currency !== "USD" || p.price !== cents || p.pay_what_you_want || p.purchasing_power_parity || p.discount || p.discount_bps || p.tax_inclusive !== true)
         throw new Error("Dodo product must have the exact tax-inclusive one-time USD price. No payment has been taken.");
     },
     async checkout(input) {

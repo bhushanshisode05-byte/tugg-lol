@@ -12,7 +12,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
   const id = z.string().uuid().parse(payment.metadata["tugg_order_id"]);
   const result = await db.from("dodo_orders").select("*").eq("id", id).single(); checked(result);
   const order = result.data;
-  if (!order || order.environment !== provider.environment || payment.metadata["tugg_environment"] !== provider.environment || payment.currency !== "USD" || payment.total_amount !== order.expected_cents || payment.product_cart.length !== 1 || payment.product_cart[0]?.product_id !== order.product_id || payment.product_cart[0]?.quantity !== 1 || order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents) throw new Error("Payment does not match order");
+  if (!order || order.environment !== provider.environment || payment.metadata["tugg_environment"] !== provider.environment || payment.currency !== "USD" || payment.total_amount !== order.expected_cents || payment.product_cart.length !== 1 || payment.product_cart[0]?.product_id !== order.product_id || payment.product_cart[0]?.quantity !== 1 || order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents || payment.checkout_session_id !== order.checkout_id || (order.payment_id && order.payment_id !== payment.payment_id)) throw new Error("Payment does not match order");
   if (event.type.startsWith("dispute.")) {
     if (order.wallet_id) checked(await db.from("pull_wallets").update({ flagged: true }).eq("id", order.wallet_id));
     checked(await db.from("events").insert({ kind: "dodo_dispute", detail: { paymentId: payment.payment_id, type: event.type } })); return;
@@ -22,9 +22,11 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
   }
   if (event.type === "refund.failed" || event.type === "refund.succeeded") {
     if (!event.data.refund_id) throw new Error("Refund reference missing");
+    const refund = payment.refunds?.find((r) => r.refund_id === event.data.refund_id);
+    if (!refund || refund.status !== (event.type === "refund.succeeded" ? "succeeded" : "failed")) throw new Error("Refund not verified");
     if (event.type === "refund.succeeded" && order.wallet_id) {
-      if (event.data.currency && event.data.currency !== "USD") throw new Error("Refund currency mismatch");
-      checked(await db.rpc("refund_dodo_wallet", { p_order: id, p_refund: event.data.refund_id, p_cents: event.data.amount ?? order.expected_cents }));
+      if (refund.currency !== "USD" || refund.amount == null) throw new Error("Refund currency or amount missing");
+      checked(await db.rpc("refund_dodo_wallet", { p_order: id, p_refund: event.data.refund_id, p_cents: refund.amount }));
     }
     checked(await db.from("dodo_orders").update({ refund_id: event.data.refund_id, refund_status: event.type === "refund.succeeded" ? "succeeded" : "failed" }).eq("id", id));
     if (event.type === "refund.succeeded") checked(await db.from("creators").update({ refunded: true }).eq("dodo_order_id", id));
