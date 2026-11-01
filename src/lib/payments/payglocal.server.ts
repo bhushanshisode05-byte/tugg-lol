@@ -4,6 +4,11 @@ import { config } from "../server-utils.server";
 import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { signPayglocalRequest } from "./payglocal-crypto";
 export const PAYGLOCAL_NOT_READY = "PayGlocal checkout is not configured yet. No payment has been taken. Please try again later.";
+export function payglocalHostedUrl(value: string) {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password || !(url.hostname === "payglocal.in" || url.hostname.endsWith(".payglocal.in"))) throw new Error("Invalid payment address");
+  return value;
+}
 export function payglocalSettings() {
   const c = config(), s = c.payglocal;
   if (!s.merchantId || !s.keyId || !s.privateKey || !s.publicCert || s.merchantId === s.otherMerchantId || s.keyId === s.otherKeyId) throw new Error(PAYGLOCAL_NOT_READY);
@@ -46,8 +51,7 @@ export function createPayglocalProvider(fetchImpl: typeof fetch = fetch): Paymen
       const raw = await request("/gl/v1/payments/initiate/paycollect", "POST", { merchantTxnId: id, merchantUniqueId: id, paymentData: { totalAmount: (input.cents / 100).toFixed(2), txnCurrency: "USD", billingData: input.billing }, riskData: { shippingData: input.billing }, merchantCallbackURL: callback.toString() });
       const data = raw["data"] as Record<string, unknown> | undefined;
       const gid = z.string().min(1).max(200).parse(raw["gid"]);
-      const url = z.string().url().parse(data?.["redirectUrl"]);
-      if (new URL(url).protocol !== "https:") throw new Error("Invalid payment address");
+      const url = payglocalHostedUrl(z.string().url().parse(data?.["redirectUrl"]));
       const statusUrl = typeof data?.["statusUrl"] === "string" ? data["statusUrl"] : undefined;
       if (statusUrl) {
         const status = new URL(statusUrl);

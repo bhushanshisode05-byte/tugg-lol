@@ -19,6 +19,11 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
   try {
     const result = await db.from("payglocal_orders").select("*").eq("id", id).eq("environment", provider.environment).single(); checked(result);
     const o = result.data; if (!o) throw new Error("Payment order unavailable");
+    if (o.status === "expired" || o.status === "failed") {
+      // Terminal unpaid orders never acquire pulls from a late or contradictory callback.
+      if (verified?.status === "SENT_FOR_CAPTURE") checked(await db.from("events").insert({ kind: "payglocal_late_capture_review", detail: { orderId: id, environment: provider.environment } }));
+      return { status: o.status };
+    }
     if (o.status === "paid" && (o.quantity > 0 || o.review_allowed === true || o.refund_status)) return { status: "paid", duplicate: true };
     const payment = verified ?? await provider.payment(o.gid || o.merchant_unique_id, o.status_url);
     // Status by merchant ID recovers an initiation whose response was lost. Never retry initiate.

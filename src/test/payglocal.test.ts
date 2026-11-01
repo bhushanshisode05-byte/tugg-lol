@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash, generateKeyPairSync, sign, verify } from "node:crypto";
 import { signPayglocalRequest, verifyPayglocalToken } from "@/lib/payments/payglocal-crypto";
-import { createPayglocalProvider, normalizePayglocal, payglocalSettings } from "@/lib/payments/payglocal.server";
+import { createPayglocalProvider, normalizePayglocal, payglocalSettings, payglocalHostedUrl } from "@/lib/payments/payglocal.server";
 import { paymentReadiness } from "@/lib/payments/selection.server";
 import { config, liveOnly } from "@/lib/server-utils.server";
 import { PRODUCTS } from "@/lib/payments/catalog";
@@ -41,5 +41,6 @@ describe("PayGlocal cryptography and provider",()=>{
   });
   it("normalizes documented capitalized status amounts and transaction currency, not billing currency",()=>expect(normalizePayglocal({gid:"g",status:"SENT_FOR_CAPTURE",data:{Amount:"5",txnCurrency:"USD",Currency:"INR",merchantTxnId:"id"}},"sandbox")).toMatchObject({total_amount:500,currency:"USD"}));
   it("rejects cross-environment status URLs before sending credentials",async()=>{const f=vi.fn();await expect(createPayglocalProvider(f).payment("gid","https://api.payglocal.in/gl/v1/payments/gid/status")).rejects.toThrow();expect(f).not.toHaveBeenCalled();});
+  it("rejects an external hosted checkout address",()=>expect(()=>payglocalHostedUrl("https://payglocal.in.attacker.test/pay")).toThrow());
   it("excludes sandbox pulls in public live queries",()=>{vi.stubEnv("PAYMENTS_ENV","live");expect(liveOnly()).toBe(true);expect(config().paymentsEnv).toBe("live");});
 });
