@@ -61,9 +61,9 @@ export function ContactForm() {
       </label>
       <label className="block space-y-2">
         <span>
-          Stripe checkout reference <span className="text-muted-foreground">(optional)</span>
+          Dodo payment reference <span className="text-muted-foreground">(optional)</span>
         </span>
-        <Input name="sessionId" maxLength={200} placeholder="cs_…" />
+        <Input name="sessionId" maxLength={200} placeholder="Payment reference" />
       </label>
       <p className="text-sm text-muted-foreground">
         Messages and replies are stored privately. Do not include card numbers or passwords. For

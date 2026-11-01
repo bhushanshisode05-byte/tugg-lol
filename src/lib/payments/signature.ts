@@ -7,7 +7,7 @@ export async function verifyDodoSignature(raw: string, headers: Headers, secret:
     throw new Error("Invalid signature");
   if (Math.abs(now / 1000 - Number(timestamp)) > 300) throw new Error("Expired signature");
   const encoded = secret.startsWith("whsec_") ? secret.slice(6) : secret;
-  let bytes: Uint8Array;
+  let bytes: Uint8Array<ArrayBuffer>;
   try { bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)); }
   catch { throw new Error("Webhook configuration unavailable"); }
   const key = await crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
