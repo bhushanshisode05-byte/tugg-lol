@@ -3,7 +3,8 @@
 ## Dodo payments and pull wallets (do not publish)
 - [x] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements; recorded in DODO_SETUP.md.
 - [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later. Blocker: user must add test credentials in Secrets.
-- [ ] Resolve custom Dodo payment setup availability. Blocker: session payment guidance prohibits payment implementation before setup is enabled; setup tools are unavailable. Never reconnect Stripe or enable managed Stripe/Paddle as a workaround.
+- [x] Custom third-party Dodo integration explicitly authorized; no managed Stripe/Paddle setup is needed or enabled.
+- [ ] Implement without credentials, fail closed, and verify with mocked Dodo plus real signed webhook fixtures; do not publish.
 - [ ] Add provider interface, isolated test/live configuration, pull packs and Dodo matchup checkout.
 - [ ] Add private hash-token wallets, idempotent credit ledger and atomic spending through the round engine.
 - [ ] Add balance, pack purchase, recovery link, Turnstile/paused protections and read-only owner reporting.
