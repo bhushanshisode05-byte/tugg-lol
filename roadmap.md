@@ -1,5 +1,15 @@
 # Tugg roadmap
 
+## PayGlocal immediate bundles (do not publish)
+- [ ] Read official signing, hosted checkout, callback, status, refund and test-card documentation.
+- [ ] Add server-selected provider and immediate mode; keep Dodo/wallet code dormant.
+- [ ] Add private durable orders, atomic immediate pulls and refund/reconcile claims with additive schema.
+- [ ] Implement signed requests, verified callbacks/Get Status fallback and pending reconciliation.
+- [ ] Update pull/create checkout, policies, operator identity, banner and read-only reporting.
+- [ ] Test signing, isolation, replay/concurrency, rollback, refunds, pause and missing keys.
+- [ ] Write PAYGLOCAL_SETUP.md with dashboard steps and exact remaining verification blockers.
+- [ ] Real sandbox checkout/callback/refund verification. Blocker: owner-provided sandbox credentials and merchant onboarding.
+
 ## Dodo payments and pull wallets (do not publish)
 - [x] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements; recorded in DODO_SETUP.md.
 - [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later. Blocker: user must add test credentials in Secrets.
