@@ -12,7 +12,8 @@ import { SideAvatar } from "@/components/tugg/SideAvatar";
 
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { getPaymentStatus } from "@/lib/payments.functions";
-import { DODO_NOT_READY } from "@/lib/payments/catalog";
+import { BillingFields, emptyBilling } from "@/components/tugg/BillingFields";
+import { billingSchema } from "@/lib/payments/billing";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -70,9 +71,12 @@ function CreateForm() {
   const checkout = useServerFn(createMatchupCheckout);
   const getPayments = useServerFn(getPaymentStatus);
   const [ready, setReady] = useState(false);
+  const [provider,setProvider] = useState("payglocal");
+  const [message,setMessage] = useState("PayGlocal checkout is not configured yet. No payment has been taken.");
+  const [billing,setBilling] = useState(emptyBilling);
   useEffect(() => {
     getPayments()
-      .then((s) => setReady(s.ready))
+      .then((s) => { setReady(s.ready && !s.paused); setProvider(s.provider); setMessage(s.paused ? "Payments are paused right now." : s.message); })
       .catch(() => setReady(false));
   }, [getPayments]);
   const [a, setA] = useState<SideIn>({ name: "", emoji: "🔥", color: "#e8ff3a" });
@@ -99,11 +103,11 @@ function CreateForm() {
       <h1 className="font-display text-5xl font-extrabold">Start a rivalry</h1>
       <p className="mt-2 text-muted-foreground">
         Brands, places, teams, foods, ideas. No private people, politics, hate or adult stuff.
-        Rejected matchups are refunded automatically.
+        Rejected matchups are refunded automatically. Payments are processed by PayGlocal (RBI-authorised).
       </p>
 
       {pay ? (
-        <p className="mt-8 text-muted-foreground">Opening Dodo checkout…</p>
+        <p className="mt-8 text-muted-foreground">Opening secure checkout…</p>
       ) : (
         <div className="mt-8 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -240,7 +244,8 @@ function CreateForm() {
               may be removed after reports.
             </p>
           )}
-          {!ready && <p className="text-sm text-muted-foreground">{DODO_NOT_READY}</p>}
+          {!ready && <p className="text-sm text-muted-foreground">{message}</p>}
+          {ready && provider === "payglocal" && <BillingFields value={billing} onChange={setBilling}/>}
           {ready && <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />}
           {err && (
             <p role="alert" className="text-sm text-destructive">
@@ -248,7 +253,7 @@ function CreateForm() {
             </p>
           )}
           <Button
-            disabled={!ok || !token || !ready}
+            disabled={!ok || !token || !ready || (provider === "payglocal" && !billingSchema.safeParse(billing).success)}
             onClick={async () => {
               setErr(null);
               setPay(true);
@@ -261,6 +266,7 @@ function CreateForm() {
                     a,
                     b,
                     tier,
+                    ...(provider === "payglocal" ? { billing } : {}),
                     returnUrl: `${window.location.origin}/create`,
                     turnstileToken: token ?? undefined,
                   },
@@ -271,7 +277,7 @@ function CreateForm() {
                   setToken(null);
                 } else window.location.assign(r.url);
               } catch {
-                setErr("Could not open Dodo checkout.");
+                setErr("Could not open checkout.");
                 setPay(false);
                 setToken(null);
               }
@@ -307,7 +313,9 @@ function CreationStatus({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-20 text-center">
-      {!s || s.status === "pending_payment" || s.status === "pending_review" ? (
+      {s?.paymentStatus === "failed" || s?.paymentStatus === "expired" ? (
+        <><h1 className="font-display text-4xl font-extrabold">Payment not completed</h1><p className="mt-2 text-muted-foreground">No matchup was activated. You can submit again.</p></>
+      ) : !s || s.status === "pending_payment" || s.status === "pending_review" ? (
         <>
           <h1 className="font-display text-4xl font-extrabold">Checking your matchup…</h1>
           <p className="mt-2 text-muted-foreground">

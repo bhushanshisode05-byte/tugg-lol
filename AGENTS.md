@@ -12,8 +12,8 @@
 ## Tugg architecture
 - Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; wallet spending calls record_pull within the same locked SQL transaction as the debit; credits come only from verified provider payments. Why: no overdraw or unpaid pulls.
 - Public pages read through publishable-key server functions in src/lib/tugg.functions.ts so SSR serves full HTML to crawlers.
-- Env switches (SITE_URL, PAUSE_PULLS, TEST_MODE, AI_GENERATOR_ENABLED) are read only via config() in src/lib/server-utils.server.ts.
-- Dodo uses a fetch-based PaymentProvider interface; PAYMENTS_ENV via config() alone selects the API host, credentials, products, wallets and webhook secret. Why: mode-specific provider authentication isolates real and test payments.
+- All environment switches and PayGlocal credentials are read only via config() in src/lib/server-utils.server.ts. Why: request-time server configuration never enters browser bundles.
+- The fetch-based PaymentProvider interface selects PayGlocal or dormant Dodo server-side; PAYMENTS_ENV alone selects credentials and hosts, and mode gates reject dormant wallet endpoints. Why: provider rollback must not mix environments or unpaid fulfillment.
 - Public pull data is served only through SECURITY DEFINER tugg_* SQL functions (aggregates, live-only filter); the pulls table has no anon/authenticated access. Why: hides stripe_session_id and keeps totals exact past row limits.
 - Realtime listens to rounds only; every recorded pull updates its round row. Why: pulls aren't publicly readable.
 - Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.
@@ -36,3 +36,7 @@
 - Refund POSTs are claimed durably once; uncertain outcomes require reconciliation and are never blindly retried because Dodo refund idempotency is undocumented. Why: avoid duplicate refunds.
 - Recovery tokens travel only in URL fragments and request bodies; browser storage is environment-scoped and the database stores only SHA-256 hashes. Why: wallet links are bearer credentials.
 - Legacy Stripe modules remain disconnected and their webhook is disabled until real Dodo sandbox verification permits deletion. Why: preserve the requested staged migration without allowing legacy writes.
+- PayGlocal orders and matching immediate credit/debit entries are service-only; apply_payglocal_payment calls record_pull inside one locked SQL transaction with unique order/gid guards and zero carryover. Why: concurrent or replayed callbacks cannot duplicate pulls or partially apply a bundle.
+- PayGlocal callbacks verify RS256 with the environment PUBCERT and merchant identity; incomplete/unverified callbacks use only the stored gid/merchant ID for authenticated Get Status. Why: browser redirects and decoded claims are never payment proof.
+- PayGlocal request JWS signs the official digest-object format over exact body bytes; returned status URLs stay on the selected API origin and hosted redirects stay under payglocal.in. Why: preserve protocol integrity and prevent credential forwarding.
+- Managed payment reconciliation checks overdue orders in bounded batches; expired/failed payments cannot become paid, and uncertain refunds are claimed once and left for owner review. Why: abandoned browser flows need recovery without blind refund retries.

@@ -40,6 +40,7 @@ import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
+import { Route as ApiPublicJobsPaymentsRouteImport } from './routes/api/public/jobs/payments'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicSideImagesIdRouteImport } from './routes/api/public/side-images/$id'
 import { Route as ApiPublicSideImagesReportRouteImport } from './routes/api/public/side-images/report'
@@ -49,6 +50,7 @@ import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
 import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
 import { Route as ApiPublicPaymentsDodoWebhookRouteImport } from './routes/api/public/payments/dodo/webhook'
+import { Route as ApiPublicPaymentsPayglocalCallbackRouteImport } from './routes/api/public/payments/payglocal/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -204,6 +206,11 @@ const ApiPublicJobsDailyRoute = ApiPublicJobsDailyRouteImport.update({
   path: '/api/public/jobs/daily',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsPaymentsRoute = ApiPublicJobsPaymentsRouteImport.update({
+  id: '/api/public/jobs/payments',
+  path: '/api/public/jobs/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -253,6 +260,12 @@ const ApiPublicPaymentsDodoWebhookRoute =
     path: '/api/public/payments/dodo/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsPayglocalCallbackRoute =
+  ApiPublicPaymentsPayglocalCallbackRouteImport.update({
+    id: '/api/public/payments/payglocal/callback',
+    path: '/api/public/payments/payglocal/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -285,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
   '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
@@ -294,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
+  '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -326,6 +341,7 @@ export interface FileRoutesByTo {
   '/recap': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
   '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
@@ -335,6 +351,7 @@ export interface FileRoutesByTo {
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
+  '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -369,6 +386,7 @@ export interface FileRoutesById {
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
   '/api/public/side-images/report': typeof ApiPublicSideImagesReportRoute
@@ -378,6 +396,7 @@ export interface FileRoutesById {
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
+  '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -412,6 +431,7 @@ export interface FileRouteTypes {
     | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
     | '/api/public/side-images/report'
@@ -421,6 +441,7 @@ export interface FileRouteTypes {
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
+    | '/api/public/payments/payglocal/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -453,6 +474,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
     | '/api/public/side-images/report'
@@ -462,6 +484,7 @@ export interface FileRouteTypes {
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
+    | '/api/public/payments/payglocal/callback'
   id:
     | '__root__'
     | '/'
@@ -495,6 +518,7 @@ export interface FileRouteTypes {
     | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
     | '/api/public/side-images/report'
@@ -504,6 +528,7 @@ export interface FileRouteTypes {
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
+    | '/api/public/payments/payglocal/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -537,6 +562,7 @@ export interface RootRouteChildren {
   RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
+  ApiPublicJobsPaymentsRoute: typeof ApiPublicJobsPaymentsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicSideImagesIdRoute: typeof ApiPublicSideImagesIdRoute
   ApiPublicSideImagesReportRoute: typeof ApiPublicSideImagesReportRoute
@@ -546,6 +572,7 @@ export interface RootRouteChildren {
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
   ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
   ApiPublicPaymentsDodoWebhookRoute: typeof ApiPublicPaymentsDodoWebhookRoute
+  ApiPublicPaymentsPayglocalCallbackRoute: typeof ApiPublicPaymentsPayglocalCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -767,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/payments': {
+      id: '/api/public/jobs/payments'
+      path: '/api/public/jobs/payments'
+      fullPath: '/api/public/jobs/payments'
+      preLoaderRoute: typeof ApiPublicJobsPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -830,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsDodoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/payglocal/callback': {
+      id: '/api/public/payments/payglocal/callback'
+      path: '/api/public/payments/payglocal/callback'
+      fullPath: '/api/public/payments/payglocal/callback'
+      preLoaderRoute: typeof ApiPublicPaymentsPayglocalCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -875,6 +916,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
+  ApiPublicJobsPaymentsRoute: ApiPublicJobsPaymentsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicSideImagesIdRoute: ApiPublicSideImagesIdRoute,
   ApiPublicSideImagesReportRoute: ApiPublicSideImagesReportRoute,
@@ -884,6 +926,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
   ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
   ApiPublicPaymentsDodoWebhookRoute: ApiPublicPaymentsDodoWebhookRoute,
+  ApiPublicPaymentsPayglocalCallbackRoute:
+    ApiPublicPaymentsPayglocalCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -6,6 +6,7 @@ import { webhookPayload, processDodoEvent } from "@/lib/payments/fulfillment.ser
 export const Route = createFileRoute("/api/public/payments/dodo/webhook")({
   staticData: { sitemap: false }, server: { handlers: {
     POST: async ({ request }) => {
+      if (config().paymentProvider !== "dodo") return new Response("Dodo is dormant", { status: 410 });
       const env = config().paymentsEnv;
       if (new URL(request.url).searchParams.get("env") !== env) return new Response("Wrong payment environment", { status: 403 });
       let settings;

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   buyPullPack: vi.fn(),
 }));
 vi.mock("@/lib/payments.functions", () => mocks);
+vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: vi.fn(), getImmediatePayment: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
 vi.mock("@/components/tugg/Turnstile", () => ({
   Turnstile: ({ onToken }: any) => (
@@ -23,7 +24,7 @@ beforeEach(() => {
   localStorage.clear();
   history.replaceState(null, "", "/");
   Object.values(mocks).forEach((f) => f.mockReset());
-  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", ready: true });
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", pullMode: "wallet", ready: true });
   mocks.getWallet.mockResolvedValue({ balance: 10, flagged: false, paid: true });
 });
 describe("wallet recovery and one-tap UI", () => {
@@ -57,7 +58,7 @@ describe("wallet recovery and one-tap UI", () => {
     );
   });
   it("missing Dodo setup disables all three pack purchases", async () => {
-    mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", ready: false });
+    mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", pullMode: "wallet", ready: false });
     render(<PullPanel sides={sides} slug="pizza-vs-burgers" paused={false} onPulled={vi.fn()} />);
     await screen.findByText(/Dodo checkout is not configured yet/);
     for (const p of [5, 10, 25])

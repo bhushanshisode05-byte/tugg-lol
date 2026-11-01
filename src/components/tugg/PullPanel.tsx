@@ -10,8 +10,9 @@ import { spendOptions, DODO_NOT_READY } from "@/lib/payments/catalog";
 import { walletTokenPattern, newWalletToken } from "@/lib/payments/wallet";
 import type { Side } from "@/lib/tugg.functions";
 import { Copy } from "lucide-react";
+import { ImmediatePullPanel } from "./ImmediatePullPanel";
 
-export function PullPanel({
+function WalletPullPanel({
   sides,
   slug,
   paused,
@@ -270,4 +271,12 @@ export function PullPanel({
       </p>
     </section>
   );
+}
+
+export function PullPanel(props: { sides: Side[]; slug: string; paused: boolean; onPulled: () => void }) {
+  const status=useServerFn(getPaymentStatus);
+  const [configuration,setConfiguration]=useState<Awaited<ReturnType<typeof getPaymentStatus>>|null>(null);
+  useEffect(()=>{status().then(setConfiguration).catch(()=>setConfiguration(null));},[status]);
+  if(configuration?.provider === "dodo" && configuration.pullMode === "wallet") return <WalletPullPanel {...props}/>;
+  return <ImmediatePullPanel {...props} paused={props.paused || !!configuration?.paused} ready={!!configuration?.ready} message={configuration?.message || "PayGlocal checkout is not configured yet. No payment has been taken. Please try again later."}/>;
 }

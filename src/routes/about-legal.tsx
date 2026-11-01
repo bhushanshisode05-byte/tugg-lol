@@ -10,6 +10,6 @@ export const Route = createFileRoute("/about-legal")({
   component: Page,
 });
 function Page() {
-  const { email } = Route.useLoaderData();
-  return <PolicyPage id="about-legal" email={email} />;
+  const { email, operator } = Route.useLoaderData();
+  return <PolicyPage id="about-legal" email={email} operator={operator} />;
 }

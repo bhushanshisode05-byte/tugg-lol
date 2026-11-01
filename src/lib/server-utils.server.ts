@@ -28,6 +28,22 @@ export const config = () => ({
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
   ownerEmail: process.env["OWNER_EMAIL"]?.trim() || "",
+  ownerName: process.env["OWNER_NAME"]?.trim() || "",
+  paymentProvider: (process.env["PAYMENT_PROVIDER"] || "payglocal").toLowerCase(),
+  pullMode: (process.env["PULL_MODE"] || "immediate").toLowerCase(),
+  payglocal: (() => {
+    const live = (process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live";
+    const prefix = `PAYGLOCAL_${live ? "LIVE" : "SANDBOX"}`;
+    const opposite = `PAYGLOCAL_${live ? "SANDBOX" : "LIVE"}`;
+    return {
+      merchantId: process.env[`${prefix}_MERCHANT_ID`] || "",
+      keyId: process.env[`${prefix}_KEY_ID`] || "",
+      privateKey: process.env[`${prefix}_PRIVATE_KEY`] || "",
+      publicCert: process.env[`${prefix}_PUBLIC_CERT`] || "",
+      otherMerchantId: process.env[`${opposite}_MERCHANT_ID`] || "",
+      otherKeyId: process.env[`${opposite}_KEY_ID`] || "",
+    };
+  })(),
   /** Server-only payment environment. Anything but "live" means sandbox. */
   paymentsEnv: ((process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live" ? "live" : "sandbox") as "sandbox" | "live",
 });

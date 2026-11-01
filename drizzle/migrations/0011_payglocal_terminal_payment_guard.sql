@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION public.guard_payglocal_terminal_payment() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF OLD.status IN ('failed','expired') AND NEW.status='paid' THEN RAISE EXCEPTION 'Terminal unpaid payment requires review'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER payglocal_terminal_payment_guard BEFORE UPDATE OF status ON public.payglocal_orders FOR EACH ROW EXECUTE FUNCTION public.guard_payglocal_terminal_payment();
