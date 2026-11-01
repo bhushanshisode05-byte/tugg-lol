@@ -1,13 +1,14 @@
 # Tugg roadmap
 
 ## PayGlocal immediate bundles (do not publish)
-- [ ] Read official signing, hosted checkout, callback, status, refund and test-card documentation.
-- [ ] Add server-selected provider and immediate mode; keep Dodo/wallet code dormant.
-- [ ] Add private durable orders, atomic immediate pulls and refund/reconcile claims with additive schema.
-- [ ] Implement signed requests, verified callbacks/Get Status fallback and pending reconciliation.
-- [ ] Update pull/create checkout, policies, operator identity, banner and read-only reporting.
-- [ ] Test signing, isolation, replay/concurrency, rollback, refunds, pause and missing keys.
-- [ ] Write PAYGLOCAL_SETUP.md with dashboard steps and exact remaining verification blockers.
+- [x] Read official signing, hosted checkout, callback, status, refund and test-card documentation; official JS digest-object implementation checked.
+- [x] Add server-selected provider and immediate mode; keep Dodo/wallet code dormant.
+- [x] Add private durable orders, atomic immediate pulls and refund/reconcile claims with additive schema; schema existence confirmed.
+- [x] Implement signed requests, verified callbacks/Get Status fallback and five-minute managed pending reconciliation.
+- [x] Update pull/create checkout, shared policies, operator identity fields, banner and read-only reporting.
+- [x] 158 automated tests pass; isolated SQL rollback and ten-callback concurrency pass; desktop/mobile missing-key paths pass.
+- [x] Write PAYGLOCAL_SETUP.md with dashboard steps and exact remaining verification blockers; no publishing or managed Stripe/Paddle.
+- [ ] Configure OWNER_NAME and OWNER_EMAIL, four sandbox credentials, Turnstile public key and merchant-specific sandbox approval. Blocker: owner-provided values.
 - [ ] Real sandbox checkout/callback/refund verification. Blocker: owner-provided sandbox credentials and merchant onboarding.
 
 ## Dodo payments and pull wallets (do not publish)
