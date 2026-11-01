@@ -117,6 +117,7 @@ export type Database = {
           kind: string
           matchup_id: string | null
           payment_id: string | null
+          processing_until: string | null
           product_id: string
           refund_id: string | null
           refund_status: string | null
@@ -134,6 +135,7 @@ export type Database = {
           kind: string
           matchup_id?: string | null
           payment_id?: string | null
+          processing_until?: string | null
           product_id: string
           refund_id?: string | null
           refund_status?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           kind?: string
           matchup_id?: string | null
           payment_id?: string | null
+          processing_until?: string | null
           product_id?: string
           refund_id?: string | null
           refund_status?: string | null
@@ -810,6 +813,10 @@ export type Database = {
         Returns: boolean
       }
       claim_dodo_event: { Args: { p_id: string }; Returns: boolean }
+      claim_dodo_order: {
+        Args: { p_env: string; p_order: string; p_payment: string }
+        Returns: boolean
+      }
       claim_tugg_owner: {
         Args: { p_email: string; p_user: string }
         Returns: boolean

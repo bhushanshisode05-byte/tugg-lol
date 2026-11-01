@@ -64,6 +64,13 @@
       "when": 1793503591242,
       "tag": "0008_dodo_wallets_orders_and_atomic_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793503939377,
+      "tag": "0009_serialize_dodo_payment_review",
+      "breakpoints": true
     }
   ]
 }
