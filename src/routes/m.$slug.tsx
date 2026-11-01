@@ -3,16 +3,16 @@ import { ReportImage } from "@/components/tugg/ReportImage";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { getMatchup, createPullCheckout, type Side } from "@/lib/tugg.functions";
+import { getMatchup, type Side } from "@/lib/tugg.functions";
 import { Turnstile } from "@/components/tugg/Turnstile";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { Shell } from "@/components/tugg/Shell";
 import { ShareButton } from "@/components/tugg/ShareButton";
 import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
-import { EmbeddedPay } from "@/components/tugg/EmbeddedPay";
+import { PullPanel } from "@/components/tugg/PullPanel";
 import { useLive } from "@/hooks/use-live";
-import { getStripeEnvironment } from "@/lib/stripe";
+
 import { imageBucket, matchupImagePath } from "@/lib/og/card";
 
 const mq = (slug: string) =>
@@ -90,16 +90,6 @@ function MatchupPage() {
   useLive(() => qc.invalidateQueries({ queryKey: ["matchup", slug] }), data?.matchup.id);
   const [celebrate, setCelebrate] = useState(false);
 
-  useEffect(() => {
-    if (!paid) return;
-    setCelebrate(true);
-    import("canvas-confetti").then(({ default: confetti }) =>
-      confetti({ particleCount: 160, spread: 90, origin: { y: 0.4 } }),
-    );
-    // webhook may land a moment later
-    const t = setTimeout(() => qc.invalidateQueries({ queryKey: ["matchup", slug] }), 2500);
-    return () => clearTimeout(t);
-  }, [paid, qc, slug]);
 
   if (!data) return null;
   const { matchup: m, top, recent, countries, history } = data;
@@ -156,7 +146,7 @@ function MatchupPage() {
           <div className="mb-6 rounded-2xl border-2 border-primary bg-primary/10 p-4">
             <p className="font-display text-2xl font-extrabold">You pulled! 🎉</p>
             <p className="text-sm text-muted-foreground">
-              Your pull shows up on the rope as soon as the payment is confirmed (a few seconds).
+              Your pull has been recorded on the rope.
             </p>
             <div className="mt-3">
               <ShareButton siteUrl={data.siteUrl} m={shareData} />
@@ -205,7 +195,7 @@ function MatchupPage() {
         </div>
 
         {m.status === "active" ? (
-          <PullPanel sides={m.sides} slug={m.slug} paused={data.paused} />
+          <PullPanel sides={m.sides} slug={m.slug} paused={data.paused} onPulled={() => { setCelebrate(true); qc.invalidateQueries({ queryKey: ["matchup", slug] }); }} />
         ) : (
           <p className="mt-8 rounded-xl border border-border p-4 text-muted-foreground">
             This matchup is retired and no longer takes pulls.
@@ -338,135 +328,3 @@ const Empty = ({ text = "Nothing yet." }: { text?: string }) => (
   <p className="text-sm text-muted-foreground">{text}</p>
 );
 
-const PRESETS = [1, 5, 10, 25, 100];
-
-function PullPanel({ sides, slug, paused }: { sides: Side[]; slug: string; paused: boolean }) {
-  const [side, setSide] = useState<string>(sides[0]!.id);
-  const [amount, setAmount] = useState(5);
-  const [name, setName] = useState("");
-  const [shout, setShout] = useState("");
-  const [checkout, setCheckout] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const valid = Number.isInteger(amount) && amount >= 1 && amount <= 1000;
-
-  if (paused)
-    return (
-      <p className="mt-8 rounded-xl border border-border p-4 text-muted-foreground">
-        Pulls are paused for a moment. Check back soon.
-      </p>
-    );
-
-  if (checkout) {
-    return (
-      <div className="mt-8">
-        <button
-          onClick={() => {
-            setToken(null);
-            setCheckout(false);
-          }}
-          className="mb-3 text-sm text-muted-foreground underline"
-        >
-          ← Change pull
-        </button>
-        <EmbeddedPay
-          fetchClientSecret={async () => {
-            const r = await createPullCheckout({
-              data: {
-                sideId: side,
-                amount,
-                name: name || undefined,
-                shout: shout || undefined,
-                returnUrl: `${window.location.origin}/m/${slug}?paid={CHECKOUT_SESSION_ID}`,
-                environment: getStripeEnvironment(),
-                turnstileToken: token ?? undefined,
-              },
-            });
-            if ("error" in r) {
-              setErr(r.error);
-              setToken(null);
-              setCheckout(false);
-              throw new Error(r.error);
-            }
-            return r.clientSecret;
-          }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <section className="mt-8 rounded-2xl border-2 border-foreground bg-card p-5 shadow-pop sm:p-6">
-      <h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {sides.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSide(s.id)}
-            aria-pressed={side === s.id}
-            className={`rounded-xl border-2 p-4 text-left font-extrabold transition-transform ${side === s.id ? "-translate-y-0.5 border-primary bg-primary text-primary-foreground" : "border-border"}`}
-          >
-            <SideAvatar side={s} /> {s.name}
-          </button>
-        ))}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {PRESETS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setAmount(p)}
-            className={`rounded-full border px-4 py-2 font-mono font-bold ${amount === p ? "border-accent bg-accent text-accent-foreground" : "border-border"}`}
-          >
-            ${p}
-          </button>
-        ))}
-        <label className="flex items-center gap-1 rounded-full border border-border px-3">
-          <span className="font-mono">$</span>
-          <input
-            type="number"
-            min={1}
-            max={1000}
-            step={1}
-            value={amount}
-            onChange={(e) => setAmount(Math.floor(Number(e.target.value)))}
-            aria-label="Custom amount in dollars"
-            className="w-20 bg-transparent py-2 font-mono outline-none"
-          />
-        </label>
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, 40))}
-          placeholder="Display name (optional)"
-          className="rounded-xl border border-input bg-background px-4 py-3"
-        />
-        <input
-          value={shout}
-          onChange={(e) => setShout(e.target.value.slice(0, 80))}
-          placeholder="Shout-out, 80 chars (optional)"
-          className="rounded-xl border border-input bg-background px-4 py-3"
-        />
-      </div>
-      <Turnstile action={TURNSTILE_ACTIONS.pull} onToken={setToken} className="mt-4" />
-      {err && (
-        <p role="alert" className="mt-3 text-sm text-destructive">
-          {err}
-        </p>
-      )}
-      <button
-        disabled={!valid || !token}
-        onClick={() => {
-          setErr(null);
-          setCheckout(true);
-        }}
-        className="mt-5 w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-      >
-        Pull ${valid ? amount : "–"} for {sides.find((s) => s.id === side)?.name}
-      </button>
-      <p className="mt-3 text-xs text-muted-foreground">
-        Non-refundable entertainment purchase. No prizes or payouts.
-      </p>
-    </section>
-  );
-}

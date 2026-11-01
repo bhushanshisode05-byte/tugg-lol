@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
-import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
+import { createDodoProvider, productId } from "./payments/dodo.server";
+import { PRODUCTS } from "./payments/catalog";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { SIDE_IMAGES_ENABLED } from "./feature-flags";
 
@@ -216,67 +217,9 @@ export const getStats = createServerFn({ method: "GET" }).handler(async () => {
   };
 });
 
-type CheckoutResult = { clientSecret: string } | { error: string };
+type CheckoutResult = { url: string } | { error: string };
 const envSchema = z.enum(["sandbox", "live"]).optional();
-
 const serverEnv = (hint?: "sandbox" | "live") => resolvePaymentsEnv(config().paymentsEnv, hint);
-
-export const createPullCheckout = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        sideId: z.string().uuid(),
-        amount: z.number().int().min(1).max(1000),
-        name: z.string().trim().max(40).optional(),
-        shout: z.string().trim().max(80).optional(),
-        returnUrl: z.string().url().max(500),
-        environment: envSchema,
-        turnstileToken: turnstileTokenSchema,
-      })
-      .parse(d),
-  )
-  .handler(async ({ data }): Promise<CheckoutResult> => {
-    if (config().pausePulls)
-      return { error: "Pulls are paused right now. Please try again later." };
-    const se = serverEnv(data.environment);
-    if ("error" in se) return se;
-    const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.pull);
-    if (ts) return ts;
-    const db = publicDb();
-    const { data: side } = await db
-      .from("sides")
-      .select("id,name,matchup_id,matchups(title,status)")
-      .eq("id", data.sideId)
-      .maybeSingle();
-    if (!side || (side as any).matchups?.status !== "active")
-      return { error: "This matchup is not open for pulls." };
-    try {
-      const stripe = createStripeClient(se.env);
-      const prices = await stripe.prices.list({ lookup_keys: ["rope_pull_1usd"] });
-      const price = prices.data[0];
-      if (!price) return { error: "Pull price not found" };
-      const session = await stripe.checkout.sessions.create({
-        line_items: [{ price: price.id, quantity: data.amount }],
-        mode: "payment",
-        ui_mode: "embedded_page",
-        return_url: data.returnUrl,
-        billing_address_collection: "required",
-        payment_intent_data: {
-          description: `Tugg pull: ${side.name} in ${(side as any).matchups.title}`,
-        },
-        metadata: {
-          kind: "pull",
-          side_id: side.id,
-          name: data.name ?? "",
-          shout: data.shout ?? "",
-          managed_payments: "false",
-        },
-      });
-      return { clientSecret: session.client_secret ?? "" };
-    } catch (e) {
-      return { error: getStripeErrorMessage(e) };
-    }
-  });
 
 const sideSchema = z.object({
   name: z.string().trim().min(1).max(40),
@@ -315,6 +258,14 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CheckoutResult> => {
     const se = serverEnv(data.environment);
     if ("error" in se) return se;
+    let provider: ReturnType<typeof createDodoProvider>;
+    let product: string;
+    try {
+      provider = createDodoProvider(); product = productId(data.tier);
+      await provider.validateProduct(product, PRODUCTS[data.tier].cents);
+    } catch (e) { return { error: e instanceof Error ? e.message : "Dodo checkout is unavailable." }; }
+    const { getRequest } = await import("@tanstack/react-start/server");
+    if (new URL(data.returnUrl).origin !== new URL(getRequest().url).origin) return { error: "Invalid return address." };
     const ts = await turnstileGate(data.turnstileToken, TURNSTILE_ACTIONS.matchup);
     if (ts) return ts;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -386,60 +337,31 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         return { error: "Picture expired or already used. Add it again before checkout." };
     }
     try {
-      const stripe = createStripeClient(se.env);
-      const lookup = data.tier === "featured" ? "matchup_featured_once" : "matchup_standard_once";
-      const prices = await stripe.prices.list({ lookup_keys: [lookup] });
-      const price = prices.data[0];
-      if (!price) return { error: "Price not found" };
-      const session = await stripe.checkout.sessions.create({
-        line_items: [{ price: price.id, quantity: 1 }],
-        mode: "payment",
-        ui_mode: "embedded_page",
-        return_url: data.returnUrl,
-        billing_address_collection: "required",
-        payment_intent_data: { description: `Tugg matchup (${data.tier}): ${data.title}` },
-        metadata: { kind: "matchup", matchup_id: m.id, tier: data.tier, managed_payments: "false" },
-      });
-      await supabaseAdmin.from("creators").insert({
-        matchup_id: m.id,
-        tier: data.tier,
-        stripe_session_id: session.id,
-        environment: se.env,
-      });
-      return { clientSecret: session.client_secret ?? "" };
+      const order = await supabaseAdmin.from("dodo_orders").insert({
+        environment: se.env, kind: data.tier, product_id: product,
+        expected_cents: PRODUCTS[data.tier].cents, matchup_id: m.id,
+      }).select("id").single();
+      if (order.error || !order.data) throw new Error("Could not start checkout.");
+      const returnUrl = new URL(data.returnUrl);
+      returnUrl.searchParams.set("session_id", order.data.id);
+      const session = await provider.checkout({ productId: product, orderId: order.data.id, returnUrl: returnUrl.toString() });
+      const saved = await supabaseAdmin.from("dodo_orders").update({ checkout_id: session.sessionId }).eq("id", order.data.id);
+      if (saved.error) throw new Error("Could not start checkout.");
+      const creator = await supabaseAdmin.from("creators").insert({ matchup_id: m.id, tier: data.tier, dodo_order_id: order.data.id, environment: se.env });
+      if (creator.error) throw new Error("Could not start checkout.");
+      return { url: session.url };
     } catch (e) {
-      return { error: getStripeErrorMessage(e) };
+      return { error: e instanceof Error ? e.message : "Dodo checkout is unavailable." };
     }
   });
 
-export const getCreationStatus = createServerFn({ method: "GET" })
-  .inputValidator((d: { sessionId: string }) =>
-    z.object({ sessionId: z.string().min(5).max(200) }).parse(d),
-  )
+export const getCreationStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ sessionId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: c } = await supabaseAdmin
-      .from("creators")
-      .select("refunded,matchups(slug,status,title)")
-      .eq("stripe_session_id", data.sessionId)
-      .maybeSingle();
-    if (!c) return null;
-    const m = (c as any).matchups;
-    const { data: log } = await supabaseAdmin
-      .from("moderation_log")
-      .select("reason,verdict")
-      .eq("subject_type", "matchup")
-      .eq("subject_id", data.sessionId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return {
-      slug: m?.slug as string,
-      status: m?.status as string,
-      title: m?.title as string,
-      refunded: c.refunded,
-      reason: log?.reason ?? null,
-    };
+    const result = await supabaseAdmin.from("dodo_orders").select("status,refund_status,review_reason,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
+    const o = result.data; if (!o || !o.matchups) return null;
+    return { slug: o.matchups.slug, status: o.matchups.status, title: o.matchups.title, refunded: o.refund_status === "succeeded", reason: o.review_reason, paymentStatus: o.status };
   });
 
 // ---------- Leaderboards / Hall of Fame / Results ----------

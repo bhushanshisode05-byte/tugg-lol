@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { config, moderate } from "./server-utils.server";
 import { createDodoProvider, productId, dodoSettings } from "./payments/dodo.server";
-import { PRODUCTS, walletTokenPattern as unused } from "./payments/catalog";
+import { PRODUCTS } from "./payments/catalog";
 import { hashWalletToken, newWalletToken, walletTokenPattern } from "./payments/wallet";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { verifyTurnstileForRequest } from "./turnstile.server";
