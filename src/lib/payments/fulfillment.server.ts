@@ -8,8 +8,12 @@ export const webhookPayload = z.object({ type: z.string().min(1).max(100), data:
 type Event = z.infer<typeof webhookPayload>;
 function checked(result: { error: { message: string } | null }) { if (result.error) throw new Error("Payment processing unavailable"); }
 export async function processDodoEvent(event: Event, provider: PaymentProvider) {
+  if (!["payment.succeeded", "payment.failed", "refund.succeeded", "refund.failed"].includes(event.type) && !event.type.startsWith("dispute.")) return;
   const payment = await provider.payment(event.data.payment_id);
   const id = z.string().uuid().parse(payment.metadata["tugg_order_id"]);
+  const lock = await db.rpc("claim_dodo_order", { p_order: id, p_payment: payment.payment_id, p_env: provider.environment }); checked(lock);
+  if (!lock.data) throw new Error("Payment already processing; retry");
+  try {
   const result = await db.from("dodo_orders").select("*").eq("id", id).single(); checked(result);
   const order = result.data;
   if (!order || order.environment !== provider.environment || payment.metadata["tugg_environment"] !== provider.environment || payment.currency !== "USD" || payment.total_amount !== order.expected_cents || payment.product_cart.length !== 1 || payment.product_cart[0]?.product_id !== order.product_id || payment.product_cart[0]?.quantity !== 1 || order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents || payment.checkout_session_id !== order.checkout_id || (order.payment_id && order.payment_id !== payment.payment_id)) throw new Error("Payment does not match order");
@@ -42,6 +46,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
   checked(await db.from("creators").update({ dodo_payment_id: payment.payment_id }).eq("dodo_order_id", id));
   const match = await db.from("matchups").select("id,title,description,status,sides(name,position)").eq("id", order.matchup_id).single(); checked(match);
   const m = match.data; if (!m) throw new Error("Matchup unavailable");
+  if (m.status === "active" || m.status === "retired") return;
   let allowed = order.review_allowed;
   if (allowed === null) {
     checked(await db.from("matchups").update({ status: "pending_review" }).eq("id", m.id).eq("status", "pending_payment"));
@@ -52,7 +57,8 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     checked(await db.from("dodo_orders").update({ review_allowed: allowed, review_reason: verdict.reason }).eq("id", id));
   }
   if (allowed) {
-    checked(await db.from("matchups").update({ status: "active", featured_until: order.kind === "featured" ? new Date(new Date(order.created_at).getTime() + 7 * 864e5).toISOString() : null }).eq("id", m.id));
+    if (m.status === "rejected" || order.refund_status) throw new Error("Rejected matchup cannot activate");
+    checked(await db.from("matchups").update({ status: "active", featured_until: order.kind === "featured" ? new Date(Date.now() + 7 * 864e5).toISOString() : null }).eq("id", m.id).eq("status", "pending_review"));
     checked(await db.rpc("ensure_open_round", { p_matchup: m.id })); return;
   }
   checked(await db.from("matchups").update({ status: "rejected" }).eq("id", m.id));
@@ -66,5 +72,8 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
   } catch {
     checked(await db.from("dodo_orders").update({ refund_status: "needs_review" }).eq("id", id));
     checked(await db.from("events").insert({ kind: "refund_error", detail: { orderId: id, reason: "Dodo refund outcome needs verification before retry" } }));
+  }
+  } finally {
+    checked(await db.from("dodo_orders").update({ processing_until: null }).eq("id", id));
   }
 }
