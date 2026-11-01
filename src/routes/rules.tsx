@@ -68,8 +68,8 @@ const sections: [string, string[]][] = [
   [
     "Refund policy",
     [
-      "Pulls are non-refundable entertainment purchases once they count on the rope.",
-      "If a payment is charged but never counts because of a technical error, it is refunded.",
+      "Each pull is $1. Buy packs of 5/$5, 10/$10 or 25/$25 in USD. Unused pulls never expire.",
+      "Packs are non-refundable except where required by law. Dodo Payments processes payments as merchant of record. Genuine payment errors must be verified through support.",
       "Matchup creation fees are refunded automatically and in full if the matchup is rejected by moderation.",
     ],
   ],

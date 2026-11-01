@@ -1,15 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/tugg/Shell";
-import { EmbeddedPay } from "@/components/tugg/EmbeddedPay";
+import { useServerFn } from "@tanstack/react-start";
+import { Button } from "@/components/ui/button";
 import { Rope } from "@/components/tugg/Rope";
 import { createMatchupCheckout, getCreationStatus } from "@/lib/tugg.functions";
 import { Turnstile } from "@/components/tugg/Turnstile";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { SideImageField, type DraftSideImage } from "@/components/tugg/SideImageField";
 import { SideAvatar } from "@/components/tugg/SideAvatar";
-import { getStripeEnvironment } from "@/lib/stripe";
+
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
+import { getPaymentStatus } from "@/lib/payments.functions";
+import { DODO_NOT_READY } from "@/lib/payments/catalog";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -64,6 +67,14 @@ function CreatePage() {
 }
 
 function CreateForm() {
+  const checkout = useServerFn(createMatchupCheckout);
+  const getPayments = useServerFn(getPaymentStatus);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    getPayments()
+      .then((s) => setReady(s.ready))
+      .catch(() => setReady(false));
+  }, [getPayments]);
   const [a, setA] = useState<SideIn>({ name: "", emoji: "🔥", color: "#e8ff3a" });
   const [b, setB] = useState<SideIn>({ name: "", emoji: "🧊", color: "#ff2e88" });
   const [images, setImages] = useState<{ a?: DraftSideImage; b?: DraftSideImage }>({});
@@ -92,62 +103,7 @@ function CreateForm() {
       </p>
 
       {pay ? (
-        <div className="mt-8">
-          <button
-            onClick={() => {
-              setToken(null);
-              setPay(false);
-            }}
-            className="mb-3 text-sm text-muted-foreground underline"
-          >
-            ← Edit matchup
-          </button>
-          <EmbeddedPay
-            fetchClientSecret={async () => {
-              const upload = async (image?: DraftSideImage) => {
-                if (!SIDE_IMAGES_ENABLED || !image) return undefined;
-                const form = new FormData();
-                form.append("image", image.blob, "side.webp");
-                form.append("rights", String(image.rights));
-                const response = await fetch("/api/public/side-images/upload", {
-                  method: "POST",
-                  body: form,
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || "Picture upload failed.");
-                return result.id as string;
-              };
-              let imageA: string | undefined, imageB: string | undefined;
-              try {
-                [imageA, imageB] = await Promise.all([upload(images.a), upload(images.b)]);
-              } catch (e) {
-                setErr(e instanceof Error ? e.message : "Picture upload failed.");
-                setPay(false);
-                throw e;
-              }
-              const r = await createMatchupCheckout({
-                data: {
-                  title: finalTitle,
-                  description: desc,
-                  category: cat,
-                  a: { ...a, imageId: imageA },
-                  b: { ...b, imageId: imageB },
-                  tier,
-                  returnUrl: `${window.location.origin}/create?session_id={CHECKOUT_SESSION_ID}`,
-                  environment: getStripeEnvironment(),
-                  turnstileToken: token ?? undefined,
-                },
-              });
-              if ("error" in r) {
-                setErr(r.error);
-                setToken(null);
-                setPay(false);
-                throw new Error(r.error);
-              }
-              return r.clientSecret;
-            }}
-          />
-        </div>
+        <p className="mt-8 text-muted-foreground">Opening Dodo checkout…</p>
       ) : (
         <div className="mt-8 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -184,12 +140,14 @@ function CreateForm() {
                     className="h-12 w-16 rounded-xl border border-input bg-background"
                   />
                 </div>
-                {SIDE_IMAGES_ENABLED && <SideImageField
-                  label={label}
-                  color={v.color}
-                  value={images[key]}
-                  onChange={(image) => setImages((prev) => ({ ...prev, [key]: image }))}
-                />}
+                {SIDE_IMAGES_ENABLED && (
+                  <SideImageField
+                    label={label}
+                    color={v.color}
+                    value={images[key]}
+                    onChange={(image) => setImages((prev) => ({ ...prev, [key]: image }))}
+                  />
+                )}
               </fieldset>
             ))}
           </div>
@@ -274,28 +232,54 @@ function CreateForm() {
               />
             </div>
           )}
-          {SIDE_IMAGES_ENABLED && <p className="text-xs leading-relaxed text-muted-foreground">
-            Optional pictures: JPG, PNG or WebP, up to 5 MB. Use only pictures you have the right to
-            use. No identifiable people, minors, sexual or violent content, hate symbols or scams.
-            Pictures are checked after payment; rejected submissions are refunded. Pictures may be
-            removed after reports.
-          </p>}
-          <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
+          {SIDE_IMAGES_ENABLED && (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Optional pictures: JPG, PNG or WebP, up to 5 MB. Use only pictures you have the right
+              to use. No identifiable people, minors, sexual or violent content, hate symbols or
+              scams. Pictures are checked after payment; rejected submissions are refunded. Pictures
+              may be removed after reports.
+            </p>
+          )}
+          {!ready && <p className="text-sm text-muted-foreground">{DODO_NOT_READY}</p>}
+          {ready && <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />}
           {err && (
             <p role="alert" className="text-sm text-destructive">
               {err}
             </p>
           )}
-          <button
-            disabled={!ok || !token}
-            onClick={() => {
+          <Button
+            disabled={!ok || !token || !ready}
+            onClick={async () => {
               setErr(null);
               setPay(true);
+              try {
+                const r = await checkout({
+                  data: {
+                    title: finalTitle,
+                    description: desc,
+                    category: cat,
+                    a,
+                    b,
+                    tier,
+                    returnUrl: `${window.location.origin}/create`,
+                    turnstileToken: token ?? undefined,
+                  },
+                });
+                if ("error" in r) {
+                  setErr(r.error);
+                  setPay(false);
+                  setToken(null);
+                } else window.location.assign(r.url);
+              } catch {
+                setErr("Could not open Dodo checkout.");
+                setPay(false);
+                setToken(null);
+              }
             }}
-            className="w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop disabled:opacity-50"
+            className="h-auto w-full whitespace-normal py-4 font-display text-xl font-extrabold"
           >
             Pay {tier === "featured" ? "$29" : "$9"} and submit
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -303,12 +287,13 @@ function CreateForm() {
 }
 
 function CreationStatus({ sessionId }: { sessionId: string }) {
+  const fetchStatus = useServerFn(getCreationStatus);
   const [s, setS] = useState<Awaited<ReturnType<typeof getCreationStatus>> | undefined>(undefined);
   useEffect(() => {
     let n = 0;
     let stop = false;
     const tick = async () => {
-      const r = await getCreationStatus({ data: { sessionId } });
+      const r = await fetchStatus({ data: { sessionId } });
       if (stop) return;
       setS(r);
       if ((!r || r.status === "pending_payment" || r.status === "pending_review") && n++ < 20)
@@ -318,7 +303,7 @@ function CreationStatus({ sessionId }: { sessionId: string }) {
     return () => {
       stop = true;
     };
-  }, [sessionId]);
+  }, [sessionId, fetchStatus]);
 
   return (
     <div className="mx-auto max-w-xl px-4 py-20 text-center">
@@ -326,7 +311,8 @@ function CreationStatus({ sessionId }: { sessionId: string }) {
         <>
           <h1 className="font-display text-4xl font-extrabold">Checking your matchup…</h1>
           <p className="mt-2 text-muted-foreground">
-            Payment received. Our moderator is reviewing it. This takes a few seconds.
+            Waiting for confirmed payment and moderation. A return from checkout is not payment
+            confirmation.
           </p>
         </>
       ) : s.status === "active" ? (

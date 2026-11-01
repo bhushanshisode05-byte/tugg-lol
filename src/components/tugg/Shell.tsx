@@ -52,8 +52,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:justify-between">
           <p>
-            Pulls are non-refundable entertainment purchases. No prizes, no payouts. Just bragging
-            rights.
+            $1 per pull. Packs of 5, 10 or 25; unused pulls never expire. Non-refundable except where
+            required by law. No prizes or payouts. Dodo Payments is the merchant of record.
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link to="/rules" className="hover:text-foreground">

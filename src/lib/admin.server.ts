@@ -16,38 +16,50 @@ export async function getAdminData(request: Request) {
     p_email: config().ownerEmail,
   });
   if (roleError || !owner) return Response.json({ error: "Owner access only." }, { status: 403 });
-  const [summary, pulls, matchups, moderation, events, support, creators] = await Promise.all([
-    supabaseAdmin.rpc("tugg_admin_summary"),
-    supabaseAdmin
-      .from("pulls")
-      .select("id,amount_cents,environment,display_name,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("matchups")
-      .select(
-        "id,title,source,status,created_at,sides(name,image_id,image_status,image_report_count)",
-      )
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("moderation_log")
-      .select("id,subject_type,verdict,reason,content,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("events")
-      .select("id,kind,detail,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("support_threads")
-      .select("id,channel,email,name,message,ai_reply,payment_error,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin.rpc("tugg_creation_revenue"),
-  ]);
-  if ([summary, pulls, matchups, moderation, events, support, creators].some((r) => r.error))
+  const [summary, pulls, matchups, moderation, events, support, creators, dodo, flaggedWallets] =
+    await Promise.all([
+      supabaseAdmin.rpc("tugg_admin_summary"),
+      supabaseAdmin
+        .from("pulls")
+        .select("id,amount_cents,environment,display_name,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("matchups")
+        .select(
+          "id,title,source,status,created_at,sides(name,image_id,image_status,image_report_count)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("moderation_log")
+        .select("id,subject_type,verdict,reason,content,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("events")
+        .select("id,kind,detail,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("support_threads")
+        .select("id,channel,email,name,message,ai_reply,payment_error,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin.rpc("tugg_creation_revenue"),
+      supabaseAdmin.rpc("tugg_dodo_summary"),
+      supabaseAdmin
+        .from("pull_wallets")
+        .select("id,environment,balance,flagged,created_at")
+        .eq("flagged", true)
+        .order("created_at", { ascending: false })
+        .limit(200),
+    ]);
+  if (
+    [summary, pulls, matchups, moderation, events, support, creators, dodo, flaggedWallets].some(
+      (r) => r.error,
+    )
+  )
     return Response.json({ error: "Could not load owner records." }, { status: 503 });
   // Creator amounts are inferred from published prices; unpaid/rejected records are never revenue.
   const fees = creators.data as { live?: number; sandbox?: number } | null;
@@ -55,6 +67,8 @@ export async function getAdminData(request: Request) {
   return Response.json(
     {
       summary: summary.data,
+      dodo: dodo.data,
+      flaggedWallets: flaggedWallets.data,
       creationRevenue,
       pulls: pulls.data,
       matchups: (matchups.data ?? []).map((m) => {

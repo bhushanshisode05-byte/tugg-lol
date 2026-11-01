@@ -10,10 +10,10 @@
 <!-- LOVABLE:END -->
 
 ## Tugg architecture
-- Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; the payment webhook is the only writer of pulls, so amounts always come from the verified payment.
+- Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; wallet spending calls record_pull within the same locked SQL transaction as the debit; credits come only from verified provider payments. Why: no overdraw or unpaid pulls.
 - Public pages read through publishable-key server functions in src/lib/tugg.functions.ts so SSR serves full HTML to crawlers.
 - Env switches (SITE_URL, PAUSE_PULLS, TEST_MODE, AI_GENERATOR_ENABLED) are read only via config() in src/lib/server-utils.server.ts.
-- Stripe environment comes only from server-side PAYMENTS_ENV via config(); browser hints are never trusted, and live mode ignores sandbox webhooks. Why: test payments must never move real ropes.
+- Dodo uses a fetch-based PaymentProvider interface; PAYMENTS_ENV via config() alone selects the API host, credentials, products, wallets and webhook secret. Why: mode-specific provider authentication isolates real and test payments.
 - Public pull data is served only through SECURITY DEFINER tugg_* SQL functions (aggregates, live-only filter); the pulls table has no anon/authenticated access. Why: hides stripe_session_id and keeps totals exact past row limits.
 - Realtime listens to rounds only; every recorded pull updates its round row. Why: pulls aren't publicly readable.
 - Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.
@@ -31,3 +31,8 @@
 - Side image files stay in private storage and only approved active/retired side references are served by a public route. Why: workspace policy blocks public buckets and pending or hidden pictures must not be exposed.
 - Image reports count distinct hashed networks atomically and never restore a hidden image during concurrent AI re-checks. Why: unauthenticated visitors have no provable person identity.
 - Optional side-picture entry points, display, moderation, cleanup and renderer use the shared SIDE_IMAGES_ENABLED gate. Why: unfinished pictures must remain dormant without deleting rollback-safe schema.
+
+- Dodo orders, wallet ledger and webhook leases are service-only durable state; unique payment IDs and wallet row locks enforce idempotent credits and spends. Why: workers are stateless and concurrent delivery must not duplicate money.
+- Refund POSTs are claimed durably once; uncertain outcomes require reconciliation and are never blindly retried because Dodo refund idempotency is undocumented. Why: avoid duplicate refunds.
+- Recovery tokens travel only in URL fragments and request bodies; browser storage is environment-scoped and the database stores only SHA-256 hashes. Why: wallet links are bearer credentials.
+- Legacy Stripe modules remain disconnected and their webhook is disabled until real Dodo sandbox verification permits deletion. Why: preserve the requested staged migration without allowing legacy writes.

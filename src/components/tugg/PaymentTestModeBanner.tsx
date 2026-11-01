@@ -1,19 +1,28 @@
-const clientToken = import.meta.env["VITE_PAYMENTS_CLIENT_TOKEN"] as string | undefined;
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getPaymentStatus } from "@/lib/payments.functions";
 
 export function PaymentTestModeBanner() {
-  if (!clientToken) {
+  const getStatus = useServerFn(getPaymentStatus);
+  const [status, setStatus] = useState<Awaited<ReturnType<typeof getPaymentStatus>> | null>(null);
+  useEffect(() => {
+    getStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
+  }, [getStatus]);
+  if (!status?.ready) {
     return (
       <div className="w-full border-b border-destructive bg-destructive/20 px-4 py-2 text-center text-sm">
-        Checkout isn't live yet. Real payments open once payments go-live is complete.
+        Dodo checkout is not configured yet. No new payments can be taken.
       </div>
     );
   }
-  if (clientToken.startsWith("pk_test_")) {
+  if (status.environment === "sandbox") {
     return (
       <div className="w-full border-b border-primary/40 bg-primary/15 px-4 py-2 text-center text-xs font-semibold">
-        Test mode: use card 4242 4242 4242 4242. No real money moves.{" "}
+        Dodo test mode: 4242 4242 4242 4242 · expiry 06/32 · CVV 123. No real money moves.{" "}
         <a
-          href="https://docs.lovable.dev/features/payments#test-and-live-environments"
+          href="https://docs.dodopayments.com/miscellaneous/testing-process"
           target="_blank"
           rel="noopener noreferrer"
           className="underline"

@@ -112,6 +112,9 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Disconnected legacy provider: retained only for rollback review, never accepts writes.
+        return new Response("Stripe payments are disconnected", { status: 410 });
+        /*
         const rawEnv = new URL(request.url).searchParams.get("env");
         if (rawEnv !== "sandbox" && rawEnv !== "live")
           return Response.json({ received: true, ignored: "invalid env" });
@@ -145,6 +148,7 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           } catch {}
           return new Response("Webhook error", { status: 500 });
         }
+        */
       },
     },
   },

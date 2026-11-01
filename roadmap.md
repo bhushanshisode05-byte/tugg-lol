@@ -3,15 +3,18 @@
 ## Dodo payments and pull wallets (do not publish)
 - [x] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements; recorded in DODO_SETUP.md.
 - [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later. Blocker: user must add test credentials in Secrets.
-- [ ] Resolve custom Dodo payment setup availability. Blocker: session payment guidance prohibits payment implementation before setup is enabled; setup tools are unavailable. Never reconnect Stripe or enable managed Stripe/Paddle as a workaround.
-- [ ] Add provider interface, isolated test/live configuration, pull packs and Dodo matchup checkout.
-- [ ] Add private hash-token wallets, idempotent credit ledger and atomic spending through the round engine.
-- [ ] Add balance, pack purchase, recovery link, Turnstile/paused protections and read-only owner reporting.
-- [ ] Update the shared policy catalog, footer and test-mode details.
+- [x] Custom third-party Dodo integration explicitly authorized; no managed Stripe/Paddle setup is needed or enabled.
+- [x] Implement without credentials, fail closed, and verify with mocked Dodo plus real signed webhook fixtures; not published.
+- [x] Add provider interface, isolated test/live configuration, pull packs and Dodo matchup checkout.
+- [x] Add private hash-token wallets, idempotent credit ledger and atomic spending through the round engine.
+- [x] Add balance, pack purchase, recovery link, Turnstile/paused protections and read-only owner reporting.
+- [x] Update the shared policy catalog, footer and server-selected Dodo test-mode details.
 - [x] Keep unfinished side pictures dormant and repair OG optional-field errors; preview build OK, 51 tests pass, phone-sized browser checked.
-- [ ] Test verified Dodo pack purchases, duplicate webhooks, spends/concurrency/recovery, protections, matchup approval/refund and environment isolation.
-- [ ] Remove legacy Stripe code only after Dodo test-mode end-to-end success. Blocker: Dodo implementation and real test purchases not available yet; legacy code retained without reconnection.
-- [x] Report proposed dashboard products, future webhook URLs, official test credentials, method eligibility and blockers in DODO_SETUP.md. No Dodo webhook is ready to register yet.
+- [x] Mocked provider/signature tests and disposable PostgreSQL credit/spend/duplicate/overdraw/concurrency tests; desktop/phone missing-key paths checked.
+- [ ] Real Dodo sandbox end-to-end payments/refunds/webhooks, real Turnstile and owner reporting. Blocker: test credentials, five product IDs, Turnstile settings and owner account.
+- [ ] Automate reconciliation of ambiguous refund POST outcomes. Blocker: real Dodo test keys needed to verify refund-status recovery before safe retries.
+- [ ] Remove legacy Stripe code only after Dodo test-mode end-to-end success. Blocker: real Dodo test purchases not yet available; legacy modules retained without reconnection and old webhook disabled.
+- [x] DODO_SETUP.md documents exact five test products, implemented webhook URL, credentials, method eligibility, additive schema and test limitations.
 
 ## Optional side pictures (do not publish)
 - [ ] Add optional circle-cropped browser uploads and rights consent.
