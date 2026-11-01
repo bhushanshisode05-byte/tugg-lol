@@ -1,5 +1,16 @@
 # Tugg roadmap
 
+## Dodo payments and pull wallets (do not publish)
+- [ ] Verify official Dodo checkout, webhook, refunds, test cards and payment-method requirements.
+- [ ] Obtain DODO_TEST_API_KEY and DODO_TEST_WEBHOOK_SECRET; live credentials later.
+- [ ] Add provider interface, isolated test/live configuration, pull packs and Dodo matchup checkout.
+- [ ] Add private hash-token wallets, idempotent credit ledger and atomic spending through the round engine.
+- [ ] Add balance, pack purchase, recovery link, Turnstile/paused protections and read-only owner reporting.
+- [ ] Update the shared policy catalog, footer and test-mode details.
+- [ ] Keep unfinished side pictures dormant and repair any preview errors.
+- [ ] Test verified Dodo pack purchases, duplicate webhooks, spends/concurrency/recovery, protections, matchup approval/refund and environment isolation.
+- [ ] Remove legacy Stripe code only after Dodo test-mode end-to-end success; report dashboard setup and blockers.
+
 ## Optional side pictures (do not publish)
 - [ ] Add optional circle-cropped browser uploads and rights consent.
 - [ ] Validate bytes, decoded dimensions and limits on server; private upload records, public-read files, server-only writes.
