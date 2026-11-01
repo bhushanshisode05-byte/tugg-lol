@@ -167,54 +167,24 @@ export async function saveReply(id: string, reply: string, status = "answered") 
 export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, threadId: string) {
   if (!input.sessionId) return "";
   const db = await supportDb();
-  const { createStripeClient } = await import("./stripe.server");
   try {
-    const session = await createStripeClient(config().paymentsEnv).checkout.sessions.retrieve(
-      input.sessionId,
-    );
-    const email = session.customer_details?.email || session.customer_email;
+    const { createDodoProvider } = await import("./payments/dodo.server");
+    const payment = await createDodoProvider().payment(input.sessionId);
+    const email = payment.customer?.email;
     if (!email || email.toLowerCase() !== input.email.toLowerCase())
       return " The payment reference could not be verified against your checkout email.";
-    if (session.payment_status !== "paid")
-      return " This reference does not show a completed payment.";
-    if (Date.now() / 1000 - session.created < 900)
+    if (payment.status !== "succeeded") return " This reference does not show a completed payment.";
+    if (!payment.created_at || Date.now() - new Date(payment.created_at).getTime() < 900000)
       return " Payment confirmation may still be processing; a delay alone does not establish an error.";
-    const kind = session.metadata?.["kind"];
-    if (kind !== "pull" && kind !== "matchup") return " This reference is not a Tugg purchase.";
-    const pull =
-      kind === "pull"
-        ? await db.from("pulls").select("id").eq("stripe_session_id", session.id).maybeSingle()
-        : null;
-    const creator =
-      kind === "matchup"
-        ? await db
-            .from("creators")
-            .select("id,refunded,matchups(status)")
-            .eq("stripe_session_id", session.id)
-            .maybeSingle()
-        : null;
-    if (pull?.error || creator?.error) throw new Error("Could not verify purchase");
-    const missing =
-      kind === "pull"
-        ? !pull?.data
-        : kind === "matchup"
-          ? !creator?.data || creator.data.matchups?.status === "pending_payment"
-          : false;
-    if (!missing) return " This payment is already recorded; the published refund policy applies.";
-    const { error } = await db
-      .from("support_threads")
-      .update({ payment_error: true, status: "payment_error_logged" })
-      .eq("id", threadId);
-    if (error) throw new Error("Could not record payment error");
-    const { error: eventError } = await db.from("events").insert({
-      kind: "support_payment_error_email_unavailable",
-      detail: {
-        support_thread_id: threadId,
-        reason: "Owner email / email domain not configured",
-      },
-    });
-    if (eventError) throw new Error("Could not record escalation");
-    return " A verified payment recording error has been logged for the owner. Email escalation is not available yet. This does not authorize a refund outside the published policy.";
+    const orderId = payment.metadata["tugg_order_id"];
+    if (typeof orderId !== "string") return " This reference is not a Tugg purchase.";
+    const order = await db.from("dodo_orders").select("status").eq("id", orderId).eq("environment", config().paymentsEnv).maybeSingle();
+    if (order.error) throw new Error("Could not verify purchase");
+    if (order.data?.status === "paid") return " This payment is already recorded; the published refund policy applies.";
+    const logged = await db.from("support_threads").update({ payment_error: true, status: "payment_error_logged" }).eq("id", threadId);
+    if (logged.error) throw new Error("Could not log payment error");
+    await db.from("events").insert({ kind: "support_payment_error_email_unavailable", detail: { support_thread_id: threadId, reason: "Email escalation is not configured" } });
+    return " A verified payment recording error has been logged for the owner. This does not authorize a refund outside the published policy.";
   } catch {
     return " We could not verify this payment reference. No payment-error escalation or refund has been promised.";
   }
