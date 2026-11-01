@@ -41,6 +41,7 @@ export type Database = {
           environment: string
           id: string
           matchup_id: string
+          payglocal_order_id: string | null
           payment_intent: string | null
           refunded: boolean
           stripe_session_id: string | null
@@ -54,6 +55,7 @@ export type Database = {
           environment?: string
           id?: string
           matchup_id: string
+          payglocal_order_id?: string | null
           payment_intent?: string | null
           refunded?: boolean
           stripe_session_id?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           environment?: string
           id?: string
           matchup_id?: string
+          payglocal_order_id?: string | null
           payment_intent?: string | null
           refunded?: boolean
           stripe_session_id?: string | null
@@ -85,6 +88,13 @@ export type Database = {
             columns: ["matchup_id"]
             isOneToOne: false
             referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creators_payglocal_order_id_fkey"
+            columns: ["payglocal_order_id"]
+            isOneToOne: false
+            referencedRelation: "payglocal_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -349,6 +359,159 @@ export type Database = {
           verdict?: string
         }
         Relationships: []
+      }
+      payglocal_ledger: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          entry_type: string
+          gid: string
+          id: string
+          order_id: string
+          pull_id: string | null
+          quantity: number
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          entry_type: string
+          gid: string
+          id?: string
+          order_id: string
+          pull_id?: string | null
+          quantity: number
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          entry_type?: string
+          gid?: string
+          id?: string
+          order_id?: string
+          pull_id?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payglocal_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "payglocal_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payglocal_ledger_pull_id_fkey"
+            columns: ["pull_id"]
+            isOneToOne: false
+            referencedRelation: "pulls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payglocal_orders: {
+        Row: {
+          billing_country: string
+          created_at: string
+          display_name: string
+          environment: string
+          expected_cents: number
+          gid: string | null
+          id: string
+          kind: string
+          matchup_id: string | null
+          merchant_unique_id: string
+          paid_at: string | null
+          processing_key: string | null
+          processing_until: string | null
+          provider_status: string | null
+          quantity: number
+          reconcile_count: number
+          reconcile_result: string | null
+          reconciled_at: string | null
+          refund_gid: string | null
+          refund_status: string | null
+          return_path: string
+          review_allowed: boolean | null
+          review_reason: string | null
+          shout_out: string
+          side_id: string | null
+          status: string
+          status_url: string | null
+        }
+        Insert: {
+          billing_country?: string
+          created_at?: string
+          display_name?: string
+          environment: string
+          expected_cents: number
+          gid?: string | null
+          id?: string
+          kind: string
+          matchup_id?: string | null
+          merchant_unique_id: string
+          paid_at?: string | null
+          processing_key?: string | null
+          processing_until?: string | null
+          provider_status?: string | null
+          quantity?: number
+          reconcile_count?: number
+          reconcile_result?: string | null
+          reconciled_at?: string | null
+          refund_gid?: string | null
+          refund_status?: string | null
+          return_path: string
+          review_allowed?: boolean | null
+          review_reason?: string | null
+          shout_out?: string
+          side_id?: string | null
+          status?: string
+          status_url?: string | null
+        }
+        Update: {
+          billing_country?: string
+          created_at?: string
+          display_name?: string
+          environment?: string
+          expected_cents?: number
+          gid?: string | null
+          id?: string
+          kind?: string
+          matchup_id?: string | null
+          merchant_unique_id?: string
+          paid_at?: string | null
+          processing_key?: string | null
+          processing_until?: string | null
+          provider_status?: string | null
+          quantity?: number
+          reconcile_count?: number
+          reconcile_result?: string | null
+          reconciled_at?: string | null
+          refund_gid?: string | null
+          refund_status?: string | null
+          return_path?: string
+          review_allowed?: boolean | null
+          review_reason?: string | null
+          shout_out?: string
+          side_id?: string | null
+          status?: string
+          status_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payglocal_orders_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payglocal_orders_side_id_fkey"
+            columns: ["side_id"]
+            isOneToOne: false
+            referencedRelation: "sides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pull_wallet_ledger: {
         Row: {
@@ -808,6 +971,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_payglocal_payment: {
+        Args: {
+          p_cents: number
+          p_country: string
+          p_env: string
+          p_gid: string
+          p_order: string
+        }
+        Returns: Json
+      }
       attach_side_images: {
         Args: { p_a: string; p_b: string; p_ip: string; p_matchup: string }
         Returns: boolean
@@ -815,6 +988,10 @@ export type Database = {
       claim_dodo_event: { Args: { p_id: string }; Returns: boolean }
       claim_dodo_order: {
         Args: { p_env: string; p_order: string; p_payment: string }
+        Returns: boolean
+      }
+      claim_payglocal_order: {
+        Args: { p_env: string; p_key: string; p_order: string }
         Returns: boolean
       }
       claim_tugg_owner: {
@@ -888,6 +1065,7 @@ export type Database = {
         Returns: Json
       }
       tugg_dodo_summary: { Args: never; Returns: Json }
+      tugg_payglocal_summary: { Args: never; Returns: Json }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {

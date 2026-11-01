@@ -71,6 +71,13 @@
       "when": 1793503939377,
       "tag": "0009_serialize_dodo_payment_review",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793562843491,
+      "tag": "0010_payglocal_immediate_orders",
+      "breakpoints": true
     }
   ]
 }
