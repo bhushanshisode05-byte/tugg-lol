@@ -11,6 +11,8 @@ import { SideImageField, type DraftSideImage } from "@/components/tugg/SideImage
 import { SideAvatar } from "@/components/tugg/SideAvatar";
 
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
+import { getPaymentStatus } from "@/lib/payments.functions";
+import { DODO_NOT_READY } from "@/lib/payments/catalog";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -66,6 +68,9 @@ function CreatePage() {
 
 function CreateForm() {
   const checkout = useServerFn(createMatchupCheckout);
+  const getPayments = useServerFn(getPaymentStatus);
+  const [ready, setReady] = useState(false);
+  useEffect(() => { getPayments().then((s) => setReady(s.ready)).catch(() => setReady(false)); }, [getPayments]);
   const [a, setA] = useState<SideIn>({ name: "", emoji: "🔥", color: "#e8ff3a" });
   const [b, setB] = useState<SideIn>({ name: "", emoji: "🧊", color: "#ff2e88" });
   const [images, setImages] = useState<{ a?: DraftSideImage; b?: DraftSideImage }>({});
@@ -225,14 +230,15 @@ function CreateForm() {
             Pictures are checked after payment; rejected submissions are refunded. Pictures may be
             removed after reports.
           </p>}
-          <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
+          {!ready && <p className="text-sm text-muted-foreground">{DODO_NOT_READY}</p>}
+          {ready && <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />}
           {err && (
             <p role="alert" className="text-sm text-destructive">
               {err}
             </p>
           )}
-          <button
-            disabled={!ok || !token}
+          <Button
+            disabled={!ok || !token || !ready}
             onClick={async () => {
               setErr(null); setPay(true);
               try {
@@ -241,10 +247,10 @@ function CreateForm() {
                 else window.location.assign(r.url);
               } catch { setErr("Could not open Dodo checkout."); setPay(false); setToken(null); }
             }}
-            className="w-full rounded-full bg-primary py-4 font-display text-xl font-extrabold text-primary-foreground shadow-pop disabled:opacity-50"
+            className="h-auto w-full whitespace-normal py-4 font-display text-xl font-extrabold"
           >
             Pay {tier === "featured" ? "$29" : "$9"} and submit
-          </button>
+          </Button>
         </div>
       )}
     </div>

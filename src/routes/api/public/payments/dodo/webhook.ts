@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/public/payments/dodo/webhook")({
       const raw = await request.text();
       if (new TextEncoder().encode(raw).length > 262144) return new Response("Too large", { status: 413 });
       let id: string;
-      try { id = await verifyDodoSignature(raw, request.headers, settings.secret); } catch { return new Response("Invalid signature", { status: 400 }); }
+      try { id = `${env}:${await verifyDodoSignature(raw, request.headers, settings.secret)}`; } catch { return new Response("Invalid signature", { status: 400 }); }
       let event;
       try { event = webhookPayload.parse(JSON.parse(raw)); } catch { return new Response("Invalid event", { status: 400 }); }
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
