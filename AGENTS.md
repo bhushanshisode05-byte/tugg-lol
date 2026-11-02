@@ -39,3 +39,4 @@
 - Payment funnel uses catalogued runtime events plus service-only app aggregates for the owner view, with completion from the order terminal trigger. Why: internal analytics has no supported app query API and browser claims cannot prove payment.
 - Reconciliation eligibility and expiry live in a service-only SQL RPC with bounded age backoff; empty results return before provider setup. Why: avoid repeated checks, stale polling and idle provider costs.
 - Router-generated per-request nonce constrains production script loading without unsafe script execution, preserving existing stricter policies; development is report-only. Why: CodeDrop must not require wildcard script permissions.
+- App email uses the scaffolded server-only managed send helper; delivery, retries, suppression and unsubscribe remain managed with no app email queue or tables. Why: preserve managed sending guarantees and keep credentials out of the browser.

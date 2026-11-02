@@ -6,7 +6,7 @@ import { TEMPLATES } from './registry'
 // Server-only: reads LOVABLE_API_KEY. Never import from client components.
 
 // Configuration baked in at scaffold time
-const SITE_NAME = "Tugg Lol"
+const SITE_NAME = "Tugg"
 // SENDER_DOMAIN is the verified sender FQDN: a delegated subdomain (e.g., "notify.example.com"),
 // or the root itself when the domain is registered through Lovable. It MUST match the sender verified in Lovable's email setup.
 const SENDER_DOMAIN = "hello.tugg.lol"
@@ -55,6 +55,11 @@ export async function sendTemplateEmail(
   if (!recipient) {
     throw new Error('Recipient is required (the template defines no fixed recipient)')
   }
+  const replyTo = options.replyTo || 'hello@tugg.lol'
+  const validAddress = /^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/
+  if (!validAddress.test(recipient) || !validAddress.test(replyTo)) {
+    throw new Error('Invalid email address')
+  }
 
   const templateData = options.templateData ?? {}
   const element = React.createElement(template.component, templateData)
@@ -64,12 +69,13 @@ export async function sendTemplateEmail(
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+  if (/[\r\n]/.test(subject)) throw new Error('Invalid email subject')
 
   try {
     await sendLovableEmail(
       {
         to: recipient,
-        from: { name: SITE_NAME, address: `noreply@${FROM_DOMAIN}` },
+        from: { name: SITE_NAME, address: `hello@${FROM_DOMAIN}` },
         sender_domain: SENDER_DOMAIN,
         subject,
         html,
@@ -77,7 +83,7 @@ export async function sendTemplateEmail(
         purpose: 'transactional',
         label: templateName,
         idempotency_key: options.idempotencyKey || crypto.randomUUID(),
-        ...(options.replyTo ? { reply_to: options.replyTo } : {}),
+        reply_to: replyTo,
       },
       { apiKey, sendUrl: process.env['LOVABLE_SEND_URL'] }
     )
