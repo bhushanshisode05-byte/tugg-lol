@@ -1,5 +1,9 @@
 # Tugg roadmap
 
+## Turnstile public key (do not publish)
+- [ ] Set the public browser key, retain shared widgets for pull/matchup checkout, contact, chat and digest; handle hostname/key/script errors without blocking browsing and keep submissions fail-closed.
+- [ ] Verify widget rendering at desktop and phone sizes and run security regression tests. Real success requires the matching secret and allowed preview/live hostnames in Cloudflare.
+
 ## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
 - [ ] Configure notify.tugg.lol with root sender identity and hello@tugg.lol reply-to. Blocker: owner completes email setup and GoDaddy verification.
 - [ ] Separate public business contact from private admin login identity.
@@ -23,7 +27,7 @@
 - [x] Update pull/create checkout, shared policies, operator identity fields, banner and read-only reporting.
 - [x] 158 automated tests pass; isolated SQL rollback and ten-callback concurrency pass; desktop/mobile missing-key paths pass.
 - [x] Write PAYGLOCAL_SETUP.md with dashboard steps and exact remaining verification blockers; no publishing or managed Stripe/Paddle.
-- [ ] Configure OWNER_NAME and OWNER_EMAIL, four sandbox credentials, Turnstile public key and merchant-specific sandbox approval. Blocker: owner-provided values.
+- [ ] Configure OWNER_NAME and OWNER_EMAIL, four sandbox credentials and merchant-specific sandbox approval. Blocker: owner-provided values.
 - [ ] Real sandbox checkout/callback/refund verification. Blocker: owner-provided sandbox credentials and merchant onboarding.
 
 ## Dodo payments and pull wallets (do not publish)
@@ -73,7 +77,7 @@
 - [ ] Emails: rejection notice, payment-error escalation, weekly owner summary, digest signup (needs email domain)
 - [ ] GEO: robots.txt, llms.txt, sitemap, JSON-LD, JSON/RSS feeds, OG images, IndexNow, SITE_URL everywhere
 - [x] Turnstile on pull/matchup checkout, contact, chat, digest (server-verified)
-- [ ] Add public Turnstile site key (VITE_TURNSTILE_SITE_KEY) and publish
+- [x] Add public Turnstile site key using shared browser configuration; do not publish.
 - [ ] X / Bluesky auto-posting (needs keys)
 - [ ] Generated share image
 - [x] Pre-launch hardening: server-side PAYMENTS_ENV, live-only totals, SQL aggregates, private pulls, stale-matchup cleanup, per-IP matchup checkout limit (5/hour)

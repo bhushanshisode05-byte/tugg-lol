@@ -1,6 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { getTurnstileSiteKey } from "@/lib/turnstile.functions";
 import type { TurnstileAction } from "@/lib/turnstile";
+import { PUBLIC_TURNSTILE_SITE_KEY, turnstileConfigurationError } from "@/lib/turnstile-config";
+import { Button } from "@/components/ui/button";
 
 type TurnstileApi = {
   render: (el: HTMLElement, opts: Record<string, unknown>) => string;
@@ -23,12 +25,19 @@ function loadScript(): Promise<TurnstileApi> {
       s.src = SCRIPT;
       s.async = true;
       s.defer = true;
-      s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("no api")));
-      s.onerror = () => {
+      const fail = () => {
+        window.clearTimeout(timer);
         scriptPromise = null;
         s.remove();
-        reject(new Error("load failed"));
+        reject(new Error("security check unavailable"));
       };
+      const timer = window.setTimeout(fail, 12000);
+      s.onload = () => {
+        window.clearTimeout(timer);
+        if (window.turnstile) resolve(window.turnstile);
+        else fail();
+      };
+      s.onerror = fail;
       document.head.appendChild(s);
     });
   }
@@ -37,7 +46,7 @@ function loadScript(): Promise<TurnstileApi> {
 
 let siteKeyPromise: Promise<string> | null = null;
 function resolveSiteKey(): Promise<string> {
-  const built = import.meta.env['VITE_TURNSTILE_SITE_KEY'] as string | undefined;
+  const built = (import.meta.env['VITE_TURNSTILE_SITE_KEY'] as string | undefined) ?? PUBLIC_TURNSTILE_SITE_KEY;
   if (built) return Promise.resolve(built);
   if (!siteKeyPromise)
     siteKeyPromise = getTurnstileSiteKey()
@@ -66,7 +75,7 @@ export const Turnstile = forwardRef<TurnstileHandle, Props>(function Turnstile(
   const widget = useRef<string | null>(null);
   const cb = useRef(onToken);
   cb.current = onToken;
-  const [state, setState] = useState<"loading" | "ready" | "error" | "config">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "error" | "config" | "host">("loading");
   const [attempt, setAttempt] = useState(0);
 
   useImperativeHandle(ref, () => ({
@@ -87,26 +96,28 @@ export const Turnstile = forwardRef<TurnstileHandle, Props>(function Turnstile(
       try {
         const api = await loadScript();
         if (cancelled || !box.current) return;
+        setState("ready");
         widget.current = api.render(box.current, {
           sitekey: siteKey,
           action,
           theme: "dark",
           size: "flexible",
           "refresh-expired": "auto",
-          "retry": "auto",
+          "retry": "never",
           callback: (t: string) => {
+            if (cancelled) return;
             setState("ready");
             cb.current(t);
           },
           "expired-callback": () => cb.current(null),
           "timeout-callback": () => cb.current(null),
-          "error-callback": () => {
+          "error-callback": (code: string) => {
+            if (cancelled) return true;
             cb.current(null);
-            setState("error");
+            setState(turnstileConfigurationError(code) ? "host" : "error");
             return true;
           },
         });
-        setState("ready");
       } catch {
         if (!cancelled) setState("error");
       }
@@ -126,12 +137,14 @@ export const Turnstile = forwardRef<TurnstileHandle, Props>(function Turnstile(
           Loading security check…
         </p>
       )}
-      {state === "error" && (
+      {(state === "error" || state === "host") && (
         <p role="alert" className="text-sm text-destructive">
-          The security check could not load.{" "}
-          <button type="button" className="underline" onClick={() => setAttempt((n) => n + 1)}>
+          {state === "host"
+            ? "The security check isn’t set up for this website yet. You can keep browsing, but this form can’t be submitted right now."
+            : "The security check couldn’t load. You can keep browsing; please retry before submitting."}{" "}
+          <Button type="button" variant="link" className="h-auto p-0 text-destructive" onClick={() => setAttempt((n) => n + 1)}>
             Try again
-          </button>
+          </Button>
         </p>
       )}
       {state === "config" && (
