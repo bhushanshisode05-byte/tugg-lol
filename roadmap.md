@@ -1,5 +1,13 @@
 # Tugg roadmap
 
+## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
+- [ ] Configure notify.tugg.lol with root sender identity and hello@tugg.lol reply-to. Blocker: owner completes email setup and GoDaddy verification.
+- [ ] Separate public business contact from private admin login identity.
+- [ ] Add verified-domain-gated transactional templates, private queue/results, capped retries, deduplication and recipient/owner limits.
+- [ ] Wire receipts, rejection/refund notices, contact replies/copies and genuine owner alerts without changing payment outcomes.
+- [ ] Double-opt-in recap digest, immediate one-click unsubscribe and Monday 08:00 UTC owner summary.
+- [ ] Update Privacy Policy and test mocked delivery, consent, safety and unverified fallback.
+
 ## PayGlocal follow-ups (do not publish)
 - [x] Optional environment-scoped CodeDrop drawer, silent redirect fallback, untrusted browser callbacks and confirmed rope refresh.
 - [x] Anonymous funnel handlers/catalog plus private owner 7/30-day test/live aggregate view.
