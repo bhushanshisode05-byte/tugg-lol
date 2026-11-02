@@ -19,16 +19,16 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
   const funnelId=useRef(""); const viewed=useRef(false); const section=useRef<HTMLElement>(null);
   const [environment,setEnvironment]=useState<"sandbox"|"live">("sandbox");
   const [orderId,setOrderId]=useState("");
-  const completed=useRef(false);
+  const completed=useRef(false); const failed=useRef(false);
   const emit = (step: "viewed"|"bundle_selected"|"turnstile_passed"|"opened"|"cancelled"|"abandoned"|"failed", bundle: 5|10|25 = pack, mode: "none"|"drawer"|"redirect" = "none") => {
     if (!funnelId.current) funnelId.current=crypto.randomUUID();
     window.__lovableEvents?.track?.("project.payment_funnel", {step,bundle,mode,environment});
     void funnel({data:{funnelId:funnelId.current,step,bundle,mode}}).catch(()=>{});
   };
   useEffect(()=>{
-    void settings().then(c=>setEnvironment(c.environment));
+    void settings().then(c=>setEnvironment(c.environment)).catch(()=>{});
     const id=new URLSearchParams(window.location.search).get("payment");
-    if(id && /^[0-9a-f-]{36}$/i.test(id))setOrderId(id);
+    if(id && /^[0-9a-f-]{36}$/i.test(id)) {setOrderId(id);const saved=sessionStorage.getItem(`tugg-funnel-${id}`);if(saved && /^[0-9a-f-]{36}$/i.test(saved))funnelId.current=saved;}
     const el=section.current; if(!el || typeof IntersectionObserver === "undefined")return;
     const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)&&!viewed.current){viewed.current=true;emit("viewed");observer.disconnect();}});
     observer.observe(el); return()=>observer.disconnect();
@@ -40,7 +40,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     let stop=false, n=0, timer: ReturnType<typeof setTimeout>|undefined;
     const tick=async()=> { const r=await read({data:{orderId:id}}); if(stop)return;
       if(r?.status === "paid") {if(!completed.current){completed.current=true;window.__lovableEvents?.track?.("project.payment_funnel",{step:"completed",bundle:r.quantity,mode:"none",environment});}setConfirmation(`${r.quantity} pulls applied to your chosen side.`);pulledRef.current();}
-      else if(r?.status === "failed" || r?.status === "expired") {setConfirmation("Payment failed or expired. No pulls were applied."); window.__lovableEvents?.track?.("project.payment_funnel",{step:"failed",bundle:r.quantity,mode:"none",environment});}
+      else if(r?.status === "failed" || r?.status === "expired") {setConfirmation("Payment failed or expired. No pulls were applied."); if(!failed.current){failed.current=true;window.__lovableEvents?.track?.("project.payment_funnel",{step:"failed",bundle:r.quantity,mode:"none",environment});}}
       else {setConfirmation("Payment confirmation pending. Please do not pay again.");if(n++<30)timer=setTimeout(tick,4000);}
     };tick().catch(()=>setConfirmation("Payment confirmation pending."));return()=>{stop=true;if(timer)clearTimeout(timer);};
   },[read,orderId,environment]);
@@ -55,7 +55,8 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     {!ready && <p className="mt-4 text-sm text-muted-foreground">{message || "PayGlocal checkout is unavailable. No payment has been taken."}</p>}
     {error && <p role="alert" className="mt-3 text-destructive">{error}</p>}
     <Button className="mt-4 h-auto w-full whitespace-normal py-4" disabled={!ready||busy||!token||!billingSchema.safeParse(billing).success||!side} onClick={async()=>{setBusy(true);setError("");try{const r=await buy({data:{funnelId:funnelId.current || (funnelId.current=crypto.randomUUID()),sideId:side,pack,name,shout,billing,returnUrl:`${window.location.origin}/m/${slug}`,turnstileToken:token??undefined}});if("error" in r){setError(r.error);emit("failed");}else {
-      setEnvironment(r.environment); completed.current=false;
+      setEnvironment(r.environment); completed.current=false; failed.current=false;
+      sessionStorage.setItem(`tugg-funnel-${r.orderId}`,funnelId.current);
       const drawer=await openCodeDrop({codedropId:r.codedropId,environment:r.environment,redirectUrl:r.url},result=>{
         if(result==="cancelled"||result==="abandoned"||result==="failed") {emit(result,pack,"drawer");setConfirmation(result==="failed"?"Payment failed. Confirmation will be checked.":"Payment closed. Confirmation will be checked.");}
         else setConfirmation("Payment confirmation pending. Please do not pay again.");

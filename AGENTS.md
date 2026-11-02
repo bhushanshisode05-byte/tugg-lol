@@ -40,3 +40,8 @@
 - PayGlocal callbacks verify RS256 with the environment PUBCERT and merchant identity; incomplete/unverified callbacks use only the stored gid/merchant ID for authenticated Get Status. Why: browser redirects and decoded claims are never payment proof.
 - PayGlocal request JWS signs the official digest-object format over exact body bytes; returned status URLs stay on the selected API origin and hosted redirects stay under payglocal.in. Why: preserve protocol integrity and prevent credential forwarding.
 - Managed payment reconciliation checks overdue orders in bounded batches; expired/failed payments cannot become paid, and uncertain refunds are claimed once and left for owner review. Why: abandoned browser flows need recovery without blind refund retries.
+
+- Optional CodeDrop loads on payment intent with environment-scoped ID and exact script hosts; browser callbacks only prompt stored-state reads. Why: drawer UX must not become payment authority or mix environments.
+- Payment funnel uses catalogued runtime events plus service-only app aggregates for the owner view, with completion from the order terminal trigger. Why: internal analytics has no supported app query API and browser claims cannot prove payment.
+- Reconciliation eligibility and expiry live in a service-only SQL RPC with bounded age backoff; empty results return before provider setup. Why: avoid repeated checks, stale polling and idle provider costs.
+- Router-generated per-request nonce constrains production script loading without unsafe script execution, preserving existing stricter policies; development is report-only. Why: CodeDrop must not require wildcard script permissions.
