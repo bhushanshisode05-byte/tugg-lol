@@ -6,9 +6,10 @@
 - [ ] Verify a successful real challenge and server validation. Blocker: owner must allow the preview hostname (and tugg.lol/www.tugg.lol for later live use) in this Cloudflare widget and ensure TURNSTILE_SECRET_KEY matches; localhost was rejected. No publishing performed.
 
 ## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
-- [ ] Configure notify.tugg.lol with root sender identity and hello@tugg.lol reply-to. Blocker: owner completes email setup and GoDaddy verification.
+- [x] Configure hello.tugg.lol with root sender identity hello@tugg.lol and hello@tugg.lol reply-to; install managed email dependencies and authenticated template preview infrastructure. DNS verification remains pending; no send attempted and nothing published.
+- [ ] Confirm DNS verification and real delivery. Blocker: GoDaddy delegation for hello.tugg.lol must point to ns3.lovable.cloud and ns4.lovable.cloud; monitor More → Emails.
 - [ ] Separate public business contact from private admin login identity.
-- [ ] Add verified-domain-gated transactional templates, private queue/results, capped retries, deduplication and recipient/owner limits.
+- [ ] Add transactional templates and trigger wiring, private body-free results, deduplication and recipient/owner limits; managed email handles delivery retries, suppression and unsubscribe (no app email queue).
 - [ ] Wire receipts, rejection/refund notices, contact replies/copies and genuine owner alerts without changing payment outcomes.
 - [ ] Double-opt-in recap digest, immediate one-click unsubscribe and Monday 08:00 UTC owner summary.
 - [ ] Update Privacy Policy and test mocked delivery, consent, safety and unverified fallback.

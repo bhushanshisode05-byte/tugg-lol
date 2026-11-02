@@ -47,6 +47,7 @@ import { Route as ApiPublicSideImagesReportRouteImport } from './routes/api/publ
 import { Route as ApiPublicSideImagesUploadRouteImport } from './routes/api/public/side-images/upload'
 import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
 import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
 import { Route as ApiPublicPaymentsDodoWebhookRouteImport } from './routes/api/public/payments/dodo/webhook'
@@ -244,6 +245,12 @@ const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
   path: '/api/public/support/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicOgMSlugRoute = ApiPublicOgMSlugRouteImport.update({
   id: '/api/public/og/m/$slug',
   path: '/api/public/og/m/$slug',
@@ -305,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
@@ -348,6 +356,7 @@ export interface FileRoutesByTo {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
@@ -393,6 +402,7 @@ export interface FileRoutesById {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
@@ -525,6 +537,7 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
@@ -569,6 +582,7 @@ export interface RootRouteChildren {
   ApiPublicSideImagesUploadRoute: typeof ApiPublicSideImagesUploadRoute
   ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
   ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
   ApiPublicPaymentsDodoWebhookRoute: typeof ApiPublicPaymentsDodoWebhookRoute
@@ -843,6 +857,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSupportContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/og/m/$slug': {
       id: '/api/public/og/m/$slug'
       path: '/api/public/og/m/$slug'
@@ -923,6 +944,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSideImagesUploadRoute: ApiPublicSideImagesUploadRoute,
   ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
   ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
   ApiPublicPaymentsDodoWebhookRoute: ApiPublicPaymentsDodoWebhookRoute,
