@@ -1,8 +1,9 @@
 # Tugg roadmap
 
 ## Turnstile public key (do not publish)
-- [ ] Set the public browser key, retain shared widgets for pull/matchup checkout, contact, chat and digest; handle hostname/key/script errors without blocking browsing and keep submissions fail-closed.
-- [ ] Verify widget rendering at desktop and phone sizes and run security regression tests. Real success requires the matching secret and allowed preview/live hostnames in Cloudflare.
+- [x] Store public key in src/lib/turnstile-config.ts; all five shared widgets use it, including checkout when provider configuration is unavailable. Friendly hostname/key/script failures leave browsing available; submissions remain fail-closed.
+- [x] Check all five widget locations at 1280×1800 and 390×844; Cloudflare renders its hostname-error state on localhost, friendly message fits, no page crashes. 37 security/checkout tests pass; preview build OK.
+- [ ] Verify a successful real challenge and server validation. Blocker: owner must allow the preview hostname (and tugg.lol/www.tugg.lol for later live use) in this Cloudflare widget and ensure TURNSTILE_SECRET_KEY matches; localhost was rejected. No publishing performed.
 
 ## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
 - [ ] Configure notify.tugg.lol with root sender identity and hello@tugg.lol reply-to. Blocker: owner completes email setup and GoDaddy verification.
