@@ -246,7 +246,7 @@ function CreateForm() {
           )}
           {!ready && <p className="text-sm text-muted-foreground">{message}</p>}
           {ready && provider === "payglocal" && <BillingFields value={billing} onChange={setBilling}/>}
-          {ready && <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />}
+          <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
           {err && (
             <p role="alert" className="text-sm text-destructive">
               {err}
