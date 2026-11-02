@@ -27,7 +27,7 @@ export const buyImmediateBundle = createServerFn({ method: "POST" })
         if (!verdict.allowed) { name=""; shout=""; }
       }
       const id=crypto.randomUUID(), returnUrl=new URL(data.returnUrl); returnUrl.searchParams.set("payment", id);
-      const order = await db.from("payglocal_orders").insert({ id, funnel_id: data.funnelId, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
+      const order = await db.from("payglocal_orders").insert({ id, funnel_id: data.funnelId ?? null, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
       if (order.error) throw new Error("Could not start checkout.");
       const session=await provider.checkout({ productId: `pull_${data.pack}`, orderId: id, returnUrl: returnUrl.toString(), cents: data.pack*100, billing: data.billing });
       const saved=await db.from("payglocal_orders").update({ gid: session.sessionId, status_url: session.statusUrl || null }).eq("id", id).is("gid", null);
@@ -52,5 +52,5 @@ export const recordPaymentFunnel = createServerFn({ method: "POST" })
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const slot = await db.rpc("take_checkout_slot", { p_ip: `funnel:${await hashWalletToken(getRequestIP({xForwardedFor:true}) || "unknown")}`, p_max: 120, p_window_minutes: 60 });
     if (slot.error || !slot.data) return;
-    await db.from("payglocal_funnel_events").upsert({ funnel_id: data.funnelId, environment: config().paymentsEnv, step: data.step, bundle: data.bundle, mode: data.mode }, { onConflict: "funnel_id,environment,step,bundle,mode", ignoreDuplicates: true });
+    await db.from("payglocal_funnel_events").upsert({ funnel_id: data.funnelId ?? null, environment: config().paymentsEnv, step: data.step, bundle: data.bundle, mode: data.mode }, { onConflict: "funnel_id,environment,step,bundle,mode", ignoreDuplicates: true });
   });

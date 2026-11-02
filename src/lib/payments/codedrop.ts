@@ -17,7 +17,7 @@ export async function openCodeDrop(input: { codedropId: string; environment: "sa
   if (url.protocol !== "https:" || !url.hostname.endsWith(".payglocal.in")) return false;
   const src = input.environment === "live" ? "https://codedrop.payglocal.in/simple.js" : "https://codedrop.uat.payglocal.in/simple.js";
   let script = document.querySelector<HTMLScriptElement>('script[data-tugg-codedrop]');
-  if (script && (script.src !== src || script.dataset.cdId !== input.codedropId)) { script.remove(); script = null; delete window.PGPay; }
+  if (script && (script.src !== src || script.dataset["cdId"] !== input.codedropId)) { script.remove(); script = null; delete window.PGPay; }
   if (!window.PGPay) {
     const loaded = await new Promise<boolean>((resolve) => {
       const element = script ?? document.createElement("script");
@@ -27,7 +27,7 @@ export async function openCodeDrop(input: { codedropId: string; environment: "sa
       element.onerror = () => finish(false);
       if (!script) {
         element.src = src; element.defer = true;
-        element.dataset.tuggCodedrop = "true"; element.dataset.displayMode = "drawer"; element.dataset.cdId = input.codedropId;
+        element.dataset["tuggCodedrop"] = "true"; element.dataset["displayMode"] = "drawer"; element.dataset["cdId"] = input.codedropId;
         document.head.appendChild(element);
       }
     });
