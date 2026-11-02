@@ -28,5 +28,13 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(tugg_payglocal_funnel()) e WHERE e->>'days'='7' AND e->>'environment'='sandbox' AND e->>'step'='viewed' AND e->>'count'='1') THEN RAISE EXCEPTION 'Visit not deduplicated'; END IF;
  IF has_table_privilege('anon','payglocal_funnel_events','SELECT') OR has_function_privilege('authenticated','tugg_payglocal_funnel()','EXECUTE') THEN RAISE EXCEPTION 'Private funnel exposed'; END IF;
  IF EXISTS(SELECT 1 FROM payglocal_ledger WHERE order_id=o) THEN RAISE EXCEPTION 'Expiry applied pulls'; END IF;
+ o:=gen_random_uuid(); f:=gen_random_uuid();
+ INSERT INTO payglocal_orders(id,environment,merchant_unique_id,kind,expected_cents,quantity,side_id,return_path,funnel_id,gid)
+ VALUES(o,'sandbox',replace(o::text,'-',''),'pull_5',500,5,s,'/',f,'funnel-gid-'||o);
+ r:=payglocal_reconcile_due('sandbox');
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(r->'rows') e WHERE e->>'id'=o::text) THEN RAISE EXCEPTION 'Payment younger than five minutes checked'; END IF;
+ PERFORM apply_payglocal_payment(o,'funnel-gid-'||o,'sandbox',500,'USA');
+ PERFORM apply_payglocal_payment(o,'funnel-gid-'||o,'sandbox',500,'USA');
+ IF (SELECT count(*) FROM payglocal_funnel_events WHERE funnel_id=f AND step='completed')<>1 THEN RAISE EXCEPTION 'Completion replay counted twice'; END IF;
 END $$;
 ROLLBACK;
