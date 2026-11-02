@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "events": {
+    "project.payment_funnel": {
+      "event_schema_version": 1,
+      "description": "An anonymous pull checkout funnel step; browser completion emitted only after server-confirmed payment.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step",
+          "bundle",
+          "mode",
+          "environment"
+        ],
+        "properties": {
+          "step": {
+            "type": "string",
+            "enum": [
+              "viewed",
+              "bundle_selected",
+              "turnstile_passed",
+              "opened",
+              "completed",
+              "cancelled",
+              "abandoned",
+              "failed"
+            ]
+          },
+          "bundle": {
+            "type": "number",
+            "enum": [
+              5,
+              10,
+              25
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "none",
+              "drawer",
+              "redirect"
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "sandbox",
+              "live"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

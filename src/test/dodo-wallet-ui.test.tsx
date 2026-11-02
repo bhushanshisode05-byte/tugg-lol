@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   buyPullPack: vi.fn(),
 }));
 vi.mock("@/lib/payments.functions", () => mocks);
-vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: vi.fn(), getImmediatePayment: vi.fn() }));
+vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: vi.fn(), getImmediatePayment: vi.fn(), recordPaymentFunnel: vi.fn(async()=>{}), getCodeDropConfig: vi.fn(async()=>({environment:"sandbox",codedropId:""})) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
 vi.mock("@/components/tugg/Turnstile", () => ({
   Turnstile: ({ onToken }: any) => (

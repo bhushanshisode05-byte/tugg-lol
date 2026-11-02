@@ -1,5 +1,12 @@
 # Tugg roadmap
 
+## PayGlocal follow-ups (do not publish)
+- [x] Optional environment-scoped CodeDrop drawer, silent redirect fallback, untrusted browser callbacks and confirmed rope refresh.
+- [x] Anonymous funnel handlers/catalog plus private owner 7/30-day test/live aggregate view.
+- [x] Due-only reconciliation with 5/15/60-minute backoff and local 24-hour expiry; quiet day 288 invocations, zero provider calls.
+- [x] Mock/simulated browser tests, SQL backoff/privacy/rollback/concurrency tests and desktop/mobile preview checks; setup host discrepancy retained.
+- [ ] Real merchant CodeDrop/CSP, scheduled delivery and signed-in owner funnel verification. Blocker: owner identity, sandbox credentials and provider CodeDrop enablement.
+
 ## PayGlocal immediate bundles (do not publish)
 - [x] Read official signing, hosted checkout, callback, status, refund and test-card documentation; official JS digest-object implementation checked.
 - [x] Add server-selected provider and immediate mode; keep Dodo/wallet code dormant.

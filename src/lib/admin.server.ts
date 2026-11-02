@@ -16,7 +16,7 @@ export async function getAdminData(request: Request) {
     p_email: config().ownerEmail,
   });
   if (roleError || !owner) return Response.json({ error: "Owner access only." }, { status: 403 });
-  const [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, flaggedWallets] =
+  const [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets] =
     await Promise.all([
       supabaseAdmin.rpc("tugg_admin_summary"),
       supabaseAdmin
@@ -50,6 +50,7 @@ export async function getAdminData(request: Request) {
       supabaseAdmin.rpc("tugg_dodo_summary"),
       supabaseAdmin.rpc("tugg_payglocal_summary"),
       supabaseAdmin.from("payglocal_orders").select("id,environment,kind,quantity,expected_cents,status,provider_status,refund_status,reconcile_count,reconciled_at,reconcile_result,created_at").order("created_at",{ascending:false}).limit(200),
+      supabaseAdmin.rpc("tugg_payglocal_funnel"),
       supabaseAdmin
         .from("pull_wallets")
         .select("id,environment,balance,flagged,created_at")
@@ -58,7 +59,7 @@ export async function getAdminData(request: Request) {
         .limit(200),
     ]);
   if (
-    [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, flaggedWallets].some(
+    [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets].some(
       (r) => r.error,
     )
   )
@@ -72,6 +73,7 @@ export async function getAdminData(request: Request) {
       dodo: dodo.data,
       payglocal: payglocal.data,
       payglocalOrders: payglocalOrders.data,
+      funnel: funnel.data,
       flaggedWallets: flaggedWallets.data,
       creationRevenue,
       pulls: pulls.data,

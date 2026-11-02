@@ -40,6 +40,7 @@ export const config = () => ({
       keyId: process.env[`${prefix}_KEY_ID`] || "",
       privateKey: process.env[`${prefix}_PRIVATE_KEY`] || "",
       publicCert: process.env[`${prefix}_PUBLIC_CERT`] || "",
+      codedropId: process.env[`${prefix}_CODEDROP_ID`] || "",
       otherMerchantId: process.env[`${opposite}_MERCHANT_ID`] || "",
       otherKeyId: process.env[`${opposite}_KEY_ID`] || "",
     };
