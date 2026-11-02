@@ -360,6 +360,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payglocal_funnel_events: {
+        Row: {
+          bundle: number
+          created_at: string
+          environment: string
+          funnel_id: string
+          id: string
+          mode: string
+          step: string
+        }
+        Insert: {
+          bundle: number
+          created_at?: string
+          environment: string
+          funnel_id: string
+          id?: string
+          mode?: string
+          step: string
+        }
+        Update: {
+          bundle?: number
+          created_at?: string
+          environment?: string
+          funnel_id?: string
+          id?: string
+          mode?: string
+          step?: string
+        }
+        Relationships: []
+      }
       payglocal_ledger: {
         Row: {
           amount_cents: number
@@ -415,6 +445,7 @@ export type Database = {
           display_name: string
           environment: string
           expected_cents: number
+          funnel_id: string | null
           gid: string | null
           id: string
           kind: string
@@ -444,6 +475,7 @@ export type Database = {
           display_name?: string
           environment: string
           expected_cents: number
+          funnel_id?: string | null
           gid?: string | null
           id?: string
           kind: string
@@ -473,6 +505,7 @@ export type Database = {
           display_name?: string
           environment?: string
           expected_cents?: number
+          funnel_id?: string | null
           gid?: string | null
           id?: string
           kind?: string
@@ -1013,6 +1046,7 @@ export type Database = {
       }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
       next_utc_midnight: { Args: never; Returns: string }
+      payglocal_reconcile_due: { Args: { p_env: string }; Returns: Json }
       record_pull: {
         Args: {
           p_amount: number
@@ -1065,6 +1099,7 @@ export type Database = {
         Returns: Json
       }
       tugg_dodo_summary: { Args: never; Returns: Json }
+      tugg_payglocal_funnel: { Args: never; Returns: Json }
       tugg_payglocal_summary: { Args: never; Returns: Json }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
