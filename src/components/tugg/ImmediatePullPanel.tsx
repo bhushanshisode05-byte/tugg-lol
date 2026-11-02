@@ -23,12 +23,12 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
   const emit = (step: "viewed"|"bundle_selected"|"turnstile_passed"|"opened"|"cancelled"|"abandoned"|"failed", bundle: 5|10|25 = pack, mode: "none"|"drawer"|"redirect" = "none") => {
     if (!funnelId.current) funnelId.current=crypto.randomUUID();
     window.__lovableEvents?.track?.("project.payment_funnel", {step,bundle,mode,environment});
-    void funnel({data:{funnelId:funnelId.current,step,bundle,mode}}).catch(()=>{});
+    return funnel({data:{funnelId:funnelId.current,step,bundle,mode}}).catch(()=>{});
   };
   useEffect(()=>{
     void settings().then(c=>setEnvironment(c.environment)).catch(()=>{});
     const id=new URLSearchParams(window.location.search).get("payment");
-    if(id && /^[0-9a-f-]{36}$/i.test(id)) {setOrderId(id);const saved=sessionStorage.getItem(`tugg-funnel-${id}`);if(saved && /^[0-9a-f-]{36}$/i.test(saved))funnelId.current=saved;}
+    if(id && /^[0-9a-f-]{36}$/i.test(id)) {setOrderId(id);try{const saved=sessionStorage.getItem(`tugg-funnel-${id}`);if(saved && /^[0-9a-f-]{36}$/i.test(saved))funnelId.current=saved;}catch{/* Storage may be disabled; checkout still works. */}}
     const el=section.current; if(!el || typeof IntersectionObserver === "undefined")return;
     const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)&&!viewed.current){viewed.current=true;emit("viewed");observer.disconnect();}});
     observer.observe(el); return()=>observer.disconnect();
@@ -56,13 +56,13 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     {error && <p role="alert" className="mt-3 text-destructive">{error}</p>}
     <Button className="mt-4 h-auto w-full whitespace-normal py-4" disabled={!ready||busy||!token||!billingSchema.safeParse(billing).success||!side} onClick={async()=>{setBusy(true);setError("");try{const r=await buy({data:{funnelId:funnelId.current || (funnelId.current=crypto.randomUUID()),sideId:side,pack,name,shout,billing,returnUrl:`${window.location.origin}/m/${slug}`,turnstileToken:token??undefined}});if("error" in r){setError(r.error);emit("failed");}else {
       setEnvironment(r.environment); completed.current=false; failed.current=false;
-      sessionStorage.setItem(`tugg-funnel-${r.orderId}`,funnelId.current);
+      try{sessionStorage.setItem(`tugg-funnel-${r.orderId}`,funnelId.current);}catch{/* Anonymous continuity is optional. */}
       const drawer=await openCodeDrop({codedropId:r.codedropId,environment:r.environment,redirectUrl:r.url},result=>{
         if(result==="cancelled"||result==="abandoned"||result==="failed") {emit(result,pack,"drawer");setConfirmation(result==="failed"?"Payment failed. Confirmation will be checked.":"Payment closed. Confirmation will be checked.");}
         else setConfirmation("Payment confirmation pending. Please do not pay again.");
         setOrderId(r.orderId);
       });
-      emit("opened",pack,drawer?"drawer":"redirect");
+      await emit("opened",pack,drawer?"drawer":"redirect");
       if(drawer){setOrderId(r.orderId);setConfirmation("Payment confirmation pending. Please do not pay again.");}else window.location.assign(r.url);
     }}catch{setError("Checkout could not open. No unverified pulls applied.");emit("failed");}finally{ts.current?.reset();setBusy(false);}}}>Pay ${pack} · {pack} pulls for {sides.find(s=>s.id===side)?.name}</Button>
     <p className="mt-4 text-xs text-muted-foreground">PayGlocal (RBI-authorised) processes payments. Bundles are non-refundable except where required by law. No prizes or payouts.</p>
