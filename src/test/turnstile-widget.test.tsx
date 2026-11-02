@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { Turnstile } from "@/components/tugg/Turnstile";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { PUBLIC_TURNSTILE_SITE_KEY, turnstileConfigurationError } from "@/lib/turnstile-config";
@@ -34,9 +34,9 @@ describe("shared Turnstile configuration and token safety", () => {
       await waitFor(() => expect(options).toBeDefined());
       const callback = options?.callback as (token: string) => void;
       const error = options?.["error-callback"] as (code: string) => boolean;
-      callback("valid-token");
+      act(() => callback("valid-token"));
       expect(onToken).toHaveBeenLastCalledWith("valid-token");
-      error(code);
+      act(() => { error(code); });
       expect(onToken).toHaveBeenLastCalledWith(null);
     });
   }
