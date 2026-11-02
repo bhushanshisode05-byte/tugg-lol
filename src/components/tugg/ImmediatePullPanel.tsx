@@ -29,7 +29,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     void settings().then(c=>setEnvironment(c.environment));
     const id=new URLSearchParams(window.location.search).get("payment");
     if(id && /^[0-9a-f-]{36}$/i.test(id))setOrderId(id);
-    const el=section.current; if(!el)return;
+    const el=section.current; if(!el || typeof IntersectionObserver === "undefined")return;
     const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)&&!viewed.current){viewed.current=true;emit("viewed");observer.disconnect();}});
     observer.observe(el); return()=>observer.disconnect();
   },[]);

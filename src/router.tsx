@@ -18,9 +18,10 @@ const requestNonce = createIsomorphicFn()
 export const getRouter = () => {
   const queryClient = new QueryClient();
 
+  const nonce=requestNonce();
   const router = createRouter({
     routeTree,
-    ssr: { nonce: requestNonce() },
+    ssr: nonce ? { nonce } : {},
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
