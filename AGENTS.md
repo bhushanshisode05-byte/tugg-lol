@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Tugg architecture
+- Subdirectories have their own AGENTS.md; read src/lib/payments/AGENTS.md before any payment-related change, including callers and schema. Why: payment integrity rules stay with their domain.
 - Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; wallet spending calls record_pull within the same locked SQL transaction as the debit; credits come only from verified provider payments. Why: no overdraw or unpaid pulls.
 - Public pages read through publishable-key server functions in src/lib/tugg.functions.ts so SSR serves full HTML to crawlers.
 - All environment switches and PayGlocal credentials are read only via config() in src/lib/server-utils.server.ts. Why: request-time server configuration never enters browser bundles.
@@ -32,13 +33,6 @@
 - Image reports count distinct hashed networks atomically and never restore a hidden image during concurrent AI re-checks. Why: unauthenticated visitors have no provable person identity.
 - Optional side-picture entry points, display, moderation, cleanup and renderer use the shared SIDE_IMAGES_ENABLED gate. Why: unfinished pictures must remain dormant without deleting rollback-safe schema.
 
-- Dodo orders, wallet ledger and webhook leases are service-only durable state; unique payment IDs and wallet row locks enforce idempotent credits and spends. Why: workers are stateless and concurrent delivery must not duplicate money.
-- Refund POSTs are claimed durably once; uncertain outcomes require reconciliation and are never blindly retried because Dodo refund idempotency is undocumented. Why: avoid duplicate refunds.
-- Recovery tokens travel only in URL fragments and request bodies; browser storage is environment-scoped and the database stores only SHA-256 hashes. Why: wallet links are bearer credentials.
-- Legacy Stripe modules remain disconnected and their webhook is disabled until real Dodo sandbox verification permits deletion. Why: preserve the requested staged migration without allowing legacy writes.
-- PayGlocal orders and matching immediate credit/debit entries are service-only; apply_payglocal_payment calls record_pull inside one locked SQL transaction with unique order/gid guards and zero carryover. Why: concurrent or replayed callbacks cannot duplicate pulls or partially apply a bundle.
-- PayGlocal callbacks verify RS256 with the environment PUBCERT and merchant identity; incomplete/unverified callbacks use only the stored gid/merchant ID for authenticated Get Status. Why: browser redirects and decoded claims are never payment proof.
-- PayGlocal request JWS signs the official digest-object format over exact body bytes; returned status URLs stay on the selected API origin and hosted redirects stay under payglocal.in. Why: preserve protocol integrity and prevent credential forwarding.
 - Managed payment reconciliation checks overdue orders in bounded batches; expired/failed payments cannot become paid, and uncertain refunds are claimed once and left for owner review. Why: abandoned browser flows need recovery without blind refund retries.
 
 - Optional CodeDrop loads on payment intent with environment-scoped ID and exact script hosts; browser callbacks only prompt stored-state reads. Why: drawer UX must not become payment authority or mix environments.
