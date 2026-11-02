@@ -32,7 +32,7 @@ describe("shared Turnstile configuration and token safety", () => {
       window.turnstile = { render: vi.fn((_el, opts) => { options = opts; return "widget"; }), remove: vi.fn(), reset: vi.fn() };
       render(<Turnstile action={TURNSTILE_ACTIONS.pull} onToken={onToken} />);
       await waitFor(() => expect(options).toBeDefined());
-      const callback = options?.callback as (token: string) => void;
+      const callback = options?.["callback"] as (token: string) => void;
       const error = options?.["error-callback"] as (code: string) => boolean;
       act(() => callback("valid-token"));
       expect(onToken).toHaveBeenLastCalledWith("valid-token");
