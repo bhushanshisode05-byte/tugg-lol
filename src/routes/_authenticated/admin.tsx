@@ -18,6 +18,7 @@ type AdminData = {
     }[];
   };
   payglocal: { environments: { environment: string; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
+  funnel: { days: number; environment: string; step: string; count: number }[];
   payglocalOrders: Record<string, unknown>[];
   flaggedWallets: Record<string, unknown>[];
   creationRevenue: { live: number; sandbox: number };
@@ -84,6 +85,21 @@ function Admin() {
           PayGlocal confirmed purchase revenue, before refunds and fees; not settlement balances.
           Historical purchases remain in the records below.
         </p>
+      </section>
+      <section className="border-b border-border py-6">
+        <h2 className="text-2xl font-bold">Pull payment funnel</h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+          {[7,30].flatMap(days=>["sandbox","live"].map(environment=>{
+            const steps=["viewed","bundle_selected","turnstile_passed","opened","completed"];
+            const count=(step:string)=>Number(data.funnel.find(r=>r.days===days&&r.environment===environment&&r.step===step)?.count??0);
+            return <div key={`${days}-${environment}`}><h3 className="font-bold">Last {days} days · {environment==="live"?"Live":"Test"}</h3>
+              <table className="mt-2 w-full text-left text-sm"><thead><tr><th>Step</th><th>Visits</th><th>From prior step</th></tr></thead><tbody>
+                {steps.map((step,i)=><tr key={step}><td className="py-2">{step.replaceAll("_"," ")}</td><td>{count(step)}</td><td>{i===0?"—":count(steps[i-1]??"")?`${(100*count(step)/count(steps[i-1]??"")).toFixed(1)}%`:"—"}</td></tr>)}
+              </tbody></table><p className="mt-2 text-sm text-muted-foreground">Cancelled: {count("cancelled")} · Abandoned: {count("abandoned")} · Failed: {count("failed")}</p>
+            </div>;
+          }))}
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">Anonymous panel visits, deduplicated per step. Completion comes only from confirmed server payments. Browser reports may be blocked; percentages are observed step ratios, not a matched cohort.</p>
       </section>
       <section className="py-6">
         <h2 className="text-2xl font-bold">Matchups by source</h2>
