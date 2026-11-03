@@ -67,6 +67,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
             detail: { paymentId: payment.payment_id, type: event.type },
           }),
       );
+      try { await (await import('../app-email.server')).sendOwnerAlert('dispute', id, provider.environment); } catch { /* dispute processing unchanged */ }
       return;
     }
     if (event.type === "payment.failed") {
@@ -106,6 +107,9 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
       );
       if (event.type === "refund.succeeded")
         checked(await db.from("creators").update({ refunded: true }).eq("dodo_order_id", id));
+      if (event.type === 'refund.failed') {
+        try { await (await import('../app-email.server')).sendOwnerAlert('refund_review', id, provider.environment); } catch { /* refund outcome unchanged */ }
+      }
       checked(
         await db
           .from("events")
