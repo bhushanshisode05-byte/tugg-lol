@@ -21,7 +21,10 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
     const o = result.data; if (!o) throw new Error("Payment order unavailable");
     if (o.status === "expired" || o.status === "failed") {
       // Terminal unpaid orders never acquire pulls from a late or contradictory callback.
-      if (verified?.status === "SENT_FOR_CAPTURE") checked(await db.from("events").insert({ kind: "payglocal_late_capture_review", detail: { orderId: id, environment: provider.environment } }));
+      if (verified?.status === "SENT_FOR_CAPTURE") {
+        checked(await db.from("events").insert({ kind: "payglocal_late_capture_review", detail: { orderId: id, environment: provider.environment } }));
+        try { await (await import('../app-email.server')).sendOwnerAlert('payment_error', id, provider.environment); } catch { /* outcome unchanged */ }
+      }
       return { status: o.status };
     }
     if (o.status === "paid" && (o.quantity > 0 || o.review_allowed === true || o.refund_status)) return { status: "paid", duplicate: true };
@@ -105,6 +108,10 @@ export async function handlePayglocalCallback(request: Request) {
       try { decodePayglocalHint(token); } catch { /* status uses stored gid below */ }
     }
     const result = await processPayglocalOrder(id, provider, verified);
+    // Only a verified, identity-matched provider status may trigger a dispute alert.
+    if (verified && ['DISPUTE','DISPUTED','CHARGEBACK','DISPUTE_OPENED'].includes(verified.status)) {
+      try { await (await import('../app-email.server')).sendOwnerAlert('dispute', id, c.paymentsEnv); } catch { /* outcome unchanged */ }
+    }
     if (result.busy) return new Response("Payment processing; retry", { status: 503 });
     const destination = new URL(order.return_path, url.origin);
     if (destination.origin !== url.origin) throw new Error("Invalid return address");
