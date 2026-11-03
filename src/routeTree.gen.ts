@@ -40,6 +40,7 @@ import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
+import { Route as ApiPublicJobsOwnerSummaryRouteImport } from './routes/api/public/jobs/owner-summary'
 import { Route as ApiPublicJobsPaymentsRouteImport } from './routes/api/public/jobs/payments'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicSideImagesIdRouteImport } from './routes/api/public/side-images/$id'
@@ -207,6 +208,12 @@ const ApiPublicJobsDailyRoute = ApiPublicJobsDailyRouteImport.update({
   path: '/api/public/jobs/daily',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsOwnerSummaryRoute =
+  ApiPublicJobsOwnerSummaryRouteImport.update({
+    id: '/api/public/jobs/owner-summary',
+    path: '/api/public/jobs/owner-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsPaymentsRoute = ApiPublicJobsPaymentsRouteImport.update({
   id: '/api/public/jobs/payments',
   path: '/api/public/jobs/payments',
@@ -305,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
@@ -349,6 +357,7 @@ export interface FileRoutesByTo {
   '/recap': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
@@ -395,6 +404,7 @@ export interface FileRoutesById {
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/side-images/$id': typeof ApiPublicSideImagesIdRoute
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
@@ -530,6 +542,7 @@ export interface FileRouteTypes {
     | '/recap/'
     | '/api/public/admin/data'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
     | '/api/public/side-images/$id'
@@ -575,6 +588,7 @@ export interface RootRouteChildren {
   RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
+  ApiPublicJobsOwnerSummaryRoute: typeof ApiPublicJobsOwnerSummaryRoute
   ApiPublicJobsPaymentsRoute: typeof ApiPublicJobsPaymentsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicSideImagesIdRoute: typeof ApiPublicSideImagesIdRoute
@@ -808,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/owner-summary': {
+      id: '/api/public/jobs/owner-summary'
+      path: '/api/public/jobs/owner-summary'
+      fullPath: '/api/public/jobs/owner-summary'
+      preLoaderRoute: typeof ApiPublicJobsOwnerSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/payments': {
       id: '/api/public/jobs/payments'
       path: '/api/public/jobs/payments'
@@ -937,6 +958,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
+  ApiPublicJobsOwnerSummaryRoute: ApiPublicJobsOwnerSummaryRoute,
   ApiPublicJobsPaymentsRoute: ApiPublicJobsPaymentsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicSideImagesIdRoute: ApiPublicSideImagesIdRoute,
