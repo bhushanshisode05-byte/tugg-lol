@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/policies";
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { denied?: boolean } => ({
+    denied: search.denied === true || search.denied === "true" || undefined,
+  }),
   staticData: { sitemap: false },
   head: () => ({
     meta: [
@@ -15,6 +18,7 @@ export const Route = createFileRoute("/auth")({
   component: Auth,
 });
 function Auth() {
+  const { denied } = Route.useSearch();
   const [error, setError] = useState("");
   const [signedIn, setSignedIn] = useState(false);
   const navigate = useNavigate();
@@ -46,6 +50,11 @@ function Auth() {
       <p className="mt-4 text-muted-foreground">
         Only the configured owner can read these records. Public signup is closed.
       </p>
+      {denied && (
+        <p role="alert" className="mt-4 text-destructive">
+          This account does not have owner access. Sign out and use the configured owner account.
+        </p>
+      )}
       <div className="mt-8 flex flex-col gap-3">
         {signedIn ? (
           <>

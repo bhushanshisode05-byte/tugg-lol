@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { pageHead } from "@/lib/policies";
+import { loadOwnerRecords } from "@/lib/admin-access";
+import { Button } from "@/components/ui/button";
 type AdminData = {
   summary: {
     pullRevenue: { environment: string; cents: string; pulls: number }[];
@@ -38,15 +40,20 @@ export const Route = createFileRoute("/_authenticated/admin")({
   }),
   loader: async () => {
     const { data } = await supabase.auth.getSession();
-    const response = await fetch("/api/public/admin/data", {
-      headers: { Authorization: `Bearer ${data.session?.access_token || ""}` },
-    });
-    if (!response.ok) {
-      const body = await response.json();
-      throw new Error(body.error);
-    }
-    return response.json() as Promise<AdminData>;
+    return loadOwnerRecords<AdminData>(data.session?.access_token);
   },
+  errorComponent: ({ reset }) => {
+    const router = useRouter();
+    return <main className="mx-auto max-w-md px-4 py-16">
+      <h1 className="font-display text-3xl font-extrabold">Owner records unavailable</h1>
+      <p className="mt-4 text-muted-foreground">Your records could not be loaded. Please try again.</p>
+      <div className="mt-6 flex gap-3">
+        <Button onClick={async () => { await router.invalidate(); reset(); }}>Try again</Button>
+        <Button variant="outline" asChild><Link to="/auth">Owner sign in</Link></Button>
+      </div>
+    </main>;
+  },
+  notFoundComponent: () => <main className="mx-auto max-w-md px-4 py-16"><h1 className="font-display text-3xl font-extrabold">Owner records not found</h1><Button className="mt-6" asChild><Link to="/auth">Owner sign in</Link></Button></main>,
   component: Admin,
 });
 function Admin() {
