@@ -25,6 +25,7 @@ const flag = (k: string, def: boolean) => {
 export const config = () => ({
   siteUrl: (process.env["SITE_URL"] || "").replace(/\/$/, ""),
   pausePulls: flag("PAUSE_PULLS", false),
+  pauseEmails: flag("PAUSE_EMAILS", false),
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
   ownerEmail: process.env["OWNER_EMAIL"]?.trim() || "",

@@ -7,7 +7,9 @@
 
 ## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
 - [x] Configure hello.tugg.lol with root sender identity hello@tugg.lol and hello@tugg.lol reply-to; install managed email dependencies and authenticated template preview infrastructure. DNS verification remains pending; no send attempted and nothing published.
-- [ ] Confirm DNS verification and real delivery. Blocker: GoDaddy delegation for hello.tugg.lol must point to ns3.lovable.cloud and ns4.lovable.cloud; monitor More → Emails.
+- [x] Confirm hello.tugg.lol DNS verification (Active).
+- [ ] Finish transactional receipts, rejection notices, contact reply/copy, limited owner alerts and Monday owner summary; mock tests and one authorized owner test send. No publishing or payment outcome changes.
+- [ ] Daily digest and double-opt-in campaign wiring blocked: managed app email explicitly prohibits blog/event digests and list sends; requires a dedicated marketing email service chosen by owner.
 - [ ] Separate public business contact from private admin login identity.
 - [ ] Add transactional templates and trigger wiring, private body-free results, deduplication and recipient/owner limits; managed email handles delivery retries, suppression and unsubscribe (no app email queue).
 - [ ] Wire receipts, rejection/refund notices, contact replies/copies and genuine owner alerts without changing payment outcomes.
