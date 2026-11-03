@@ -1,9 +1,11 @@
 # Tugg roadmap
 
 ## Owner access incident (do not publish)
-- [ ] Replace admin 401/403 page failures with a clean owner sign-in redirect and explicit access-denied message; preserve all server authorization checks.
-- [ ] Verify signed-out phone/desktop, non-owner denial, anonymous/invalid-token 401 and owner read-back; check production/preview logs.
-- [ ] Confirm hosted signup restrictions and owner provisioning; report any account/settings blockers without changing owner identity.
+- [x] Replace admin 401/403 page failures with owner sign-in redirects and explicit non-owner denial; no server authorization changes, no private data for non-owners, no publishing.
+- [x] Preview and production fresh signed-out /admin redirect to /auth at 1280×1800 and 390×844. Reproduced exact Error: Owner access only with requesting user's non-owner session; production logs show matching 403s. Fixed preview denies cleanly; sign-out and revisit verified; anonymous/invalid-token API requests remain 401. 17 tests pass; build OK.
+- [x] Hosted read confirms two auth users and one confirmed account matching OWNER_EMAIL; no owner roles yet (existing service-only claim assigns the unique role on authorized access). Requesting user's account differs from configured owner.
+- [ ] Owner sign-in and real private-record read-back. Blocker: session minting for the different configured owner account requires approval unavailable in this context; owner must sign in with Google/Lovable using the configured OWNER_EMAIL. No new account or identity change performed.
+- [ ] Disable public signup in More → Users → Auth settings. Blocker: hosted disable_signup is false; safe agent configuration cannot preserve the unexposed current HIBP setting. Owner must enable Disable sign-up there; no unrelated auth settings changed.
 
 ## Turnstile public key (do not publish)
 - [x] Store public key in src/lib/turnstile-config.ts; all five shared widgets use it, including checkout when provider configuration is unavailable. Friendly hostname/key/script failures leave browsing available; submissions remain fail-closed.
@@ -79,7 +81,7 @@
 - [x] How it works, FAQ, Terms, Privacy, Refund, working Contact (AI answers), About/Legal; all footer-linked and crawler HTML verified
 - [x] Hidden read-only /admin and owner-only data endpoint; anonymous/invalid-token requests return 401
 - [x] Policy-grounded FAQ chat and private support records; contact and chat limits (10/hour each) verified with 429; oversized input rejected with 413
-- [ ] Activate and verify owner admin access: OWNER_EMAIL is missing and auth currently has no users; owner account must be provisioned in Users with public signup remaining disabled
+- [ ] Verify owner admin read-back: OWNER_EMAIL is configured and a matching confirmed account exists; sign in as that account and disable public signup in Users → Auth settings (see incident blockers above).
 - [x] Wire verified payment-error email escalation; real error delivery and signed-in owner review remain unverified.
 - [x] AI daily generator (01:05 UTC, 3/day, cap 30, 14-day retirement, AI_GENERATOR_ENABLED)
 - [x] Share button on every rope, private share counts, per-matchup generated preview images (current sharing behavior below)
