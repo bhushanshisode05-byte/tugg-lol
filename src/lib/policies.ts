@@ -103,6 +103,10 @@ export const policySections = {
         text: "We use this information to fulfill purchases, moderate submissions, show public rivalry results, reply to support requests, prevent abuse, and investigate payment errors. Payment and hosting providers may process information outside your country.",
       },
       {
+        title: "App emails and private records",
+        text: "We retain the email address you supply at checkout to send your purchase receipt and matchup/refund updates. Contact-form messages, sender addresses and policy-based replies are stored privately; the reply is emailed to the sender and a copy of the thread goes to hello@tugg.lol. The owner receives limited operational alerts and a weekly summary. Our email provider processes recipient addresses and message content to deliver these messages and manage retries, bounces, complaints and unsubscribe requests. Operational send logs contain a hashed recipient identifier, message type, event reference and result, not message bodies or card data. These records are used for support, abuse prevention, delivery troubleshooting and legal obligations; contact Tugg about access or deletion. Email unsubscribe requests are honored by the provider. Recap signup addresses are stored privately, but daily digest delivery and confirmation are not active; no existing signup is treated as confirmed consent.",
+      },
+      {
         title: "Access and deletion",
         text: "Contact Tugg to ask about access, correction, or deletion of your information. We may need to keep records for payment disputes and legal obligations. We do not sell support messages or personal information. Browser storage is used for sign-in sessions; payment services may use their own cookies.",
       },

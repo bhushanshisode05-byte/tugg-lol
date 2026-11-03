@@ -79,6 +79,8 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
     return { status };
   } finally {
     checked(await db.from("payglocal_orders").update({ processing_until: null, processing_key: null }).eq("id", id).eq("processing_key", key));
+    // Email is a post-outcome observer, never payment authority or a fulfillment dependency.
+    try { await (await import('../app-email.server')).sendPurchaseNotices(id, provider.environment); } catch { /* payment outcome unchanged */ }
   }
 }
 export async function handlePayglocalCallback(request: Request) {
@@ -122,7 +124,9 @@ export async function reconcilePayglocal() {
   const provider = createPayglocalProvider(fetch, 3000);
   await Promise.all(candidates.map(async (row) => {
     try { const r = await processPayglocalOrder(row.id, provider, undefined, true); if (r.status === "paid") finalized++; if (r.status === "expired") expired++; }
-    catch { errors++; checked(await db.from("payglocal_orders").update({ reconciled_at: new Date().toISOString(), reconcile_count: row.reconcile_count+1, reconcile_result: "error" }).eq("id", row.id)); checked(await db.from("events").insert({ kind: "payglocal_reconcile_error", detail: { orderId: row.id } })); }
+    catch { errors++; checked(await db.from("payglocal_orders").update({ reconciled_at: new Date().toISOString(), reconcile_count: row.reconcile_count+1, reconcile_result: "error" }).eq("id", row.id)); checked(await db.from("events").insert({ kind: "payglocal_reconcile_error", detail: { orderId: row.id } }));
+      try { await (await import('../app-email.server')).sendOwnerAlert('payment_error', row.id, environment); } catch { /* payment outcome unchanged */ }
+    }
   }));
   checked(await db.from("events").insert({ kind: "payglocal_reconcile", detail: { environment: provider.environment, checked: candidates.length, finalized, expired, errors } }));
   return { checked: candidates.length, finalized, expired, errors };

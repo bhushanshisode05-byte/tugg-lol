@@ -348,7 +348,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
         const order = await supabaseAdmin.from("payglocal_orders").insert({
           id, environment: se.env, kind: data.tier, expected_cents: PRODUCTS[data.tier].cents,
           merchant_unique_id: `${se.env === "live" ? "L" : "S"}${id.replaceAll("-", "")}`,
-          matchup_id: m.id, billing_country: data.billing?.addressCountry || "", return_path: returnUrl.pathname + returnUrl.search,
+          matchup_id: m.id, buyer_email: data.billing?.emailId || null, billing_country: data.billing?.addressCountry || "", return_path: returnUrl.pathname + returnUrl.search,
         }).select("id").single();
         if (order.error) throw new Error("Could not start checkout.");
         const creator = await supabaseAdmin.from("creators").insert({ matchup_id: m.id, tier: data.tier, payglocal_order_id: id, environment: se.env });
