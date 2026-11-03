@@ -17,6 +17,7 @@ describe("owner access navigation", () => {
     const request = vi.fn();
     const result = await loadOwnerRecords(undefined, request).catch(e => e);
     expect(isRedirect(result)).toBe(true);
+    if (!isRedirect(result)) throw new Error("Expected sign-in redirect");
     expect(result.options.to).toBe("/auth");
     expect(request).not.toHaveBeenCalled();
   });
@@ -24,8 +25,9 @@ describe("owner access navigation", () => {
     const request = vi.fn().mockResolvedValue(Response.json({ error: "Denied" }, { status }));
     const result = await loadOwnerRecords("test-token", request).catch(e => e);
     expect(isRedirect(result)).toBe(true);
+    if (!isRedirect(result)) throw new Error("Expected sign-in redirect");
     expect(result.options.to).toBe("/auth");
-    expect(result.options.search.denied).toBe(status === 403);
+    expect(result.options.search).toEqual({ denied: status === 403 });
   });
   it("accepted owner data reads back without changing it", async () => {
     const data = { pulls: [{ amount_cents: 500 }] };

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/policies";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { denied?: boolean } => ({
-    denied: search.denied === true || search.denied === "true" || undefined,
+    ...(search["denied"] === true || search["denied"] === "true" ? { denied: true } : {}),
   }),
   staticData: { sitemap: false },
   head: () => ({
