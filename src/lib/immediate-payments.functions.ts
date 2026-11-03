@@ -27,7 +27,7 @@ export const buyImmediateBundle = createServerFn({ method: "POST" })
         if (!verdict.allowed) { name=""; shout=""; }
       }
       const id=crypto.randomUUID(), returnUrl=new URL(data.returnUrl); returnUrl.searchParams.set("payment", id);
-      const order = await db.from("payglocal_orders").insert({ id, funnel_id: data.funnelId ?? null, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
+      const order = await db.from("payglocal_orders").insert({ id, buyer_email: data.billing.emailId, funnel_id: data.funnelId ?? null, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
       if (order.error) throw new Error("Could not start checkout.");
       const session=await provider.checkout({ productId: `pull_${data.pack}`, orderId: id, returnUrl: returnUrl.toString(), cents: data.pack*100, billing: data.billing });
       const saved=await db.from("payglocal_orders").update({ gid: session.sessionId, status_url: session.statusUrl || null }).eq("id", id).is("gid", null);

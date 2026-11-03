@@ -441,6 +441,7 @@ export type Database = {
       payglocal_orders: {
         Row: {
           billing_country: string
+          buyer_email: string | null
           created_at: string
           display_name: string
           environment: string
@@ -471,6 +472,7 @@ export type Database = {
         }
         Insert: {
           billing_country?: string
+          buyer_email?: string | null
           created_at?: string
           display_name?: string
           environment: string
@@ -501,6 +503,7 @@ export type Database = {
         }
         Update: {
           billing_country?: string
+          buyer_email?: string | null
           created_at?: string
           display_name?: string
           environment?: string
@@ -1027,6 +1030,15 @@ export type Database = {
         Args: { p_env: string; p_key: string; p_order: string }
         Returns: boolean
       }
+      claim_tugg_notice: {
+        Args: {
+          p_key: string
+          p_owner: boolean
+          p_recipient: string
+          p_template: string
+        }
+        Returns: string
+      }
       claim_tugg_owner: {
         Args: { p_email: string; p_user: string }
         Returns: boolean
@@ -1159,6 +1171,10 @@ export type Database = {
           name: string
           side_id: string
         }[]
+      }
+      tugg_weekly_notice_facts: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
       }
     }
     Enums: {

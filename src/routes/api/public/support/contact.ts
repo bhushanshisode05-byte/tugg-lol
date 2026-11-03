@@ -28,13 +28,18 @@ export const Route = createFileRoute("/api/public/support/contact")({
           const paymentNote = await checkPaymentError(input, id);
           const reply = await answerFromPolicies(request, input.message);
           await saveReply(id, reply + paymentNote);
+          // Saved support response is independent of email delivery.
+          try { await (await import('@/lib/app-email.server')).sendContactNotices(id); } catch { /* message remains saved */ }
           return Response.json({ reply: reply + paymentNote, id });
         } catch (e) {
           if (e instanceof TurnstileError)
             return Response.json({ error: e.message, turnstile: e.reason }, { status: e.status });
           const error =
             e instanceof SupportError ? e.message : "Please check your message and email address.";
-          if (id) await saveReply(id, error, "error");
+          if (id) {
+            await saveReply(id, error, "error");
+            try { await (await import('@/lib/app-email.server')).sendContactNotices(id); } catch { /* message remains saved */ }
+          }
           return Response.json(
             { error },
             {

@@ -1,0 +1,2 @@
+ALTER TABLE public.payglocal_orders ADD COLUMN buyer_email text CHECK (buyer_email IS NULL OR (char_length(buyer_email) <= 254 AND buyer_email !~ '[\r\n]' AND buyer_email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'));
+COMMENT ON COLUMN public.payglocal_orders.buyer_email IS 'Private purchase contact supplied by buyer for receipts and purchase/refund support; never included in public order reads.';

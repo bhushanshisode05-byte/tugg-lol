@@ -6,13 +6,16 @@
 - [ ] Verify a successful real challenge and server validation. Blocker: owner must allow the preview hostname (and tugg.lol/www.tugg.lol for later live use) in this Cloudflare widget and ensure TURNSTILE_SECRET_KEY matches; localhost was rejected. No publishing performed.
 
 ## Email (do not publish; preserve payments, rounds, pricing, moderation and sharing)
-- [x] Configure hello.tugg.lol with root sender identity hello@tugg.lol and hello@tugg.lol reply-to; install managed email dependencies and authenticated template preview infrastructure. DNS verification remains pending; no send attempted and nothing published.
-- [ ] Confirm DNS verification and real delivery. Blocker: GoDaddy delegation for hello.tugg.lol must point to ns3.lovable.cloud and ns4.lovable.cloud; monitor More → Emails.
-- [ ] Separate public business contact from private admin login identity.
-- [ ] Add transactional templates and trigger wiring, private body-free results, deduplication and recipient/owner limits; managed email handles delivery retries, suppression and unsubscribe (no app email queue).
-- [ ] Wire receipts, rejection/refund notices, contact replies/copies and genuine owner alerts without changing payment outcomes.
-- [ ] Double-opt-in recap digest, immediate one-click unsubscribe and Monday 08:00 UTC owner summary.
-- [ ] Update Privacy Policy and test mocked delivery, consent, safety and unverified fallback.
+- [x] Configure verified hello.tugg.lol with root sender identity Tugg <hello@tugg.lol> and hello@tugg.lol reply-to; real owner-only test accepted with a managed sent event on 2026-11-03. Nothing published.
+- [x] Confirm hello.tugg.lol DNS verification (Active).
+- [x] Wire PayGlocal buyer receipts, accurate rejection/refund-state notices, contact sender reply/owner copy and genuine error/refund-review/dispute owner alerts; email failures never affect payment outcomes. Buyer email retained privately on new orders; old orders without email cannot receive receipts.
+- [ ] Daily digest and double-opt-in campaign wiring blocked: managed app email explicitly prohibits blog/event digests and list sends; requires a dedicated marketing email service chosen by owner.
+- [x] Public business address is fixed hello@tugg.lol independently of unchanged OWNER_EMAIL admin identity.
+- [x] Branded mobile-friendly templates; body-free private events, atomic claims, 6 non-owner/15 owner attempts per hour, 3 alerts/hour, 3 attempts/event, header checks, HTML escaping, PAUSE_EMAILS for non-owner messages. Managed delivery handles retries/suppression/unsubscribe; no custom queue or automatic application retry dispatcher.
+- [x] Monday 08:00 UTC weekly owner-summary managed schedule registered; service-only SQL facts separate live/test gross revenue, pulls, sources, rejections/refund requests, confirmed refunds, errors, current pending/reviews and 7-day funnel conversion. Scheduler may spread by about 30 seconds; newly added route needs a later explicit publish for production execution.
+- [x] Privacy Policy and recap signup acknowledgement reflect actual email collection and inactive/unconfirmed digest state.
+- [x] 54 automated tests passed; live database checks: 10 concurrent claims → one accepted, duplicate suppression, 6/hour recipient cap, 3 attempts/event, 3 alerts/hour; test records deleted by id. Privacy preview visible, no runtime errors; anonymous weekly callback returns 401.
+- [ ] Real customer purchase→receipt, rejected-matchup→refund notice, contact Turnstile+AI→inbox, production weekly callback execution and inbox placement. Blockers: real merchant credentials/Turnstile, owner inbox confirmation and later explicit publish. Daily-digest consent/unsubscribe tests await a dedicated marketing service.
 
 ## PayGlocal follow-ups (do not publish)
 - [x] Optional environment-scoped CodeDrop drawer, silent redirect fallback, untrusted browser callbacks and confirmed rope refresh.
@@ -67,16 +70,16 @@
 - [x] Leaderboards, Hall of Fame + result cards (/results/[id]), /rivalries/[slug]
 - [ ] Check Hall of Fame cards with real winners after the first 00:00 UTC close
 - [x] Yesterday on Tugg recap at /recap + /recap/[date] (00:45 UTC daily, data-only summary, digest signup stored)
-- [ ] Send the daily digest email (subscribers are stored; needs an email domain)
+- [ ] Send the daily digest email (blocked: dedicated marketing service required; existing subscribers remain unconfirmed and unsent).
 - [x] How it works, FAQ, Terms, Privacy, Refund, working Contact (AI answers), About/Legal; all footer-linked and crawler HTML verified
 - [x] Hidden read-only /admin and owner-only data endpoint; anonymous/invalid-token requests return 401
 - [x] Policy-grounded FAQ chat and private support records; contact and chat limits (10/hour each) verified with 429; oversized input rejected with 413
 - [ ] Activate and verify owner admin access: OWNER_EMAIL is missing and auth currently has no users; owner account must be provisioned in Users with public signup remaining disabled
-- [ ] Activate payment-error email escalation: no email domain or OWNER_EMAIL; verified errors currently log events instead; genuine-error and signed-in owner flows not yet verified
+- [x] Wire verified payment-error email escalation; real error delivery and signed-in owner review remain unverified.
 - [x] AI daily generator (01:05 UTC, 3/day, cap 30, 14-day retirement, AI_GENERATOR_ENABLED)
 - [x] Share button on every rope, private share counts, per-matchup generated preview images (current sharing behavior below)
 - [x] Confirmed the 00:00 UTC close ran on 2026-10-29
-- [ ] Emails: rejection notice, payment-error escalation, weekly owner summary, digest signup (needs email domain)
+- [x] App emails: receipts, rejection notice, contact reply/copy, payment-error escalation and weekly owner summary wired and mock-tested; digest delivery remains blocked as documented above.
 - [ ] GEO: robots.txt, llms.txt, sitemap, JSON-LD, JSON/RSS feeds, OG images, IndexNow, SITE_URL everywhere
 - [x] Turnstile on pull/matchup checkout, contact, chat, digest (server-verified)
 - [x] Add public Turnstile site key using shared browser configuration; do not publish.

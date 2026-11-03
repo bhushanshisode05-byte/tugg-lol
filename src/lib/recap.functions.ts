@@ -61,7 +61,7 @@ export const subscribeDigest = createServerFn({ method: "POST" })
     if (!ok) return { ok: false, message: "Too many signups from your network. Try again later." };
     const { error } = await supabaseAdmin.from("digest_subscribers").upsert({ email: data.email }, { onConflict: "email", ignoreDuplicates: true });
     if (error) return { ok: false, message: "Could not save your email. Please try again." };
-    return { ok: true, message: "You're on the list for the daily Tugg digest." };
+    return { ok: true, message: "Your signup is saved. Digest delivery is not active yet; confirmation will be required before any digest is sent." };
   });
 
 /** Anonymous share counter; failures store only channel and a standard error name. */

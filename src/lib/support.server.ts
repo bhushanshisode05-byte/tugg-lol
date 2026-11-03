@@ -206,6 +206,7 @@ export async function checkPaymentError(input: Zod.infer<typeof contactSchema>, 
         kind: "support_payment_error_email_unavailable",
         detail: { support_thread_id: threadId, reason: "Email escalation is not configured" },
       });
+    try { await (await import('./app-email.server')).sendOwnerAlert('payment_error', threadId, config().paymentsEnv); } catch { /* saved support outcome remains authoritative */ }
     return " A verified payment recording error has been logged for the owner. This does not authorize a refund outside the published policy.";
   } catch {
     return " We could not verify this payment reference. No payment-error escalation or refund has been promised.";

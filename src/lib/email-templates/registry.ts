@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { receipt, rejection, contactReply, contactOwner, ownerAlert, weekly, ownerTest } from './tugg-notices'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -18,6 +19,11 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  // Add templates here as they are created, e.g.:
-  // 'welcome': welcomeTemplate,
+  'purchase-receipt': receipt,
+  'matchup-rejection': rejection,
+  'contact-reply': contactReply,
+  'contact-owner': contactOwner,
+  'owner-alert': ownerAlert,
+  'weekly-summary': weekly,
+  'owner-test': ownerTest,
 }
