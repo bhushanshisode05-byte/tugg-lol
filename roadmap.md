@@ -1,5 +1,10 @@
 # Tugg roadmap
 
+## Owner access incident (do not publish)
+- [ ] Replace admin 401/403 page failures with a clean owner sign-in redirect and explicit access-denied message; preserve all server authorization checks.
+- [ ] Verify signed-out phone/desktop, non-owner denial, anonymous/invalid-token 401 and owner read-back; check production/preview logs.
+- [ ] Confirm hosted signup restrictions and owner provisioning; report any account/settings blockers without changing owner identity.
+
 ## Turnstile public key (do not publish)
 - [x] Store public key in src/lib/turnstile-config.ts; all five shared widgets use it, including checkout when provider configuration is unavailable. Friendly hostname/key/script failures leave browsing available; submissions remain fail-closed.
 - [x] Check all five widget locations at 1280×1800 and 390×844; Cloudflare renders its hostname-error state on localhost, friendly message fits, no page crashes. 37 security/checkout tests pass; preview build OK.
