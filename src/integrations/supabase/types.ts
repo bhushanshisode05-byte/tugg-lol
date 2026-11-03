@@ -441,6 +441,7 @@ export type Database = {
       payglocal_orders: {
         Row: {
           billing_country: string
+          buyer_email: string | null
           created_at: string
           display_name: string
           environment: string
@@ -471,6 +472,7 @@ export type Database = {
         }
         Insert: {
           billing_country?: string
+          buyer_email?: string | null
           created_at?: string
           display_name?: string
           environment: string
@@ -501,6 +503,7 @@ export type Database = {
         }
         Update: {
           billing_country?: string
+          buyer_email?: string | null
           created_at?: string
           display_name?: string
           environment?: string
