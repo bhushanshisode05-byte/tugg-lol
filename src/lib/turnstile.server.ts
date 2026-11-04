@@ -1,4 +1,6 @@
 import type { TurnstileAction } from "./turnstile";
+import type { AuthDiagnostic, AuthReasonCode } from "./auth-diagnostics";
+import { logAuthDiagnostic } from "./auth-diagnostics.server";
 
 export const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
@@ -9,6 +11,7 @@ export class TurnstileError extends Error {
     public reason: TurnstileFailure,
     public status: number,
     message: string,
+    public diagnostic?: AuthDiagnostic,
   ) {
     super(message);
   }
@@ -40,18 +43,25 @@ export async function verifyTurnstile(
   expectedAction: TurnstileAction,
   opts: Opts = {},
 ): Promise<void> {
-  if (!token || !token.trim()) throw turnstileError("missing");
-  if (token.length > 2048) throw turnstileError("invalid");
+  let result: { success?: boolean; action?: string; hostname?: string; "error-codes"?: string[] } = {};
+  const fail = async (failure: TurnstileFailure, reason: AuthReasonCode): Promise<never> => {
+    const diagnostic: AuthDiagnostic = { reason, operation: expectedAction, expectedAction,
+      errorCodes: Array.isArray(result["error-codes"]) ? result["error-codes"].filter((code): code is string => typeof code === "string") : [],
+      hostname: typeof result.hostname === "string" && ![token, opts.secret ?? process.env["TURNSTILE_SECRET_KEY"]].some(value => value && result.hostname?.includes(value)) ? result.hostname : null,
+      action: result.action ?? null };
+    await logAuthDiagnostic(diagnostic);
+    throw new TurnstileError(failure, ...MESSAGES[failure], diagnostic);
+  };
+  if (!token || !token.trim()) return fail("missing", "turnstile_invalid_response");
+  if (token.length > 2048) return fail("invalid", "turnstile_invalid_response");
   const secret = opts.secret ?? process.env["TURNSTILE_SECRET_KEY"];
   if (!secret) {
-    console.error("Turnstile: server secret is not configured");
-    throw turnstileError("unavailable");
+    return fail("unavailable", "turnstile_secret_missing");
   }
   const body = new FormData();
   body.append("secret", secret);
   body.append("response", token);
   if (opts.remoteip) body.append("remoteip", opts.remoteip);
-  let result: { success?: boolean; action?: string; "error-codes"?: string[] };
   try {
     const res = await (opts.fetchImpl ?? fetch)(SITEVERIFY_URL, {
       method: "POST",
@@ -59,21 +69,21 @@ export async function verifyTurnstile(
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`status ${res.status}`);
-    result = await res.json();
-  } catch (e) {
-    console.error("Turnstile: siteverify unavailable", e instanceof Error ? e.message : "");
-    throw turnstileError("unavailable");
+    const payload = await res.json();
+    if (!payload || typeof payload !== "object") return fail("unavailable", "turnstile_unreachable");
+    result = payload;
+  } catch {
+    return fail("unavailable", "turnstile_unreachable");
   }
-  const codes = result["error-codes"] ?? [];
+  const codes = Array.isArray(result["error-codes"]) ? result["error-codes"] : [];
   if (result.success !== true) {
-    if (codes.includes("timeout-or-duplicate")) throw turnstileError("expired");
-    if (codes.some((c) => c.startsWith("missing-input-secret") || c.startsWith("invalid-input-secret") || c === "internal-error")) {
-      console.error("Turnstile: siteverify rejected configuration", codes.join(","));
-      throw turnstileError("unavailable");
-    }
-    throw turnstileError("invalid");
+    if (codes.includes("timeout-or-duplicate")) return fail("expired", "turnstile_timeout_or_duplicate");
+    if (codes.includes("invalid-input-secret") || codes.includes("missing-input-secret")) return fail("unavailable", "turnstile_invalid_secret");
+    if (codes.includes("internal-error")) return fail("unavailable", "turnstile_unreachable");
+    if (codes.includes("hostname-mismatch")) return fail("invalid", "turnstile_hostname_mismatch");
+    return fail("invalid", "turnstile_invalid_response");
   }
-  if (result.action !== expectedAction) throw turnstileError("action");
+  if (result.action !== expectedAction) return fail("action", "turnstile_action_mismatch");
 }
 
 /** Verifies using the current request's client IP (Cloudflare header) when present. */
