@@ -22,6 +22,7 @@ import { Route as IndexnowDottxtRouteImport } from './routes/indexnow[.]txt'
 import { Route as LeaderboardsRouteImport } from './routes/leaderboards'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
@@ -48,6 +49,8 @@ import { Route as ApiPublicSideImagesReportRouteImport } from './routes/api/publ
 import { Route as ApiPublicSideImagesUploadRouteImport } from './routes/api/public/side-images/upload'
 import { Route as ApiPublicSupportChatRouteImport } from './routes/api/public/support/chat'
 import { Route as ApiPublicSupportContactRouteImport } from './routes/api/public/support/contact'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
 import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
@@ -116,6 +119,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
   id: '/refund-policy',
   path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesRoute = RulesRouteImport.update({
@@ -252,6 +260,16 @@ const ApiPublicSupportContactRoute = ApiPublicSupportContactRouteImport.update({
   path: '/api/public/support/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -294,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
@@ -320,6 +339,8 @@ export interface FileRoutesByFullPath {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
@@ -339,6 +360,7 @@ export interface FileRoutesByTo {
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
@@ -365,6 +387,8 @@ export interface FileRoutesByTo {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
@@ -386,6 +410,7 @@ export interface FileRoutesById {
   '/leaderboards': typeof LeaderboardsRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rules': typeof RulesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
@@ -412,6 +437,8 @@ export interface FileRoutesById {
   '/api/public/side-images/upload': typeof ApiPublicSideImagesUploadRoute
   '/api/public/support/chat': typeof ApiPublicSupportChatRoute
   '/api/public/support/contact': typeof ApiPublicSupportContactRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
@@ -433,6 +460,7 @@ export interface FileRouteTypes {
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/rules'
     | '/sitemap.xml'
     | '/stats'
@@ -459,6 +487,8 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
@@ -478,6 +508,7 @@ export interface FileRouteTypes {
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/rules'
     | '/sitemap.xml'
     | '/stats'
@@ -504,6 +535,8 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
@@ -524,6 +557,7 @@ export interface FileRouteTypes {
     | '/leaderboards'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/rules'
     | '/sitemap.xml'
     | '/stats'
@@ -550,6 +584,8 @@ export interface FileRouteTypes {
     | '/api/public/side-images/upload'
     | '/api/public/support/chat'
     | '/api/public/support/contact'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
     | '/api/public/og/r/$id'
@@ -571,6 +607,7 @@ export interface RootRouteChildren {
   LeaderboardsRoute: typeof LeaderboardsRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RulesRoute: typeof RulesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
@@ -596,6 +633,8 @@ export interface RootRouteChildren {
   ApiPublicSideImagesUploadRoute: typeof ApiPublicSideImagesUploadRoute
   ApiPublicSupportChatRoute: typeof ApiPublicSupportChatRoute
   ApiPublicSupportContactRoute: typeof ApiPublicSupportContactRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
   ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
@@ -694,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/refund-policy'
       fullPath: '/refund-policy'
       preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rules': {
@@ -878,6 +924,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSupportContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -941,6 +1001,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardsRoute: LeaderboardsRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RulesRoute: RulesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
@@ -966,6 +1027,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSideImagesUploadRoute: ApiPublicSideImagesUploadRoute,
   ApiPublicSupportChatRoute: ApiPublicSupportChatRoute,
   ApiPublicSupportContactRoute: ApiPublicSupportContactRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
   ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
