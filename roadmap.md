@@ -1,5 +1,10 @@
 # Tugg roadmap
 
+## Safe login diagnostics (do not publish)
+- [x] Add closed failure references to email login and password reset, preserving wrong-password/account-existence messages and authorization. Shared Turnstile failures capture safe codes, returned hostname/action and expected action; private events and server logs use projected fields only, never raw exceptions, tokens, passwords or emails. No new hostname enforcement or unrelated behavior changes.
+- [ ] Run diagnostic-path and leakage tests plus existing login/Turnstile regressions and phone preview check.
+- [ ] Diagnose the real published failure after owner publishes and retries. Blocker: new diagnostics are preview-only; no publishing or real authentication emails during this task.
+
 ## Email owner login (do not publish)
 - [x] Email/password first on /auth with labels and show/hide; Google/Lovable retained below, existing-account-only email link and generic recovery acknowledgement. Public /reset-password uses a one-use recovery hash verified server-side before setting a password, 12-character validation and global session sign-out. No SMS/signup UI, no profiles, owner checks unchanged.
 - [x] Enabled email sign-in; hosted disable_signup=true verified via settings, confirmation remains enabled, anonymous signup disabled. Configuration tool accepted leaked-password protection and require-current-password=true; HIBP is not exposed by read-only public settings for independent verification.
