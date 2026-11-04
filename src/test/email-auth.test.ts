@@ -59,7 +59,7 @@ describe("email authentication rules", () => {
   it("magic link cannot create an account and returns to live domain", async () => {
     mocks.otp.mockResolvedValue({ error: new Error("no account") });
     expect(await executeEmailAuth({ operation: "link", email: input.email, turnstileToken: "test" }, request())).toEqual({ ok: true, message: AUTH_ACKNOWLEDGEMENT });
-    expect(mocks.otp).toHaveBeenCalledWith(input.email, { options: { shouldCreateUser: false, emailRedirectTo: "https://tugg.lol/auth" } });
+    expect(mocks.otp).toHaveBeenCalledWith({ email: input.email, options: { shouldCreateUser: false, emailRedirectTo: "https://tugg.lol/auth" } });
   });
   it("cross-site requests never reach authentication", async () => {
     expect((await executeEmailAuth(input, new Request("https://tugg.lol/test", { headers: { origin: "https://evil.example" } }))).ok).toBe(false);
