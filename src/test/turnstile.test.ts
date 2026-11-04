@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { verifyTurnstile, TurnstileError, SITEVERIFY_URL } from "@/lib/turnstile.server";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
+vi.mock("@/lib/auth-diagnostics.server", () => ({ logAuthDiagnostic: vi.fn() }));
 
 const side = vi.hoisted(() => ({
   limitSupport: vi.fn(),
