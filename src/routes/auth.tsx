@@ -4,6 +4,7 @@ import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/policies";
+import { EmailLoginForm } from "@/components/tugg/EmailLoginForm";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { denied?: boolean } => ({
     ...(search["denied"] === true || search["denied"] === "true" ? { denied: true } : {}),
@@ -74,6 +75,8 @@ function Auth() {
           </>
         ) : (
           <>
+            <EmailLoginForm onSignedIn={async () => { setSignedIn(true); await router.invalidate(); await navigate({ to: "/admin" }); }} />
+            <div className="my-3 flex items-center gap-3 text-sm text-muted-foreground"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
             <Button onClick={() => login("google")}>Sign in with Google</Button>
             <Button variant="outline" onClick={() => login("lovable")}>
               Sign in with Lovable

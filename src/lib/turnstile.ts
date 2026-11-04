@@ -7,6 +7,10 @@ export const TURNSTILE_ACTIONS = {
   contact: "support_contact",
   chat: "support_chat",
   digest: "digest_signup",
+  login: "owner_login",
+  passwordReset: "owner_password_reset",
+  emailLink: "owner_email_link",
+  passwordUpdate: "owner_password_update",
 } as const;
 export type TurnstileAction = (typeof TURNSTILE_ACTIONS)[keyof typeof TURNSTILE_ACTIONS];
 

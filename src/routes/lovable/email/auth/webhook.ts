@@ -7,9 +7,10 @@ import { MagicLinkEmail } from '@/lib/email-templates/magic-link'
 import { RecoveryEmail } from '@/lib/email-templates/recovery'
 import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
+import { recoveryEmailUrl } from '@/lib/email-auth-schema'
 
 // Configuration
-const SITE_NAME = "Tugg Lol"
+const SITE_NAME = "Tugg"
 const SENDER_DOMAIN = "hello.tugg.lol"
 const ROOT_DOMAIN = "tugg.lol"
 const FROM_DOMAIN = "tugg.lol"
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         const handler = createAuthEmailHandler({
           apiKey: process.env['LOVABLE_API_KEY']!,
           from: { name: SITE_NAME, address: `noreply@${FROM_DOMAIN}` },
+          replyTo: "hello@tugg.lol",
           senderDomain: SENDER_DOMAIN,
           sendUrl: process.env['LOVABLE_SEND_URL'],
           emails: {
@@ -60,7 +62,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
               render: (data) =>
                 React.createElement(RecoveryEmail, {
                   siteName: SITE_NAME,
-                  confirmationUrl: data.url,
+                  confirmationUrl: recoveryEmailUrl(data.url),
                 }),
             },
             email_change: {
