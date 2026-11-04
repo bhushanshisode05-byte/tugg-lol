@@ -2,7 +2,7 @@
 
 ## Safe login diagnostics (do not publish)
 - [x] Add closed failure references to email login and password reset, preserving wrong-password/account-existence messages and authorization. Shared Turnstile failures capture safe codes, returned hostname/action and expected action; private events and server logs use projected fields only, never raw exceptions, tokens, passwords or emails. No new hostname enforcement or unrelated behavior changes.
-- [ ] Run diagnostic-path and leakage tests plus existing login/Turnstile regressions and phone preview check.
+- [x] 67 diagnostic/login/Turnstile tests pass, including all reference paths, leakage checks and unchanged account-existence responses. Automatic build OK; phone 390×844 reset submission with deliberately invalid token displays friendly failure and Reference: turnstile_invalid_response without overflow; no auth email or password change.
 - [ ] Diagnose the real published failure after owner publishes and retries. Blocker: new diagnostics are preview-only; no publishing or real authentication emails during this task.
 
 ## Email owner login (do not publish)
