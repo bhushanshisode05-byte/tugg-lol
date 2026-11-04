@@ -1,9 +1,12 @@
 import { publicDb, config } from "./server-utils.server";
-import { verifyTurnstileForRequest } from "./turnstile.server";
+import { TurnstileError, verifyTurnstileForRequest } from "./turnstile.server";
 import { TURNSTILE_ACTIONS } from "./turnstile";
 import { AUTH_ACKNOWLEDGEMENT, AUTH_FAILURE, AUTH_LIMITS, authReturnUrl, emailAuthSchema, resetPasswordSchema, type EmailAuthInput, type ResetPasswordInput } from "./email-auth-schema";
 
-type Result = { ok: false; message: string } | { ok: true; message: string; session?: { access_token: string; refresh_token: string } };
+import { AuthDiagnosticError, type AuthReasonCode } from "./auth-diagnostics";
+import { logAuthDiagnostic } from "./auth-diagnostics.server";
+
+type Result = { ok: false; message: string; reason?: AuthReasonCode } | { ok: true; message: string; session?: { access_token: string; refresh_token: string } };
 const denied = (message = AUTH_FAILURE): Result => ({ ok: false, message });
 
 function sameOrigin(request: Request) {
@@ -25,16 +28,30 @@ export async function takeAuthLimits(request: Request, identifier: string, group
     supabaseAdmin.rpc("take_checkout_slot", { p_ip: await hash("ip", ip), p_max: limits.ip, p_window_minutes: limits.minutes }),
     supabaseAdmin.rpc("take_checkout_slot", { p_ip: await hash("email", identifier.toLowerCase()), p_max: limits.email, p_window_minutes: limits.minutes }),
   ]);
-  return slots.every(slot => !slot.error && slot.data === true);
+  if (slots.some(slot => slot.error)) throw new AuthDiagnosticError({ reason: "rate_limiter_error", operation: "email_auth" });
+  return slots.every(slot => slot.data === true);
+}
+
+async function failure(error: unknown, operation: string, reason: AuthReasonCode, message: string): Promise<Result> {
+  const diagnostic = error instanceof TurnstileError ? error.diagnostic : error instanceof AuthDiagnosticError ? error.diagnostic : undefined;
+  const code = diagnostic?.reason ?? reason;
+  if (!(error instanceof TurnstileError && diagnostic)) await logAuthDiagnostic({ reason: code, operation });
+  return { ok: false, message, reason: code };
 }
 
 export async function executeEmailAuth(input: EmailAuthInput, request: Request): Promise<Result> {
   const parsed = emailAuthSchema.safeParse(input);
-  if (!parsed.success || !sameOrigin(request)) return denied();
+  if (!parsed.success) return denied();
   const data = parsed.data;
+  const operation = data.operation === "password" ? TURNSTILE_ACTIONS.login : data.operation === "reset" ? TURNSTILE_ACTIONS.passwordReset : TURNSTILE_ACTIONS.emailLink;
+  let stage: AuthReasonCode = "origin_check_failed";
   try {
+    if (!sameOrigin(request)) return failure(null, operation, stage, AUTH_FAILURE);
+    stage = "unexpected_error";
     await verifyTurnstileForRequest(data.turnstileToken, data.operation === "password" ? TURNSTILE_ACTIONS.login : data.operation === "reset" ? TURNSTILE_ACTIONS.passwordReset : TURNSTILE_ACTIONS.emailLink, request);
-    if (!await takeAuthLimits(request, data.email, data.operation === "password" ? "password" : "mail")) return denied("Too many attempts. Please try again later.");
+    stage = "rate_limiter_error";
+    if (!await takeAuthLimits(request, data.email, data.operation === "password" ? "password" : "mail")) return failure(null, operation, "rate_limited", "Too many attempts. Please try again later.");
+    stage = "auth_provider_error";
     // New isolated client for each request; never reuse an authenticated server client.
     const db = publicDb();
     if (data.operation === "password") {
@@ -42,26 +59,37 @@ export async function executeEmailAuth(input: EmailAuthInput, request: Request):
       if (error || !result.session || !result.user?.email_confirmed_at) return denied();
       return { ok: true, message: "Signed in.", session: { access_token: result.session.access_token, refresh_token: result.session.refresh_token } };
     }
+    stage = "return_url_error";
     const site = config().siteUrl;
+    const returnUrl = authReturnUrl(site, data.operation === "reset" ? "/reset-password" : "/auth");
+    stage = "auth_provider_error";
     // Provider/account errors deliberately receive identical acknowledgements.
     if (data.operation === "reset") {
-      await db.auth.resetPasswordForEmail(data.email, { redirectTo: authReturnUrl(site, "/reset-password") });
+      const result = await db.auth.resetPasswordForEmail(data.email, { redirectTo: returnUrl });
+      if (result.error) await logAuthDiagnostic({ reason: "auth_provider_error", operation });
     } else {
-      await db.auth.signInWithOtp({ email: data.email, options: { shouldCreateUser: false, emailRedirectTo: authReturnUrl(site, "/auth") } });
+      const result = await db.auth.signInWithOtp({ email: data.email, options: { shouldCreateUser: false, emailRedirectTo: returnUrl } });
+      if (result.error) await logAuthDiagnostic({ reason: "auth_provider_error", operation });
     }
     return { ok: true, message: AUTH_ACKNOWLEDGEMENT };
-  } catch {
-    return denied("Unable to complete this request. Please retry the security check and try again.");
+  } catch (error) {
+    return failure(error, operation, stage, "Unable to complete this request. Please retry the security check and try again.");
   }
 }
 
 export async function executePasswordReset(input: ResetPasswordInput, request: Request): Promise<Result> {
   const parsed = resetPasswordSchema.safeParse(input);
-  if (!parsed.success || !sameOrigin(request)) return denied("Unable to reset your password. Request a new reset link.");
+  if (!parsed.success) return denied("Unable to reset your password. Request a new reset link.");
+  const operation = TURNSTILE_ACTIONS.passwordUpdate;
+  let stage: AuthReasonCode = "origin_check_failed";
   try {
+    if (!sameOrigin(request)) return failure(null, operation, stage, "Unable to reset your password. Request a new reset link.");
+    stage = "unexpected_error";
     const data = parsed.data;
     await verifyTurnstileForRequest(data.turnstileToken, TURNSTILE_ACTIONS.passwordUpdate, request);
-    if (!await takeAuthLimits(request, `recovery:${data.tokenHash}`, "password")) return denied("Too many attempts. Please try again later.");
+    stage = "rate_limiter_error";
+    if (!await takeAuthLimits(request, `recovery:${data.tokenHash}`, "password")) return failure(null, operation, "rate_limited", "Too many attempts. Please try again later.");
+    stage = "auth_provider_error";
     const db = publicDb();
     // Only a real, unused recovery token can establish this client session.
     const { data: verified, error } = await db.auth.verifyOtp({ token_hash: data.tokenHash, type: "recovery" });
@@ -70,7 +98,7 @@ export async function executePasswordReset(input: ResetPasswordInput, request: R
     if (updateError) return denied("Password could not be updated. Choose a different password and request a new reset link.");
     await db.auth.signOut({ scope: "global" });
     return { ok: true, message: "Password updated. Sign in with your new password." };
-  } catch {
-    return denied("Unable to reset your password. Please retry or request a new link.");
+  } catch (error) {
+    return failure(error, operation, stage, "Unable to reset your password. Please retry or request a new link.");
   }
 }

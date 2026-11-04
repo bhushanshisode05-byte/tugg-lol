@@ -3,7 +3,8 @@ import { AUTH_ACKNOWLEDGEMENT, AUTH_LIMITS, MIN_PASSWORD_LENGTH, authReturnUrl, 
 import { executeEmailAuth, executePasswordReset, takeAuthLimits } from "@/lib/email-auth.server";
 
 const mocks = vi.hoisted(() => ({ verify: vi.fn(), rpc: vi.fn(), password: vi.fn(), reset: vi.fn(), otp: vi.fn(), verifyOtp: vi.fn(), update: vi.fn(), signOut: vi.fn() }));
-vi.mock("@/lib/turnstile.server", () => ({ verifyTurnstileForRequest: mocks.verify }));
+vi.mock("@/lib/turnstile.server", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/turnstile.server")>(), verifyTurnstileForRequest: mocks.verify }));
+vi.mock("@/lib/auth-diagnostics.server", () => ({ logAuthDiagnostic: vi.fn() }));
 vi.mock("@/lib/server-utils.server", () => ({ config: () => ({ siteUrl: "https://tugg.lol" }), publicDb: () => ({ auth: { signInWithPassword: mocks.password, resetPasswordForEmail: mocks.reset, signInWithOtp: mocks.otp, verifyOtp: mocks.verifyOtp, updateUser: mocks.update, signOut: mocks.signOut } }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { rpc: mocks.rpc } }));
 const request = () => new Request("https://tugg.lol/_serverFn/test", { headers: { origin: "https://tugg.lol", "cf-connecting-ip": "192.0.2.1" } });
@@ -48,7 +49,7 @@ describe("email authentication rules", () => {
   });
   it("limiter database failure fails closed", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "down" } });
-    expect(await takeAuthLimits(request(), input.email, "mail")).toBe(false);
+    await expect(takeAuthLimits(request(), input.email, "mail")).rejects.toMatchObject({ diagnostic: { reason: "rate_limiter_error" } });
   });
   it.each([null, new Error("not found")])("reset acknowledgement cannot reveal account existence", async error => {
     mocks.reset.mockResolvedValue({ error });
