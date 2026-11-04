@@ -1,5 +1,10 @@
 # Tugg roadmap
 
+## Email owner login (do not publish)
+- [ ] Email/password first on /auth, existing social login retained, protected reset and optional email link; no SMS or signup, owner access unchanged.
+- [ ] Hosted signup disable and leaked-password protection; shared Turnstile and per-IP/per-email limits.
+- [ ] Mocked login/reset/authorization/security tests and phone checks; owner sets password using reset after deployment. Pending clarification: profiles needed? Built-in backend lacks standard rate limiting; approve reuse of app's atomic hashed limiter.
+
 ## Owner access incident (do not publish)
 - [x] Recheck 2026-11-04 report: fresh desktop/phone visits to both localhost preview and published tugg.lol/admin reach /auth without browser errors; published anonymous private endpoint returns 401. Current published admin logs show 200 document requests; no Error entries in available last-hour logs, and no preview admin errors. Current backend has two confirmed users, not zero. No current anonymous failure reproduced; earlier Owner access only refusal is historical evidence, not a new confirmed cause.
 - [x] Requesting user's real non-owner session reaches /auth?denied=true on preview desktop/phone without private records; sign-out then /admin returns to login. OWNER_EMAIL and OWNER_NAME are present in sandbox; OWNER_NAME is not an admin authorization dependency. No payment, round, price, moderation, email or publishing changes.
