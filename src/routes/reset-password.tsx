@@ -8,6 +8,7 @@ import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { MIN_PASSWORD_LENGTH, recoveryHash, resetPasswordSchema } from "@/lib/email-auth-schema";
 import { resetOwnerPassword } from "@/lib/email-auth.functions";
 import { pageHead } from "@/lib/policies";
+import { authReference } from "@/lib/auth-diagnostics";
 
 export const Route = createFileRoute("/reset-password")({
   staticData: { sitemap: false },
@@ -23,6 +24,7 @@ function ResetPassword() {
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [reference, setReference] = useState<string | undefined>();
   const [done, setDone] = useState(false);
   const challenge = useRef<TurnstileHandle>(null);
   const reset = useServerFn(resetOwnerPassword);
@@ -31,14 +33,14 @@ function ResetPassword() {
     window.history.replaceState(window.history.state, "", window.location.pathname);
   }, []);
   async function submit(event: FormEvent) {
-    event.preventDefault(); setError("");
+    event.preventDefault(); setError(""); setReference(undefined);
     const parsed = resetPasswordSchema.safeParse({ password, tokenHash, turnstileToken: token });
     if (password !== confirmation) { setError("Passwords must match."); return; }
     if (!parsed.success) { setError("Use at least 12 characters and complete the security check."); return; }
     setPending(true);
     try {
       const result = await reset({ data: parsed.data });
-      if (!result.ok) setError(result.message);
+      if (!result.ok) { setError(result.message); setReference(authReference(result.reason)); }
       else { setDone(true); setPassword(""); setConfirmation(""); setTokenHash(null); }
     } catch { setError("Unable to reset your password. Please try again."); }
     finally { setPending(false); challenge.current?.reset(); setToken(null); }
@@ -52,6 +54,7 @@ function ResetPassword() {
       <Turnstile ref={challenge} action={TURNSTILE_ACTIONS.passwordUpdate} onToken={setToken} />
       <Button className="min-h-12 w-full" type="submit" disabled={pending || !token}>{pending ? "Updating…" : "Set new password"}</Button>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && reference && <p className="text-xs text-muted-foreground">Reference: {reference}</p>}
     </form>}
     <Button variant="link" className="mt-6 px-0" asChild><Link to="/auth">Back to sign in</Link></Button>
   </main>;

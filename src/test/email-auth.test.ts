@@ -4,6 +4,7 @@ import { executeEmailAuth, executePasswordReset, takeAuthLimits } from "@/lib/em
 
 const mocks = vi.hoisted(() => ({ verify: vi.fn(), rpc: vi.fn(), password: vi.fn(), reset: vi.fn(), otp: vi.fn(), verifyOtp: vi.fn(), update: vi.fn(), signOut: vi.fn() }));
 vi.mock("@/lib/turnstile.server", () => ({ verifyTurnstileForRequest: mocks.verify }));
+vi.mock("@/lib/auth-diagnostics.server", () => ({ logAuthDiagnostic: vi.fn() }));
 vi.mock("@/lib/server-utils.server", () => ({ config: () => ({ siteUrl: "https://tugg.lol" }), publicDb: () => ({ auth: { signInWithPassword: mocks.password, resetPasswordForEmail: mocks.reset, signInWithOtp: mocks.otp, verifyOtp: mocks.verifyOtp, updateUser: mocks.update, signOut: mocks.signOut } }) }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { rpc: mocks.rpc } }));
 const request = () => new Request("https://tugg.lol/_serverFn/test", { headers: { origin: "https://tugg.lol", "cf-connecting-ip": "192.0.2.1" } });
