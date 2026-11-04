@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Tugg architecture
+- Email auth verifies Turnstile and keyed limits server-side; recovery uses one-use tokens. Why: protect auth side effects.
 - Subdirectories have their own AGENTS.md; read src/lib/payments/AGENTS.md before any payment-related change, including callers and schema. Why: payment integrity rules stay with their domain.
 - Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; wallet spending calls record_pull within the same locked SQL transaction as the debit; credits come only from verified provider payments. Why: no overdraw or unpaid pulls.
 - Public pages read through publishable-key server functions in src/lib/tugg.functions.ts so SSR serves full HTML to crawlers.
