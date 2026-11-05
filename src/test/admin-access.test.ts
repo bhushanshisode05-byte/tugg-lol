@@ -85,7 +85,7 @@ describe("owner endpoint remains anonymous-safe", () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: "owner-id", email: "OWNER@example.com", email_confirmed_at: "2026-11-04" } }, error: null });
     mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "claim_tugg_owner" ? true : name === "tugg_admin_summary" ? { pullRevenue: [], sources: [] } : name === "tugg_creation_revenue" ? { live: 900, sandbox: 2900 } : name === "tugg_payglocal_funnel" ? [] : { environments: [] }, error: null }));
     const rows = [{ id: "stored-pull", amount_cents: 500, environment: "sandbox" }];
-    const query = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), limit: vi.fn() };
+    const query = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), limit: vi.fn() };
     mocks.from.mockImplementation((table: string) => ({ ...query, limit: vi.fn().mockResolvedValue({ data: table === "pulls" ? rows : [], error: null }) }));
     const response = await getAdminData(new Request("https://tugg.lol/api/public/admin/data", { headers: { Authorization: "Bearer test" } }));
     expect(response.status).toBe(200);
@@ -94,6 +94,6 @@ describe("owner endpoint remains anonymous-safe", () => {
     expect(body.pulls).toEqual(rows);
     expect(body.creationRevenue).toEqual({ live: 900, sandbox: 2900 });
     expect(mocks.rpc).toHaveBeenCalledWith("claim_tugg_owner", { p_user: "owner-id", p_email: "owner@example.com" });
-    expect(mocks.from.mock.calls.map(([table]) => table)).toEqual(["pulls", "matchups", "moderation_log", "events", "support_threads", "payglocal_orders", "pull_wallets"]);
+    expect(mocks.from.mock.calls.map(([table]) => table)).toEqual(["pulls", "matchups", "moderation_log", "events", "support_threads", "payglocal_orders", "pull_wallets", "dodo_orders"]);
   });
 });

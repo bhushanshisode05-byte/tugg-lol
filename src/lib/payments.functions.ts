@@ -24,7 +24,7 @@ export const getWallet = createServerFn({ method: "POST" })
     z.object({ token: tokenSchema, orderId: z.string().uuid().optional() }).parse(d),
   )
   .handler(async ({ data }) => {
-    if (config().paymentProvider !== "dodo" || config().pullMode !== "wallet") return { error: "Wallets are dormant in immediate-bundle mode." };
+    if (config().pullMode === "immediate" || config().paymentProvider !== "dodo") return { error: "Wallets are dormant in immediate-bundle mode." };
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const result = await db
       .from("pull_wallets")
@@ -59,7 +59,7 @@ export const buyPullPack = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    if (config().paymentProvider !== "dodo" || config().pullMode !== "wallet") return { error: "Wallet purchases are dormant in immediate-bundle mode." };
+    if (config().pullMode === "immediate" || config().paymentProvider !== "dodo") return { error: "Wallet purchases are dormant in immediate-bundle mode." };
     if (config().pausePulls)
       return { error: "Pulls are paused right now. Please try again later." };
     try {
@@ -156,7 +156,7 @@ export const spendPulls = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    if (config().paymentProvider !== "dodo" || config().pullMode !== "wallet") return { error: "Wallet spending is dormant in immediate-bundle mode." };
+    if (config().pullMode === "immediate" || config().paymentProvider !== "dodo") return { error: "Wallet spending is dormant in immediate-bundle mode." };
     if (config().pausePulls)
       return { error: "Pulls are paused right now. Please try again later." };
     try {

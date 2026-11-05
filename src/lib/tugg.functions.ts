@@ -218,7 +218,7 @@ export const getStats = createServerFn({ method: "GET" }).handler(async () => {
   };
 });
 
-type CheckoutResult = { url: string } | { error: string };
+type CheckoutResult = { url: string; orderId?: string; environment?: "sandbox" | "live" } | { error: string };
 const envSchema = z.enum(["sandbox", "live"]).optional();
 const serverEnv = (hint?: "sandbox" | "live") => resolvePaymentsEnv(config().paymentsEnv, hint);
 
@@ -370,7 +370,7 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
       if (saved.error) throw new Error("Could not start checkout.");
       const creator = await supabaseAdmin.from("creators").insert({ matchup_id: m.id, tier: data.tier, dodo_order_id: order.data.id, environment: se.env });
       if (creator.error) throw new Error("Could not start checkout.");
-      return { url: session.url };
+      return { url: session.url, orderId: order.data.id, environment: se.env };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Checkout is unavailable." };
     }

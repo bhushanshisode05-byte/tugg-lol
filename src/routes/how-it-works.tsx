@@ -10,6 +10,6 @@ export const Route = createFileRoute("/how-it-works")({
   component: Page,
 });
 function Page() {
-  const { email } = Route.useLoaderData();
-  return <PolicyPage id="how-it-works" email={email} />;
+  const { email, provider } = Route.useLoaderData();
+  return <PolicyPage id="how-it-works" provider={provider} email={email} />;
 }

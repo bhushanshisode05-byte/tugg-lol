@@ -59,6 +59,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "date-fns": "^4.1.0",
+        "dodopayments-checkout": "^2.1.0",
         "embla-carousel-react": "^8.6.0",
         "entities": "4.5.0",
         "imagescript": "^3.7.0",
@@ -1050,6 +1051,8 @@
     "devlop": ["devlop@1.1.0", "", { "dependencies": { "dequal": "^2.0.0" } }, "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA=="],
 
     "diff": ["diff@8.0.4", "", {}, "sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw=="],
+
+    "dodopayments-checkout": ["dodopayments-checkout@2.1.0", "", {}, "sha512-RX8Bu3JBbO36uczPAGJZYOx8y/FOgTTOQwNii5oRTmtlj10R6F2pZNQHb2/MLeuoA7jbsGRhLe2X0Y1jVB28iQ=="],
 
     "dom-accessibility-api": ["dom-accessibility-api@0.6.3", "", {}, "sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w=="],
 

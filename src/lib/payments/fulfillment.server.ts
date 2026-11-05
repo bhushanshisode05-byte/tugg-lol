@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PRODUCTS } from "./catalog";
-import type { PaymentProvider } from "./provider";
+import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { moderate } from "../server-utils.server";
 
@@ -21,7 +21,7 @@ type Event = z.infer<typeof webhookPayload>;
 function checked(result: { error: { message: string } | null }) {
   if (result.error) throw new Error("Payment processing unavailable");
 }
-export async function processDodoEvent(event: Event, provider: PaymentProvider) {
+export async function processDodoEvent(event: Event, provider: PaymentProvider, verified?: VerifiedPayment) {
   if (
     !["payment.succeeded", "payment.failed", "refund.succeeded", "refund.failed"].includes(
       event.type,
@@ -29,12 +29,15 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     !event.type.startsWith("dispute.")
   )
     return;
-  const payment = await provider.payment(event.data.payment_id);
+  const payment = verified ?? await provider.payment(event.data.payment_id);
+  if (payment.payment_id !== event.data.payment_id) throw new Error("Payment identity mismatch");
   const id = z.string().uuid().parse(payment.metadata["tugg_order_id"]);
-  const lock = await db.rpc("claim_dodo_order", {
+  const key = crypto.randomUUID();
+  const lock = await db.rpc("claim_dodo_immediate_order", {
     p_order: id,
     p_payment: payment.payment_id,
     p_env: provider.environment,
+    p_key: key,
   });
   checked(lock);
   if (!lock.data) throw new Error("Payment already processing; retry");
@@ -44,21 +47,24 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     const order = result.data;
     if (
       !order ||
+      order.wallet_id ||
       order.environment !== provider.environment ||
       payment.metadata["tugg_environment"] !== provider.environment ||
       payment.currency !== "USD" ||
       payment.total_amount !== order.expected_cents ||
-      payment.product_cart.length !== 1 ||
+      (event.type !== "payment.failed" && (payment.product_cart.length !== 1 ||
       payment.product_cart[0]?.product_id !== order.product_id ||
-      payment.product_cart[0]?.quantity !== 1 ||
+      payment.product_cart[0]?.quantity !== 1)) ||
       order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents ||
       payment.checkout_session_id !== order.checkout_id ||
       (order.payment_id && order.payment_id !== payment.payment_id)
     )
       throw new Error("Payment does not match order");
+    if (["failed", "expired"].includes(order.status) && event.type === "payment.succeeded") {
+      checked(await db.from("events").insert({ kind: "dodo_late_payment_review", detail: { orderId: id, environment: provider.environment } }));
+      return;
+    }
     if (event.type.startsWith("dispute.")) {
-      if (order.wallet_id)
-        checked(await db.from("pull_wallets").update({ flagged: true }).eq("id", order.wallet_id));
       checked(
         await db
           .from("events")
@@ -71,6 +77,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
       return;
     }
     if (event.type === "payment.failed") {
+      if (payment.status !== "failed" && payment.status !== "cancelled") throw new Error("Failure not confirmed");
       checked(
         await db
           .from("dodo_orders")
@@ -82,20 +89,11 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     }
     if (event.type === "refund.failed" || event.type === "refund.succeeded") {
       if (!event.data.refund_id) throw new Error("Refund reference missing");
-      const refund = payment.refunds?.find((r) => r.refund_id === event.data.refund_id);
+      const refund = provider.refundStatus ? await provider.refundStatus(event.data.refund_id) : payment.refunds?.find((r) => r.refund_id === event.data.refund_id);
+      if (refund && "payment_id" in refund && refund.payment_id !== payment.payment_id) throw new Error("Refund payment mismatch");
       if (!refund || refund.status !== (event.type === "refund.succeeded" ? "succeeded" : "failed"))
         throw new Error("Refund not verified");
-      if (event.type === "refund.succeeded" && order.wallet_id) {
-        if (refund.currency !== "USD" || refund.amount == null)
-          throw new Error("Refund currency or amount missing");
-        checked(
-          await db.rpc("refund_dodo_wallet", {
-            p_order: id,
-            p_refund: event.data.refund_id,
-            p_cents: refund.amount,
-          }),
-        );
-      }
+      if (event.type === "refund.succeeded" && (refund.currency !== "USD" || refund.amount !== order.expected_cents)) throw new Error("Refund amount or currency mismatch");
       checked(
         await db
           .from("dodo_orders")
@@ -122,9 +120,9 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     }
     if (event.type !== "payment.succeeded") return;
     if (payment.status !== "succeeded") throw new Error("Payment not confirmed");
-    if (order.wallet_id) {
+    if (order.side_id) {
       checked(
-        await db.rpc("credit_dodo_wallet", {
+        await db.rpc("apply_dodo_bundle", {
           p_order: id,
           p_payment: payment.payment_id,
           p_country: payment.billing?.country || "",
@@ -138,7 +136,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
     checked(
       await db
         .from("dodo_orders")
-        .update({ payment_id: payment.payment_id, status: "paid" })
+        .update({ payment_id: payment.payment_id, status: "paid", paid_at: order.paid_at || new Date().toISOString(), provider_status: payment.status })
         .eq("id", id),
     );
     checked(
@@ -237,6 +235,6 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider) 
       );
     }
   } finally {
-    checked(await db.from("dodo_orders").update({ processing_until: null }).eq("id", id));
+    checked(await db.from("dodo_orders").update({ processing_until: null, processing_key: null }).eq("id", id).eq("processing_key", key));
   }
 }

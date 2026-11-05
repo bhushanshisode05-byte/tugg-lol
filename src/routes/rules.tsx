@@ -1,9 +1,12 @@
+import { activePaymentCopy } from "@/lib/payments/copy";
+import { getPublicContact } from "@/lib/support.functions";
 import { IMAGE_POLICY } from "@/lib/side-image";
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/tugg/Shell";
 
 export const Route = createFileRoute("/rules")({
   staticData: { sitemap: true },
+  loader: () => getPublicContact(),
   head: () => ({
     meta: [
       { title: "Rules, rounds and refunds | Tugg" },
@@ -76,6 +79,7 @@ const sections: [string, string[]][] = [
 ];
 
 function Rules() {
+  const { provider } = Route.useLoaderData();
   return (
     <Shell>
       <div className="mx-auto max-w-3xl px-4 py-10">
@@ -86,7 +90,7 @@ function Rules() {
               <h2 className="text-2xl font-extrabold">{h}</h2>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                 {ps.map((p) => (
-                  <li key={p}>{p}</li>
+                  <li key={p}>{activePaymentCopy(p,provider)}</li>
                 ))}
               </ul>
             </section>

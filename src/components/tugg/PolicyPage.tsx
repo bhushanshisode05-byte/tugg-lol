@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Shell } from "./Shell";
+import { activePaymentCopy } from "@/lib/payments/copy";
 import { policySections, type PolicyPageId } from "@/lib/policies";
-export function PolicyPage({ id, email, operator }: { id: PolicyPageId; email?: string | null; operator?: string | null }) {
+export function PolicyPage({ id, email, operator, provider = "dodo" }: { provider?: string; id: PolicyPageId; email?: string | null; operator?: string | null }) {
   const page = policySections[id];
   return (
     <Shell>
@@ -13,7 +14,7 @@ export function PolicyPage({ id, email, operator }: { id: PolicyPageId; email?: 
           {page.sections.map((s) => (
             <section key={s.title} className="py-6">
               <h2 className="font-display text-2xl font-bold">{s.title}</h2>
-              <p className="mt-3 leading-7 text-muted-foreground">{s.text}</p>
+              <p className="mt-3 leading-7 text-muted-foreground">{activePaymentCopy(s.text,provider)}</p>
             </section>
           ))}
         </div>

@@ -88,6 +88,8 @@ beforeEach(() => {
     checkout_id: "cs-fixture",
     payment_id: null,
     wallet_id: null,
+    side_id: null,
+    status: "pending",
     matchup_id: id,
     review_allowed: null,
     refund_status: null,
@@ -113,16 +115,17 @@ describe("mocked Dodo fulfillment", () => {
     ["pull_5", 500],
     ["pull_10", 1000],
     ["pull_25", 2500],
-  ])("credits %s through atomic SQL only", async (kind, cents) => {
+  ])("applies %s through atomic immediate SQL only", async (kind, cents) => {
     state.order.kind = kind;
     state.order.expected_cents = cents;
-    state.order.wallet_id = id;
+    state.order.side_id = id;
+    state.order.quantity = cents/100;
     await processDodoEvent(
       { type: "payment.succeeded", data: { payment_id: "pay-fixture" } },
       provider(),
     );
     expect(state.rpc).toHaveBeenCalledWith(
-      "credit_dodo_wallet",
+      "apply_dodo_bundle",
       expect.objectContaining({ p_payment: "pay-fixture", p_cents: cents, p_env: "sandbox" }),
     );
   });
@@ -157,13 +160,13 @@ describe("mocked Dodo fulfillment", () => {
       value: { refund_status: "needs_review" },
     });
   });
-  it("flags a disputed wallet", async () => {
-    state.order.wallet_id = id;
+  it("records a dispute without creating a wallet balance", async () => {
     await processDodoEvent(
       { type: "dispute.opened", data: { payment_id: "pay-fixture" } },
       provider(),
     );
-    expect(state.updates).toContainEqual({ table: "pull_wallets", value: { flagged: true } });
+    expect(state.updates.some(r => r.table === "events" && r.value.kind === "dodo_dispute")).toBe(true);
+    expect(state.updates.some(r => r.table === "pull_wallets")).toBe(false);
   });
   it("refuses a payment in another environment", async () => {
     state.order.environment = "live";
@@ -173,7 +176,7 @@ describe("mocked Dodo fulfillment", () => {
         provider(),
       ),
     ).rejects.toThrow("match");
-    expect(state.rpc).not.toHaveBeenCalledWith("credit_dodo_wallet", expect.anything());
+    expect(state.rpc).not.toHaveBeenCalledWith("apply_dodo_bundle", expect.anything());
   });
   it("refuses wrong amount or checkout", async () => {
     const p = provider();
@@ -182,12 +185,35 @@ describe("mocked Dodo fulfillment", () => {
       processDodoEvent({ type: "payment.succeeded", data: { payment_id: "pay-fixture" } }, p),
     ).rejects.toThrow("match");
   });
-  it("records failed payment without credits", async () => {
+  it("records failed payment without pulls", async () => {
+    const failed = provider();
+    failed.payment = vi.fn(async()=>({...payment(),status:"failed"}));
     await processDodoEvent(
       { type: "payment.failed", data: { payment_id: "pay-fixture" } },
-      provider(),
+      failed,
     );
     expect(state.updates).toContainEqual({ table: "dodo_orders", value: { status: "failed" } });
-    expect(state.rpc).not.toHaveBeenCalledWith("credit_dodo_wallet", expect.anything());
+    expect(state.rpc).not.toHaveBeenCalledWith("apply_dodo_bundle", expect.anything());
   });
+});
+
+it.each(["failed","expired"])("late success on %s never applies pulls", async status => {
+  state.order.status=status; state.order.side_id=id; state.order.kind="pull_5";state.order.quantity=5;state.order.expected_cents=500;
+  await processDodoEvent({type:"payment.succeeded",data:{payment_id:"pay-fixture"}},provider());
+  expect(state.rpc).not.toHaveBeenCalledWith("apply_dodo_bundle",expect.anything());
+});
+it("refuses legacy wallet orders",async()=>{
+  state.order.wallet_id=id;
+  await expect(processDodoEvent({type:"payment.succeeded",data:{payment_id:"pay-fixture"}},provider())).rejects.toThrow("match");
+  expect(state.rpc).not.toHaveBeenCalledWith("credit_dodo_wallet",expect.anything());
+});
+it.each(["succeeded","failed"])("verifies refund %s via Dodo API",async status=>{
+  const p=provider();p.refundStatus=vi.fn(async()=>({refund_id:"r",payment_id:"pay-fixture",status,currency:"USD",amount:900}));
+  await processDodoEvent({type:`refund.${status}`,data:{payment_id:"pay-fixture",refund_id:"r"}},p);
+  expect(p.refundStatus).toHaveBeenCalledWith("r");
+  expect(state.updates).toContainEqual({table:"dodo_orders",value:{refund_id:"r",refund_status:status}});
+});
+it("refuses refund belonging to a different payment",async()=>{
+  const p=provider();p.refundStatus=vi.fn(async()=>({refund_id:"r",payment_id:"wrong",status:"succeeded"}));
+  await expect(processDodoEvent({type:"refund.succeeded",data:{payment_id:"pay-fixture",refund_id:"r"}},p)).rejects.toThrow("mismatch");
 });

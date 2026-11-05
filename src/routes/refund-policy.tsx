@@ -10,6 +10,6 @@ export const Route = createFileRoute("/refund-policy")({
   component: Page,
 });
 function Page() {
-  const { email } = Route.useLoaderData();
-  return <PolicyPage id="refund-policy" email={email} />;
+  const { email, provider } = Route.useLoaderData();
+  return <PolicyPage id="refund-policy" provider={provider} email={email} />;
 }

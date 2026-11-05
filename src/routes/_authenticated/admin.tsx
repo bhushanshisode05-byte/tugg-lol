@@ -8,17 +8,9 @@ type AdminData = {
     pullRevenue: { environment: string; cents: string; pulls: number }[];
     sources: { source: string; count: number }[];
   };
-  dodo: {
-    environments: {
-      environment: string;
-      revenue_cents: number;
-      packs_sold: number;
-      pulls_sold: number;
-      pulls_used: number;
-      refunds: number;
-      flagged_wallets: number;
-    }[];
-  };
+  provider: string;
+  dodoOrders: Record<string, unknown>[];
+  dodo: { environments: { environment: string; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
   payglocal: { environments: { environment: string; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
   funnel: { days: number; environment: string; step: string; count: number }[];
   payglocalOrders: Record<string, unknown>[];
@@ -68,28 +60,27 @@ function Admin() {
           {(["live", "sandbox"] as const).map((env) => {
             const pg = data.payglocal.environments.find((r) => r.environment === env);
             const dodo = data.dodo.environments.find((r) => r.environment === env);
+            const active = data.provider === "dodo" ? dodo : pg;
+            const providerName = data.provider === "dodo" ? "Dodo Payments" : "PayGlocal";
             return (
               <div key={env}>
                 <h3 className="font-bold">{env === "live" ? "Live money" : "Test money"}</h3>
                 <p className="mt-2 font-mono text-3xl">
-                  ${(Number(pg?.revenue_cents ?? 0) / 100).toFixed(2)}
+                  ${(Number(active?.revenue_cents ?? 0) / 100).toFixed(2)}
                 </p>
                 <p className="text-muted-foreground">
-                  PayGlocal bundles: {pg?.bundles_sold ?? 0} · Pulls applied: {pg?.pulls_applied ?? 0}<br/>
-                  Refund requests: {pg?.refunds ?? 0} · Refund reviews: {pg?.refund_reviews ?? 0}<br/>
-                  Pending: {pg?.pending ?? 0} · Expired: {pg?.expired ?? 0}<br/>
-                  Reconcile checks: {pg?.reconcile_checks ?? 0} · Paid: {pg?.reconciled_paid ?? 0} · Expired: {pg?.reconciled_expired ?? 0}<br/>
-                  Dormant Dodo packs: {dodo?.packs_sold ?? 0} · Pulls sold: {dodo?.pulls_sold ?? 0} · Pulls
-                  used: {dodo?.pulls_used ?? 0}
-                  <br />
-                  Refunds: {dodo?.refunds ?? 0} · Flagged wallets: {dodo?.flagged_wallets ?? 0}
+                  {providerName} bundles: {active?.bundles_sold ?? 0} · Pulls applied: {active?.pulls_applied ?? 0}<br/>
+                  Refund requests: {active?.refunds ?? 0} · Refund reviews: {active?.refund_reviews ?? 0}<br/>
+                  Pending: {active?.pending ?? 0} · Expired: {active?.expired ?? 0}<br/>
+                  Reconcile checks: {active?.reconcile_checks ?? 0} · Paid: {active?.reconciled_paid ?? 0} · Expired: {active?.reconciled_expired ?? 0}<br/>
+
                 </p>
               </div>
             );
           })}
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          PayGlocal confirmed purchase revenue, before refunds and fees; not settlement balances.
+          Confirmed purchase revenue, before refunds and fees; not settlement balances.
           Historical purchases remain in the records below.
         </p>
       </section>
@@ -120,7 +111,7 @@ function Admin() {
       </section>
       {(
         [
-          ["PayGlocal payments", data.payglocalOrders],
+          [data.provider === "dodo" ? "Dodo payments" : "PayGlocal payments", data.provider === "dodo" ? data.dodoOrders : data.payglocalOrders],
           ["Dormant Dodo flagged wallets", data.flaggedWallets],
           ["Pulls", data.pulls],
           ["Matchups", data.matchups],

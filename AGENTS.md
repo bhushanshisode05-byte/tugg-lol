@@ -14,8 +14,8 @@
 - Subdirectories have their own AGENTS.md; read src/lib/payments/AGENTS.md before any payment-related change, including callers and schema. Why: payment integrity rules stay with their domain.
 - Round/pull integrity lives in SQL functions (record_pull, close_round, close_due_rounds) callable only by service role; wallet spending calls record_pull within the same locked SQL transaction as the debit; credits come only from verified provider payments. Why: no overdraw or unpaid pulls.
 - Public pages read through publishable-key server functions in src/lib/tugg.functions.ts so SSR serves full HTML to crawlers.
-- All environment switches and PayGlocal credentials are read only via config() in src/lib/server-utils.server.ts. Why: request-time server configuration never enters browser bundles.
-- The fetch-based PaymentProvider interface selects PayGlocal or dormant Dodo server-side; PAYMENTS_ENV alone selects credentials and hosts, and mode gates reject dormant wallet endpoints. Why: provider rollback must not mix environments or unpaid fulfillment.
+- All environment switches and payment credentials are read only via config() in src/lib/server-utils.server.ts. Why: request-time server configuration never enters browser bundles.
+- The fetch-based PaymentProvider interface defaults to Dodo with PayGlocal retained behind the selector; immediate mode is forced and wallet APIs reject unconditionally. Why: provider rollback must never restore stored balances or mix environments.
 - Public pull data is served only through SECURITY DEFINER tugg_* SQL functions (aggregates, live-only filter); the pulls table has no anon/authenticated access. Why: hides stripe_session_id and keeps totals exact past row limits.
 - Realtime listens to rounds only; every recorded pull updates its round row. Why: pulls aren't publicly readable.
 - Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.

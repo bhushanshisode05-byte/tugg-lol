@@ -13,7 +13,7 @@ export function PaymentTestModeBanner() {
   if (!status?.ready) {
     return (
       <div className="w-full border-b border-destructive bg-destructive/20 px-4 py-2 text-center text-sm">
-        {status?.message || "PayGlocal checkout is not configured yet. No new payments can be taken."}
+        {status?.message || "Checkout is not configured yet. No new payments can be taken."}
       </div>
     );
   }

@@ -16,7 +16,7 @@ export function paymentReadiness() {
     if (c.pullMode !== "immediate") throw new Error("PayGlocal requires immediate bundles.");
     payglocalSettings();
     if (!c.ownerName || !z.string().email().safeParse(c.ownerEmail).success) throw new Error("Checkout is unavailable while merchant contact details are being configured. No payment has been taken.");
-  } else if (c.paymentProvider === "dodo" && c.pullMode === "wallet") {
+  } else if (c.paymentProvider === "dodo" && c.pullMode === "immediate") {
     dodoSettings(); for (const kind of ["pull_5","pull_10","pull_25","standard","featured"] as const) productId(kind);
   } else throw new Error("Payment provider and pull mode are unavailable. No payment has been taken.");
 }
