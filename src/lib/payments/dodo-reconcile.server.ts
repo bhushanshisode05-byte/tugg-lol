@@ -21,6 +21,7 @@ export async function reconcileDodo() {
       if (paymentId) {
         if (session?.payment_id && row.payment_id && session.payment_id !== row.payment_id) throw new Error("Payment identity mismatch");
         const payment = await provider.payment(paymentId);
+        if (payment.metadata["tugg_order_id"] !== row.id || payment.checkout_session_id !== row.checkout_id || payment.metadata["tugg_environment"] !== environment) throw new Error("Payment does not match stored order");
         if (["succeeded","failed","cancelled"].includes(payment.status)) {
           await processDodoEvent({ type: payment.status === "succeeded" ? "payment.succeeded" : "payment.failed", data: { payment_id: paymentId } }, provider, payment);
           const stored = await db.from("dodo_orders").select("status").eq("id",row.id).single();

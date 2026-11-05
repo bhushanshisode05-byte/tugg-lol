@@ -33,7 +33,7 @@ const paymentSchema = z.object({
   currency: z.string(),
   total_amount: z.number().int().nonnegative(),
   metadata: z.record(z.unknown()).default({}),
-  product_cart: z.array(z.object({ product_id: z.string(), quantity: z.number().int() })).max(20),
+  product_cart: z.array(z.object({ product_id: z.string(), quantity: z.number().int() })).max(20).nullable().transform(v=>v ?? []),
   billing: z.object({ country: z.string().max(2).optional() }).optional(),
   checkout_session_id: z.string().nullable().optional(),
   customer: z.object({ email: z.string() }).optional(),

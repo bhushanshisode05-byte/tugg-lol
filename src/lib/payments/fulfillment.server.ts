@@ -52,9 +52,9 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
       payment.metadata["tugg_environment"] !== provider.environment ||
       payment.currency !== "USD" ||
       payment.total_amount !== order.expected_cents ||
-      payment.product_cart.length !== 1 ||
+      (event.type !== "payment.failed" && (payment.product_cart.length !== 1 ||
       payment.product_cart[0]?.product_id !== order.product_id ||
-      payment.product_cart[0]?.quantity !== 1 ||
+      payment.product_cart[0]?.quantity !== 1)) ||
       order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents ||
       payment.checkout_session_id !== order.checkout_id ||
       (order.payment_id && order.payment_id !== payment.payment_id)
@@ -65,8 +65,6 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
       return;
     }
     if (event.type.startsWith("dispute.")) {
-      if (order.wallet_id)
-        checked(await db.from("pull_wallets").update({ flagged: true }).eq("id", order.wallet_id));
       checked(
         await db
           .from("events")
@@ -95,17 +93,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
       if (refund && "payment_id" in refund && refund.payment_id !== payment.payment_id) throw new Error("Refund payment mismatch");
       if (!refund || refund.status !== (event.type === "refund.succeeded" ? "succeeded" : "failed"))
         throw new Error("Refund not verified");
-      if (event.type === "refund.succeeded" && order.wallet_id) {
-        if (refund.currency !== "USD" || refund.amount == null)
-          throw new Error("Refund currency or amount missing");
-        checked(
-          await db.rpc("refund_dodo_wallet", {
-            p_order: id,
-            p_refund: event.data.refund_id,
-            p_cents: refund.amount,
-          }),
-        );
-      }
+      if (event.type === "refund.succeeded" && (refund.currency !== "USD" || refund.amount !== order.expected_cents)) throw new Error("Refund amount or currency mismatch");
       checked(
         await db
           .from("dodo_orders")

@@ -17,12 +17,12 @@ it("expired orders stop before provider setup",async()=>{state.expired=1;expect(
 it("PayGlocal selection leaves Dodo dormant",async()=>{state.mode="payglocal";expect(await reconcileDodo()).toHaveProperty("skipped");expect(state.provider).not.toHaveBeenCalled();});
 const row={id:"12345678-1234-4234-8234-123456789abc",checkout_id:"cs",payment_id:null,reconcile_count:2};
 it("recovers stored checkout through Dodo status then verified payment",async()=>{
- state.rows=[row];const payment={payment_id:"p",status:"succeeded",metadata:{tugg_order_id:row.id}};
+ state.rows=[row];const payment={payment_id:"p",status:"succeeded",checkout_session_id:"cs",metadata:{tugg_order_id:row.id,tugg_environment:"sandbox"}};
  const provider={checkoutStatus:vi.fn(async()=>({payment_id:"p"})),payment:vi.fn(async()=>payment)};state.provider.mockReturnValue(provider);
  expect(await reconcileDodo()).toMatchObject({checked:1,finalized:1,errors:0});
  expect(provider.checkoutStatus).toHaveBeenCalledWith("cs");expect(provider.payment).toHaveBeenCalledWith("p");
  expect(state.process).toHaveBeenCalledWith({type:"payment.succeeded",data:{payment_id:"p"}},provider,payment);
  expect(state.updates).toContainEqual(expect.objectContaining({reconcile_count:3,reconcile_result:"paid"}));
 });
-it("pending status never applies a bundle",async()=>{state.rows=[row];state.provider.mockReturnValue({checkoutStatus:async()=>({payment_id:"p"}),payment:async()=>({status:"processing"})});await reconcileDodo();expect(state.process).not.toHaveBeenCalled();});
+it("pending status never applies a bundle",async()=>{state.rows=[row];state.provider.mockReturnValue({checkoutStatus:async()=>({payment_id:"p"}),payment:async()=>({status:"processing",checkout_session_id:"cs",metadata:{tugg_order_id:row.id,tugg_environment:"sandbox"}})});await reconcileDodo();expect(state.process).not.toHaveBeenCalled();});
 it("cross-order status is refused before fulfillment",async()=>{state.rows=[{...row,payment_id:"stored"}];state.provider.mockReturnValue({checkoutStatus:async()=>({payment_id:"other"})});expect(await reconcileDodo()).toHaveProperty("errors",1);expect(state.process).not.toHaveBeenCalled();});
