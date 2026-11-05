@@ -1,9 +1,9 @@
 # Tugg roadmap
 
 ## Dodo immediate switch (do not publish)
-- [ ] Switch default provider to Dodo, force immediate-only bundles and block all wallet APIs; preserve PayGlocal rollback code.
-- [ ] Verified Dodo checkout/webhooks, atomic bundles, durable refund claims, pending-only bounded reconciliation, read-only reporting and provider-selected policy text.
-- [ ] Mocked protocol/signature/atomic/concurrency/guard tests plus desktop and phone checks; update DODO_SETUP.md.
+- [x] Default Dodo provider, forced immediate-only bundles, wallet UI disconnected and all wallet read/buy/spend APIs refused even with PULL_MODE=wallet. PayGlocal remains selectable/dormant; no managed Stripe/Paddle, no publishing, no pricing/round/moderation/email/sharing changes.
+- [x] Reused Dodo POST /checkouts and verified raw-body webhook; official on-demand overlay/manual-return with redirect fallback. Additive migration 0015: private immediate applications and funnel, keyed claims, atomic record_pull/no credits or wallet, pending/expired guards, age-backed reconciliation and owner aggregate reporting. Durable once-only refunds and GET refund verification; ambiguous refunds remain owner review, never retried blindly. Existing five-minute managed job reused with provider dispatch; quiet day 288 timer invocations, zero provider calls when empty.
+- [x] 165 tests pass across 17 files: mocked Dodo checkout/overlay/reconcile, real signature tampering/expiry/environment, webhook replay, exact bundle prices, fail-closed/Turnstile/pause/no-wallet, moderation/refunds/disputes, PayGlocal rollback, unchanged owner authorization and sharing. Disposable PostgreSQL actual functions: 5/10/25 atomic apply, duplicate/rollback, environment/public-live-total isolation, due backoff/expiry, private grants and webhook lease replay; ten concurrent applications create exactly one five-pull bundle, no wallet. Preview desktop 1280×1800 and phone 390×844: choose 25 pulls, correct disabled Dodo checkout without keys, provider-only policies, no overflow/page errors; webhook 503 missing keys/403 wrong env, anonymous admin/job 401. Automatic build OK. DODO_SETUP.md updated with exact secrets, products, endpoints and subscriptions.
 - [ ] Real Dodo test checkout, overlay, webhook/refund delivery and owner records. Blocker: owner Dodo test credentials/product IDs, Dodo approval and successful real Turnstile; do not publish.
 
 ## Safe login diagnostics (do not publish)
