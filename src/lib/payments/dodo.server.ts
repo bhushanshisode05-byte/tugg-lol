@@ -4,16 +4,14 @@ import { DODO_NOT_READY, type PaymentsEnv, type ProductKind } from "./catalog";
 import type { PaymentProvider } from "./provider";
 
 export function dodoSettings(env: PaymentsEnv = config().paymentsEnv) {
-  const prefix = env === "sandbox" ? "DODO_TEST" : "DODO_LIVE";
-  const key = process.env[`${prefix}_API_KEY`] || "";
-  const secret = process.env[`${prefix}_WEBHOOK_SECRET`] || "";
-  const other = env === "sandbox" ? "DODO_LIVE" : "DODO_TEST";
+  if (env !== config().paymentsEnv) throw new Error(DODO_NOT_READY);
+  const { prefix, key, secret, otherKey, otherSecret } = config().dodo;
   // Reject swapped known credentials. Dodo's mode-specific host is the authoritative key validator.
   if (
     !key ||
     !secret ||
-    key === process.env[`${other}_API_KEY`] ||
-    secret === process.env[`${other}_WEBHOOK_SECRET`]
+    key === otherKey ||
+    secret === otherSecret
   )
     throw new Error(DODO_NOT_READY);
   return {
@@ -24,8 +22,8 @@ export function dodoSettings(env: PaymentsEnv = config().paymentsEnv) {
   };
 }
 export function productId(kind: ProductKind) {
-  const { prefix } = dodoSettings();
-  const id = process.env[`${prefix}_PRODUCT_${kind.toUpperCase()}`];
+  dodoSettings();
+  const id = config().dodo.products[kind];
   if (!id) throw new Error(DODO_NOT_READY);
   return id;
 }
@@ -51,7 +49,7 @@ const paymentSchema = z.object({
     )
     .optional(),
 });
-export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProvider {
+export function createDodoProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 15000): PaymentProvider {
   const environment = config().paymentsEnv;
   const settings = dodoSettings(environment);
   async function api(path: string, body?: unknown, idempotency?: string) {
@@ -63,7 +61,7 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProv
         ...(idempotency ? { "Idempotency-Key": idempotency } : {}),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok)
       throw new Error(
@@ -121,8 +119,16 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch): PaymentProv
         throw new Error("Invalid Dodo checkout destination.");
       return { sessionId: parsed.session_id, url: parsed.checkout_url };
     },
+    async checkoutStatus(id) {
+      return z.object({ payment_id: z.string().nullable().optional(), payment_status: z.string().nullable().optional() }).parse(await api(`/checkouts/${encodeURIComponent(id)}`));
+    },
+    async refundStatus(id) {
+      return z.object({ refund_id: z.string(), payment_id: z.string(), status: z.string(), amount: z.number().int().nullable().optional(), currency: z.string().nullable().optional() }).parse(await api(`/refunds/${encodeURIComponent(id)}`));
+    },
     async payment(id) {
-      return paymentSchema.parse(await api(`/payments/${encodeURIComponent(id)}`));
+      const payment = paymentSchema.parse(await api(`/payments/${encodeURIComponent(id)}`));
+      if (payment.payment_id !== id) throw new Error("Payment identity mismatch");
+      return payment;
     },
     async refund(paymentId, orderId) {
       const result = await api(
