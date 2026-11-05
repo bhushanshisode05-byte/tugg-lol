@@ -14,6 +14,8 @@ import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { getPaymentStatus } from "@/lib/payments.functions";
 import { BillingFields, emptyBilling } from "@/components/tugg/BillingFields";
 import { billingSchema } from "@/lib/payments/billing";
+import { paymentProviderText } from "@/lib/payments/copy";
+import { openDodoOverlay } from "@/lib/payments/dodo-overlay";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -71,8 +73,8 @@ function CreateForm() {
   const checkout = useServerFn(createMatchupCheckout);
   const getPayments = useServerFn(getPaymentStatus);
   const [ready, setReady] = useState(false);
-  const [provider,setProvider] = useState("payglocal");
-  const [message,setMessage] = useState("PayGlocal checkout is not configured yet. No payment has been taken.");
+  const [provider,setProvider] = useState("dodo");
+  const [message,setMessage] = useState("Dodo checkout is not configured yet. No payment has been taken.");
   const [billing,setBilling] = useState(emptyBilling);
   useEffect(() => {
     getPayments()
@@ -103,7 +105,7 @@ function CreateForm() {
       <h1 className="font-display text-5xl font-extrabold">Start a rivalry</h1>
       <p className="mt-2 text-muted-foreground">
         Brands, places, teams, foods, ideas. No private people, politics, hate or adult stuff.
-        Rejected matchups are refunded automatically. Payments are processed by PayGlocal (RBI-authorised).
+        Rejected matchups are refunded automatically. {paymentProviderText(provider)}
       </p>
 
       {pay ? (
@@ -275,7 +277,13 @@ function CreateForm() {
                   setErr(r.error);
                   setPay(false);
                   setToken(null);
-                } else window.location.assign(r.url);
+                } else {
+                  const destination = new URL(r.url);
+                  if (provider === "dodo" && await openDodoOverlay(r.url, r.environment ?? "sandbox", () => {
+                    if (r.orderId) window.location.assign(`${window.location.origin}/create?session_id=${r.orderId}`);
+                  })) setPay(false);
+                  else window.location.assign(destination.toString());
+                }
               } catch {
                 setErr("Could not open checkout.");
                 setPay(false);
