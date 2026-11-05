@@ -16,7 +16,7 @@ export async function getAdminData(request: Request) {
     p_email: config().ownerEmail,
   });
   if (roleError || !owner) return Response.json({ error: "Owner access only." }, { status: 403 });
-  const [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets] =
+  const [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets, dodoOrders, dodoFunnel] =
     await Promise.all([
       supabaseAdmin.rpc("tugg_admin_summary"),
       supabaseAdmin
@@ -57,9 +57,11 @@ export async function getAdminData(request: Request) {
         .eq("flagged", true)
         .order("created_at", { ascending: false })
         .limit(200),
+      supabaseAdmin.from("dodo_orders").select("id,environment,kind,quantity,expected_cents,status,provider_status,refund_status,reconcile_count,reconciled_at,reconcile_result,created_at").is("wallet_id",null).order("created_at",{ascending:false}).limit(200),
+      supabaseAdmin.rpc("tugg_dodo_funnel"),
     ]);
   if (
-    [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets].some(
+    [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets, dodoOrders, dodoFunnel].some(
       (r) => r.error,
     )
   )
@@ -69,11 +71,13 @@ export async function getAdminData(request: Request) {
   const creationRevenue = { live: Number(fees?.live ?? 0), sandbox: Number(fees?.sandbox ?? 0) };
   return Response.json(
     {
+      provider: config().paymentProvider,
+      dodoOrders: dodoOrders.data,
       summary: summary.data,
       dodo: dodo.data,
       payglocal: payglocal.data,
       payglocalOrders: payglocalOrders.data,
-      funnel: funnel.data,
+      funnel: config().paymentProvider === "dodo" ? dodoFunnel.data : funnel.data,
       flaggedWallets: flaggedWallets.data,
       creationRevenue,
       pulls: pulls.data,

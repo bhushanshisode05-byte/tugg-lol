@@ -1,3 +1,4 @@
+import { activePaymentCopy } from "./payments/copy";
 import { IMAGE_POLICY } from "./side-image";
 export const supportAnswers = [
   {
@@ -43,11 +44,11 @@ export const supportAnswers = [
   },
 ] as const;
 export type AnswerId = (typeof supportAnswers)[number]["id"];
-export function approvedAnswer(id: string) {
-  return (
+export function approvedAnswer(id: string, provider = "dodo") {
+  return activePaymentCopy(
     supportAnswers.find((a) => a.id === id)?.text ??
     supportAnswers.find((a) => a.id === "scope")?.text ??
-    "Tugg support answers only published policies."
+    "Tugg support answers only published policies.", provider
   );
 }
 export const policySections = {

@@ -9,6 +9,6 @@ export const Route = createFileRoute("/privacy")({
   component: Page,
 });
 function Page() {
-  const { email } = Route.useLoaderData();
-  return <PolicyPage id="privacy" email={email} />;
+  const { email, provider } = Route.useLoaderData();
+  return <PolicyPage id="privacy" provider={provider} email={email} />;
 }

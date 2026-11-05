@@ -4,5 +4,5 @@ export const getPublicContact = createServerFn({ method: "GET" }).handler(async 
   const { z } = await import("zod");
   // Public business inbox is deliberately separate from the configured admin login.
   const email = 'hello@tugg.lol';
-  return { operator: config().ownerName || null, email: z.string().email().safeParse(email).success ? email : null };
+  return { provider: config().paymentProvider, operator: config().ownerName || null, email: z.string().email().safeParse(email).success ? email : null };
 });

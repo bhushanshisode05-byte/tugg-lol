@@ -29,8 +29,8 @@ export interface PaymentProvider {
     cents?: number;
     billing?: { firstName: string; lastName: string; emailId: string; addressCountry: string; addressStreet1: string; addressCity: string; addressState: string; addressPostalCode: string };
   }): Promise<{ sessionId: string; url: string; statusUrl?: string }>;
-  checkoutStatus?(id: string): Promise<{ payment_id?: string | null; payment_status?: string | null }>;
-  refundStatus?(id: string): Promise<{ refund_id: string; payment_id: string; status: string; amount?: number | null; currency?: string | null }>;
+  checkoutStatus?(id: string): Promise<{ payment_id?: string | null | undefined; payment_status?: string | null | undefined }>;
+  refundStatus?(id: string): Promise<{ refund_id: string; payment_id: string; status: string; amount?: number | null | undefined; currency?: string | null | undefined }>;
   payment(id: string, statusUrl?: string | null): Promise<VerifiedPayment>;
   refund(paymentId: string, orderId: string): Promise<{ refundId: string; status: string }>;
 }
