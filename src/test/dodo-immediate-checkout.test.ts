@@ -7,7 +7,7 @@ vi.mock("@/lib/turnstile.server",()=>({verifyTurnstileForRequest:state.verify}))
 vi.mock("@/lib/payments/selection.server",()=>({paymentReadiness:state.ready,selectedProduct:(kind:string)=>`product-${kind}`,selectedProvider:()=>({environment:"sandbox",validateProduct:state.validate,checkout:state.checkout})}));
 vi.mock("@/integrations/supabase/client.server",()=>({supabaseAdmin:{rpc:async()=>({data:true,error:null}),from:(table:string)=>{
  let inserted:any;const q:any={select:()=>q,eq:()=>q,is:()=>q,insert:(v:any)=>{inserted=v;state.writes.push({table,value:v});return q;},update:(v:any)=>{state.writes.push({table,value:v});return q;},single:async()=>({error:null,data:table==="sides"?{matchups:{status:"active"}}:{id:inserted?.id}}),then:(r:any)=>r({error:null})};return q;
-}}));
+}}}));
 import { buyImmediateBundle } from "@/lib/immediate-payments.functions";
 beforeEach(()=>{vi.stubEnv("PAYMENT_PROVIDER","dodo");vi.stubEnv("PAUSE_PULLS","false");state.writes=[];state.ready.mockReset();state.verify.mockReset();state.validate.mockReset();state.checkout.mockReset().mockResolvedValue({sessionId:"cs",url:"https://checkout.dodopayments.com/test"});});
 it.each([5,10,25] as const)("creates a %i-pull immediate order and fixed-product checkout without a wallet",async pack=>{
