@@ -117,58 +117,166 @@ export type Database = {
         }
         Relationships: []
       }
+      dodo_bundle_applications: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          environment: string
+          order_id: string
+          payment_id: string
+          pull_id: string
+          quantity: number
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          environment: string
+          order_id: string
+          payment_id: string
+          pull_id: string
+          quantity: number
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          environment?: string
+          order_id?: string
+          payment_id?: string
+          pull_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dodo_bundle_applications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "dodo_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dodo_bundle_applications_pull_id_fkey"
+            columns: ["pull_id"]
+            isOneToOne: true
+            referencedRelation: "pulls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dodo_funnel_events: {
+        Row: {
+          bundle: number
+          created_at: string
+          environment: string
+          funnel_id: string
+          id: string
+          mode: string
+          step: string
+        }
+        Insert: {
+          bundle: number
+          created_at?: string
+          environment: string
+          funnel_id: string
+          id?: string
+          mode?: string
+          step: string
+        }
+        Update: {
+          bundle?: number
+          created_at?: string
+          environment?: string
+          funnel_id?: string
+          id?: string
+          mode?: string
+          step?: string
+        }
+        Relationships: []
+      }
       dodo_orders: {
         Row: {
           checkout_id: string | null
           created_at: string
+          display_name: string
           environment: string
           expected_cents: number
+          funnel_id: string | null
           id: string
           kind: string
           matchup_id: string | null
+          paid_at: string | null
           payment_id: string | null
+          processing_key: string | null
           processing_until: string | null
           product_id: string
+          provider_status: string | null
+          quantity: number
+          reconcile_count: number
+          reconcile_result: string | null
+          reconciled_at: string | null
           refund_id: string | null
           refund_status: string | null
           review_allowed: boolean | null
           review_reason: string | null
+          shout_out: string
+          side_id: string | null
           status: string
           wallet_id: string | null
         }
         Insert: {
           checkout_id?: string | null
           created_at?: string
+          display_name?: string
           environment: string
           expected_cents: number
+          funnel_id?: string | null
           id?: string
           kind: string
           matchup_id?: string | null
+          paid_at?: string | null
           payment_id?: string | null
+          processing_key?: string | null
           processing_until?: string | null
           product_id: string
+          provider_status?: string | null
+          quantity?: number
+          reconcile_count?: number
+          reconcile_result?: string | null
+          reconciled_at?: string | null
           refund_id?: string | null
           refund_status?: string | null
           review_allowed?: boolean | null
           review_reason?: string | null
+          shout_out?: string
+          side_id?: string | null
           status?: string
           wallet_id?: string | null
         }
         Update: {
           checkout_id?: string | null
           created_at?: string
+          display_name?: string
           environment?: string
           expected_cents?: number
+          funnel_id?: string | null
           id?: string
           kind?: string
           matchup_id?: string | null
+          paid_at?: string | null
           payment_id?: string | null
+          processing_key?: string | null
           processing_until?: string | null
           product_id?: string
+          provider_status?: string | null
+          quantity?: number
+          reconcile_count?: number
+          reconcile_result?: string | null
+          reconciled_at?: string | null
           refund_id?: string | null
           refund_status?: string | null
           review_allowed?: boolean | null
           review_reason?: string | null
+          shout_out?: string
+          side_id?: string | null
           status?: string
           wallet_id?: string | null
         }
@@ -178,6 +286,13 @@ export type Database = {
             columns: ["matchup_id"]
             isOneToOne: false
             referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dodo_orders_side_id_fkey"
+            columns: ["side_id"]
+            isOneToOne: false
+            referencedRelation: "sides"
             referencedColumns: ["id"]
           },
           {
@@ -1007,6 +1122,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_dodo_bundle: {
+        Args: {
+          p_cents: number
+          p_country: string
+          p_env: string
+          p_order: string
+          p_payment: string
+        }
+        Returns: Json
+      }
       apply_payglocal_payment: {
         Args: {
           p_cents: number
@@ -1022,6 +1147,15 @@ export type Database = {
         Returns: boolean
       }
       claim_dodo_event: { Args: { p_id: string }; Returns: boolean }
+      claim_dodo_immediate_order: {
+        Args: {
+          p_env: string
+          p_key: string
+          p_order: string
+          p_payment: string
+        }
+        Returns: boolean
+      }
       claim_dodo_order: {
         Args: { p_env: string; p_order: string; p_payment: string }
         Returns: boolean
@@ -1056,6 +1190,7 @@ export type Database = {
         }
         Returns: Json
       }
+      dodo_reconcile_due: { Args: { p_env: string }; Returns: Json }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
       next_utc_midnight: { Args: never; Returns: string }
       payglocal_reconcile_due: { Args: { p_env: string }; Returns: Json }
@@ -1110,6 +1245,7 @@ export type Database = {
         Args: { p_from: string; p_live: boolean; p_to: string }
         Returns: Json
       }
+      tugg_dodo_funnel: { Args: never; Returns: Json }
       tugg_dodo_summary: { Args: never; Returns: Json }
       tugg_payglocal_funnel: { Args: never; Returns: Json }
       tugg_payglocal_summary: { Args: never; Returns: Json }
