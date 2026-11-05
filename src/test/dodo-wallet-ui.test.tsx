@@ -27,42 +27,28 @@ beforeEach(() => {
   mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", pullMode: "wallet", ready: true });
   mocks.getWallet.mockResolvedValue({ balance: 10, flagged: false, paid: true });
 });
-describe("wallet recovery and one-tap UI", () => {
-  it("restores a private fragment wallet, spends one pull and reads remaining balance", async () => {
+describe("legacy wallets stay unreachable", () => {
+  it("does not restore a wallet or offer spending even with legacy storage and configuration", async () => {
     const credential = "c".repeat(64);
     history.replaceState(null, "", `/#wallet=${credential}`);
     mocks.spendPulls.mockResolvedValue({ balance: 9, duplicate: false });
     const pulled = vi.fn();
     render(<PullPanel sides={sides} slug="pizza-vs-burgers" paused={false} onPulled={pulled} />);
-    await screen.findByText("10 pulls remaining");
-    expect(location.hash).toBe("");
-    expect(localStorage.getItem("tugg-wallet-sandbox")).toBe(credential);
-    expect(screen.getByRole("button", { name: "×10 · $10" })).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Mock security check"));
-    fireEvent.click(screen.getByRole("button", { name: "Pull $1 for Pizza" }));
-    await screen.findByText("9 pulls remaining");
-    expect(pulled).toHaveBeenCalledTimes(1);
-    expect(mocks.spendPulls).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        token: credential,
-        quantity: 1,
-        sideId: sides[0].id,
-        turnstileToken: "public-turnstile-fixture",
-      }),
-    });
+    await waitFor(()=>expect(mocks.getPaymentStatus).toHaveBeenCalled());
+    expect(mocks.getWallet).not.toHaveBeenCalled();
+    expect(mocks.spendPulls).not.toHaveBeenCalled();
+    expect(mocks.buyPullPack).not.toHaveBeenCalled();
+    expect(localStorage.getItem("tugg-wallet-sandbox")).toBeNull();
     expect(screen.queryByRole("button", { name: "×10 · $10" })).toBeNull();
-    expect(
-      (screen.getByRole("textbox", { name: "Wallet recovery link" }) as HTMLInputElement).value,
-    ).toBe(
-      `${location.origin}/m/pizza-vs-burgers# wallet=${credential}`.replace("# wallet", "#wallet"),
-    );
+    expect(screen.queryByRole("textbox", { name: "Wallet recovery link" })).toBeNull();
   });
   it("missing Dodo setup disables all three pack purchases", async () => {
     mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", pullMode: "wallet", ready: false });
     render(<PullPanel sides={sides} slug="pizza-vs-burgers" paused={false} onPulled={vi.fn()} />);
     await screen.findByText(/Dodo checkout is not configured yet/);
     for (const p of [5, 10, 25])
-      expect(screen.getByRole("button", { name: `$${p} ${p} pulls` })).toBeDisabled();
+      expect(screen.getByRole("button", { name: `$${p} ${p} pulls` })).toBeEnabled();
+    expect(screen.getByRole("button", {name: /Pay \$5/})).toBeDisabled();
     expect(mocks.buyPullPack).not.toHaveBeenCalled();
   });
 });
