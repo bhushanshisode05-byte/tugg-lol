@@ -63,7 +63,7 @@ Existing managed five-minute /api/public/jobs/payments schedule is reused and di
 Read-only owner reporting separates live/test revenue, bundles/pulls, refunds and reviews, pending/expired, reconcile outcomes and 7/30-day anonymous funnel. Completion comes from the committed order trigger, not browser claims. Existing admin authorization is unchanged.
 
 ## Tests and remaining checks
-133 automated tests passed initially across Dodo, PayGlocal rollback, owner access and policy suites; final count recorded in roadmap. Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
+165 automated tests passed across 17 files covering Dodo, PayGlocal rollback, owner access, policy and unchanged sharing suites. Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
 
 Disposable local PostgreSQL tests use the actual existing record_pull and additive migration 0015: all three bundle values, replay, no wallet, inactive-side rollback, wrong amount/environment, failed/expired guard, live totals exclude test pulls, due backoff/expiry, private grants and webhook lease deduplication. Ten concurrent delivery applications create exactly one five-pull bundle. No fake pulls/users/money were stored in the hosted database.
 
