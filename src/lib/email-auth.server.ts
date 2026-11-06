@@ -73,10 +73,16 @@ export async function executeEmailAuth(input: EmailAuthInput, request: Request):
     // Provider/account errors deliberately receive identical acknowledgements.
     if (data.operation === "reset") {
       const result = await db.auth.resetPasswordForEmail(data.email, { redirectTo: returnUrl });
-      if (result.error) await logAuthDiagnostic({ reason: "auth_provider_error", operation });
+      if (result.error) {
+        const mapped = mapPasswordUpdateError(result.error);
+        await logAuthDiagnostic({ reason: mapped.reason === "provider_rate_limited" ? mapped.reason : "auth_provider_error", operation, providerCode: mapped.providerCode, providerStatus: mapped.providerStatus });
+      }
     } else {
       const result = await db.auth.signInWithOtp({ email: data.email, options: { shouldCreateUser: false, emailRedirectTo: returnUrl } });
-      if (result.error) await logAuthDiagnostic({ reason: "auth_provider_error", operation });
+      if (result.error) {
+        const mapped = mapPasswordUpdateError(result.error);
+        await logAuthDiagnostic({ reason: "auth_provider_error", operation, providerCode: mapped.providerCode, providerStatus: mapped.providerStatus });
+      }
     }
     return { ok: true, message: AUTH_ACKNOWLEDGEMENT };
   } catch (error) {
