@@ -31,7 +31,7 @@ describe("password update error mapping", () => {
     expect(result).toMatchObject({ ok: false, reason, message });
     expect("recovery" in result).toBe(retry);
     expect(JSON.stringify(result)).not.toContain("provider text");
-    const logged = m.log.mock.calls[0][0];
+    const logged = m.log.mock.calls[0]![0];
     expect(logged.reason).toBe(reason);
     expect(logged.providerCode).toBe(reason === "auth_provider_error" ? "unknown" : (providerError as { code: string }).code);
     expect(JSON.stringify(logged)).not.toMatch(/Thirteen|hash|fake-|hello@/);
@@ -44,7 +44,7 @@ describe("password update error mapping", () => {
     m.verifyOtp.mockResolvedValue({ data: { session: null }, error: err("otp_expired", 403) });
     expect(await run()).toMatchObject({ ok: false, reason: "recovery_expired" });
     expect(m.update).not.toHaveBeenCalled();
-    expect(m.log.mock.calls[0][0]).toMatchObject({ reason: "recovery_expired", providerCode: "otp_expired" });
+    expect(m.log.mock.calls[0]![0]).toMatchObject({ reason: "recovery_expired", providerCode: "otp_expired" });
   });
   it("retry after a rejected password reuses the in-memory recovery session, not the burned link", async () => {
     m.update.mockResolvedValue({ error: null });
@@ -66,6 +66,6 @@ describe("password update error mapping", () => {
   it("reset-email cooldown is logged as provider_rate_limited with its code but acknowledgement stays generic", async () => {
     m.reset.mockResolvedValue({ error: err("over_email_send_rate_limit", 429) });
     expect((await executeEmailAuth({ operation: "reset", email: "hello@tugg.lol", turnstileToken: "t" }, req())).ok).toBe(true);
-    expect(m.log.mock.calls[0][0]).toMatchObject({ reason: "provider_rate_limited", providerCode: "over_email_send_rate_limit", operation: "owner_password_reset" });
+    expect(m.log.mock.calls[0]![0]).toMatchObject({ reason: "provider_rate_limited", providerCode: "over_email_send_rate_limit", operation: "owner_password_reset" });
   });
 });
