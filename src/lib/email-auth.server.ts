@@ -3,10 +3,17 @@ import { TurnstileError, verifyTurnstileForRequest } from "./turnstile.server";
 import { TURNSTILE_ACTIONS } from "./turnstile";
 import { AUTH_ACKNOWLEDGEMENT, AUTH_FAILURE, AUTH_LIMITS, authReturnUrl, emailAuthSchema, resetPasswordSchema, type EmailAuthInput, type ResetPasswordInput } from "./email-auth-schema";
 
-import { AuthDiagnosticError, type AuthReasonCode } from "./auth-diagnostics";
+import { AuthDiagnosticError, mapPasswordUpdateError, PASSWORD_MESSAGES, type AuthReasonCode } from "./auth-diagnostics";
+
+async function providerFailure(error: unknown, operation: string, fallback: "recovery_expired"): Promise<Result> {
+  const mapped = error ? mapPasswordUpdateError(error) : null;
+  const reason = mapped && mapped.reason === "provider_rate_limited" ? mapped.reason : fallback;
+  await logAuthDiagnostic({ reason, operation, providerCode: mapped?.providerCode ?? "none", providerStatus: mapped?.providerStatus ?? null });
+  return { ok: false, message: PASSWORD_MESSAGES[reason], reason };
+}
 import { logAuthDiagnostic } from "./auth-diagnostics.server";
 
-type Result = { ok: false; message: string; reason?: AuthReasonCode } | { ok: true; message: string; session?: { access_token: string; refresh_token: string } };
+type Result = { ok: false; message: string; reason?: AuthReasonCode; recovery?: { access_token: string; refresh_token: string } } | { ok: true; message: string; session?: { access_token: string; refresh_token: string } };
 const denied = (message = AUTH_FAILURE): Result => ({ ok: false, message });
 
 function sameOrigin(request: Request) {
@@ -88,14 +95,28 @@ export async function executePasswordReset(input: ResetPasswordInput, request: R
     const data = parsed.data;
     await verifyTurnstileForRequest(data.turnstileToken, TURNSTILE_ACTIONS.passwordUpdate, request);
     stage = "rate_limiter_error";
-    if (!await takeAuthLimits(request, `recovery:${data.tokenHash}`, "password")) return failure(null, operation, "rate_limited", "Too many attempts. Please try again later.");
+    const limitKey = data.tokenHash ? `recovery:${data.tokenHash}` : `recovery-session:${data.recovery!.refresh_token}`;
+    if (!await takeAuthLimits(request, limitKey, "password")) return failure(null, operation, "rate_limited", "Too many attempts. Please try again later.");
     stage = "auth_provider_error";
     const db = publicDb();
-    // Only a real, unused recovery token can establish this client session.
-    const { data: verified, error } = await db.auth.verifyOtp({ token_hash: data.tokenHash, type: "recovery" });
-    if (error || !verified.session || !verified.user?.email_confirmed_at) return denied("This reset link is invalid or expired. Request a new reset link.");
+    let session: { access_token: string; refresh_token: string } | null = null;
+    if (data.tokenHash) {
+      // Only a real, unused recovery token can establish this client session.
+      const { data: verified, error } = await db.auth.verifyOtp({ token_hash: data.tokenHash, type: "recovery" });
+      if (error || !verified.session || !verified.user?.email_confirmed_at) return providerFailure(error, operation, "recovery_expired");
+      session = { access_token: verified.session.access_token, refresh_token: verified.session.refresh_token };
+    } else {
+      // Retry within the same recovery session returned after a rejected password.
+      const { data: restored, error } = await db.auth.setSession(data.recovery!);
+      if (error || !restored.session || !restored.user?.email_confirmed_at) return providerFailure(error, operation, "recovery_expired");
+      session = { access_token: restored.session.access_token, refresh_token: restored.session.refresh_token };
+    }
     const { error: updateError } = await db.auth.updateUser({ password: data.password });
-    if (updateError) return denied("Password could not be updated. Choose a different password and request a new reset link.");
+    if (updateError) {
+      const mapped = mapPasswordUpdateError(updateError);
+      await logAuthDiagnostic({ reason: mapped.reason, operation, providerCode: mapped.providerCode, providerStatus: mapped.providerStatus, weakReasons: mapped.weakReasons });
+      return { ok: false, message: PASSWORD_MESSAGES[mapped.reason], reason: mapped.reason, ...(mapped.retryable && session ? { recovery: session } : {}) };
+    }
     await db.auth.signOut({ scope: "global" });
     return { ok: true, message: "Password updated. Sign in with your new password." };
   } catch (error) {
