@@ -16,7 +16,16 @@ export const emailAuthSchema = z.discriminatedUnion("operation", [
   z.object({ operation: z.literal("link"), email, turnstileToken: token }),
 ]);
 export type EmailAuthInput = z.infer<typeof emailAuthSchema>;
-export const resetPasswordSchema = z.object({ password, tokenHash: z.string().min(1).max(512), turnstileToken: token });
+/** Matches the backend: 12+ characters (app rule) and not found in known breaches (leaked-password check). */
+export const PASSWORD_REQUIREMENTS = `At least ${MIN_PASSWORD_LENGTH} characters, not a password found in known data breaches, and different from your current password.`;
+const recoverySession = z.object({ access_token: z.string().min(1).max(4096), refresh_token: z.string().min(1).max(512) });
+export const resetPasswordSchema = z.object({
+  password,
+  tokenHash: z.string().min(1).max(512).optional(),
+  // Held only in page memory after a retryable failure, so a rejected password does not burn the one-use link.
+  recovery: recoverySession.optional(),
+  turnstileToken: token,
+}).refine(value => Boolean(value.tokenHash) !== Boolean(value.recovery), { message: "Provide exactly one recovery credential." });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 /** Explicit live domain: email return URLs never depend on the preview origin. */

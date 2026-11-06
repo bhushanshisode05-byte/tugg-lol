@@ -1,4 +1,4 @@
-import { authReference, type AuthDiagnostic } from "./auth-diagnostics";
+import { authReference, PROVIDER_ERROR_CODES, PROVIDER_WEAK_REASONS, type AuthDiagnostic } from "./auth-diagnostics";
 import { TURNSTILE_ACTIONS } from "./turnstile";
 
 const cloudflareCodes = new Set(["missing-input-secret", "invalid-input-secret", "missing-input-response", "invalid-input-response", "bad-request", "timeout-or-duplicate", "internal-error", "hostname-mismatch"]);
@@ -12,6 +12,9 @@ export async function logAuthDiagnostic(input: AuthDiagnostic) {
     hostname: typeof input.hostname === "string" && input.hostname.length <= 253 && /^(?:[a-z0-9-]+\.)+[a-z0-9-]+$/i.test(input.hostname) ? input.hostname : null,
     action: actions.find(action => action === input.action) ?? (input.action ? "unrecognized" : null),
     expectedAction: actions.find(action => action === input.expectedAction) ?? null,
+    ...(input.providerCode === undefined ? {} : { providerCode: input.providerCode == null ? null : (PROVIDER_ERROR_CODES as readonly string[]).includes(input.providerCode) || input.providerCode === "none" ? input.providerCode : "unknown",
+      providerStatus: typeof input.providerStatus === "number" && input.providerStatus >= 100 && input.providerStatus < 600 ? input.providerStatus : null,
+      weakReasons: (input.weakReasons ?? []).filter(r => (PROVIDER_WEAK_REASONS as readonly string[]).includes(r)) }),
   };
   console.error("auth_diagnostic", detail);
   try {
