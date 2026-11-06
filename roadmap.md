@@ -1,5 +1,14 @@
 # Tugg roadmap
 
+## Owner password reset fix (2026-11-06)
+- [x] Diagnosed 01:43–01:45 UTC failure from auth logs: leaked-password rejection, then a burned reset link, a reset-email cooldown, and finally "same as current password".
+- [x] Rejected passwords no longer burn the one-use reset link (retry within the same recovery session, held only in page memory).
+- [x] Specific safe messages and reason codes for breached, too short, same password, expired link and rate limit; private events now store the provider error code and weak-password reasons only.
+- [x] Form states the real rules up front; success returns to sign in, which claims the owner role on /admin.
+- [x] Mocked tests for every mapping, retry and success.
+- [ ] Owner: retry the reset on a phone with a new, unique passphrase (not yet done with a real link).
+
+
 ## Dodo immediate switch (do not publish)
 - [x] Default Dodo provider, forced immediate-only bundles, wallet UI disconnected and all wallet read/buy/spend APIs refused even with PULL_MODE=wallet. PayGlocal remains selectable/dormant; no managed Stripe/Paddle, no publishing, no pricing/round/moderation/email/sharing changes.
 - [x] Reused Dodo POST /checkouts and verified raw-body webhook; official on-demand overlay/manual-return with redirect fallback. Additive migration 0015: private immediate applications and funnel, keyed claims, atomic record_pull/no credits or wallet, pending/expired guards, age-backed reconciliation and owner aggregate reporting. Durable once-only refunds and GET refund verification; ambiguous refunds remain owner review, never retried blindly. Existing five-minute managed job reused with provider dispatch; quiet day 288 timer invocations, zero provider calls when empty.
