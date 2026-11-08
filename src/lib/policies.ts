@@ -19,12 +19,12 @@ export const supportAnswers = [
   {
     id: "rejected",
     title: "What if moderation rejects my matchup?",
-    text: "Matchups rejected by moderation are refunded automatically and in full to the original payment method through PayGlocal. The time it takes to appear depends on PayGlocal and your bank. Support cannot promise a refund for an approved matchup or an ordinary pull.",
+    text: "Matchups rejected by moderation are refunded automatically and in full to the original payment method through {{provider}}. The time it takes to appear depends on {{provider}} and your bank. Support cannot promise a refund for an approved matchup or an ordinary pull.",
   },
   {
     id: "payment",
     title: "What if I have a payment error?",
-    text: "PayGlocal (RBI-authorised) processes payments through a hosted checkout. Bundles are applied only after a verified payment callback or a server-side status check; returning from checkout does not confirm payment. All pulls in the bundle and the matching accounting entries succeed together. Use the contact form with your checkout email and PayGlocal payment reference for a genuine payment error. Verified technical errors are reviewed under the published policy and applicable law; support cannot invent refund exceptions. A pending payment or short confirmation delay is not proof of an error.",
+    text: "{{providerProcesses}} through a hosted checkout. Bundles are applied only after a verified payment callback or a server-side status check; returning from checkout does not confirm payment. All pulls in the bundle and the matching accounting entries succeed together. Use the contact form with your checkout email and {{provider}} payment reference for a genuine payment error. Verified technical errors are reviewed under the published policy and applicable law; support cannot invent refund exceptions. A pending payment or short confirmation delay is not proof of an error.",
   },
   {
     id: "moderation",
@@ -34,7 +34,7 @@ export const supportAnswers = [
   {
     id: "privacy",
     title: "What information does Tugg store?",
-    text: "Tugg stores payment references, purchase and ledger entries, pull amounts, optional public display names and shout-outs, billing country information, matchup submissions, and support messages and replies. Billing name, email and address are sent securely to PayGlocal to process digital purchases and risk checks. PayGlocal handles card details on its hosted checkout; card data never touches Tugg servers. Legacy wallet records are retained privately but wallets are dormant in immediate-bundle mode. Support records are private and accessible only to the owner. Hashed network identifiers limit abuse. Support text is sent to an AI service to match questions to published policies; do not include card numbers, passwords, recovery links, or sensitive personal information.",
+    text: "Tugg stores payment references, purchase and ledger entries, pull amounts, optional public display names and shout-outs, billing country information, matchup submissions, and support messages and replies. {{billingPrivacy}} Legacy wallet records are retained privately but wallets are dormant in immediate-bundle mode. Support records are private and accessible only to the owner. Hashed network identifiers limit abuse. Support text is sent to an AI service to match questions to published policies; do not include card numbers, passwords, recovery links, or sensitive personal information.",
   },
   { id: "images", title: "Side pictures and takedowns", text: IMAGE_POLICY },
   {
@@ -122,7 +122,7 @@ export const policySections = {
       { title: "Genuine payment errors", text: supportAnswers[4].text },
       {
         title: "Payment processing",
-        text: "PayGlocal (RBI-authorised) processes payments and refunds for Tugg. Refunds go to the original payment method. Applicable statutory consumer rights remain unchanged.",
+        text: "{{providerProcesses}} and refunds for Tugg. Refunds go to the original payment method. Applicable statutory consumer rights remain unchanged.",
       },
     ],
   },
@@ -136,7 +136,7 @@ export const policySections = {
       },
       {
         title: "Payments and content",
-        text: "PayGlocal (RBI-authorised) processes payments for Tugg. Brands, teams, and places named in matchups are not sponsors or partners unless explicitly stated. Tugg does not claim ownership of their names.",
+        text: "{{providerProcesses}} for Tugg. Brands, teams, and places named in matchups are not sponsors or partners unless explicitly stated. Tugg does not claim ownership of their names.",
       },
     ],
   },

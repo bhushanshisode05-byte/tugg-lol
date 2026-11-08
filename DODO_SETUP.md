@@ -1,9 +1,11 @@
 # Dodo Payments — immediate-bundle setup
 
-Status: Dodo is the default active provider; PayGlocal remains dormant behind PAYMENT_PROVIDER. Immediate mode is forced even if PULL_MODE is set to wallet. No wallet, balance, credits, one-tap spending or recovery links are reachable. Nothing published; no managed Stripe/Paddle enabled. Dodo eligibility is subject to their review, not guaranteed approval.
+Status (2026-11-08): Dodo is the default provider in code — when PAYMENT_PROVIDER is unset, Dodo is active. PAYMENT_PROVIDER is not currently set, so Dodo is active in preview. The published site still runs an older build where PayGlocal was the default, so it stays on PayGlocal until the next publish. PayGlocal is intact and reachable again by setting PAYMENT_PROVIDER=payglocal (no code change). Immediate mode is forced; PULL_MODE is ignored. No wallet, balance, credits, one-tap spending or recovery links are reachable. Nothing published; no managed Stripe/Paddle enabled. Dodo eligibility is subject to their review, not guaranteed approval.
+
+Until the Dodo secrets below exist, Dodo checkout fails closed: pull and matchup buttons are disabled with "Dodo checkout is not configured yet", and the webhook answers 503.
 
 ## Add in Project Settings → Secrets
-Keep credentials out of chat and source files. No Dodo credentials or product IDs are currently configured.
+Keep credentials out of chat and source files. As of 2026-11-08 none of the Dodo secrets below are configured (existing secrets: OWNER_EMAIL, OWNER_NAME, SITE_URL, TURNSTILE_SECRET_KEY, INDEXNOW_KEY plus managed keys). The names must match exactly; the code reads `DODO_TEST_*` when PAYMENTS_ENV is anything other than `live`, and `DODO_LIVE_*` only when PAYMENTS_ENV=live.
 
 Test:
 - DODO_TEST_API_KEY
@@ -23,7 +25,7 @@ Live, only after Dodo approval and successful test verification:
 - DODO_LIVE_PRODUCT_STANDARD
 - DODO_LIVE_PRODUCT_FEATURED
 
-Configuration: PAYMENT_PROVIDER=dodo (default), PAYMENTS_ENV=sandbox (default). PAYMENTS_ENV alone selects test/live hosts and all corresponding credentials; TEST_MODE cannot change payment mode. PULL_MODE is always immediate. PAUSE_PULLS=true blocks new checkout. OWNER_EMAIL, OWNER_NAME, SITE_URL and TURNSTILE_SECRET_KEY already exist; keep SITE_URL=https://tugg.lol and the shared Turnstile widget configured for preview and tugg.lol/www.tugg.lol.
+Optional settings (do not need adding for Dodo test mode): PAYMENT_PROVIDER — unset or `dodo` uses Dodo, `payglocal` switches back to PayGlocal. PAYMENTS_ENV — unset or anything except `live` means sandbox/Dodo test mode; `live` means Dodo live mode. Preview and the published site read the same secrets, so one PAYMENTS_ENV value applies to both. PAYMENTS_ENV alone selects test/live hosts and all corresponding credentials; TEST_MODE cannot change payment mode. PULL_MODE is always immediate. PAUSE_PULLS=true blocks new checkout. OWNER_EMAIL, OWNER_NAME, SITE_URL and TURNSTILE_SECRET_KEY already exist; keep SITE_URL=https://tugg.lol and the shared Turnstile widget configured for preview and tugg.lol/www.tugg.lol.
 
 The docs do not guarantee a key prefix. Test keys are authenticated only against https://test.dodopayments.com and live keys only against https://live.dodopayments.com. Identical test/live API keys or signing secrets are rejected; no opposite-environment fallback. Product validation runs before checkout and rejects wrong-host authentication. Do not swap keys or reuse products across modes.
 
@@ -41,10 +43,12 @@ Dodo dashboard → Products → create one-time digital product. Use exact USD t
 Each pull costs $1. A product purchase applies the whole selected bundle to the selected side; it never creates an entitlement to spend later. Featured listing remains seven days. Disable subscriptions, pay-what-you-want, discounts, purchasing-power-parity and Adaptive Currency (Settings → Pricing). Products must be tax inclusive so final USD amount is exactly $5/$10/$25/$9/$29. Tugg validates these settings before POST /checkouts and validates amount/currency/cart again before fulfillment. No UPI/INR, adaptive conversion or buyer currency selection; card/debit and eligible USD Apple Pay/Google Pay/Cash App only. Method eligibility depends on Dodo, country and device.
 
 ## Webhooks
-Test endpoint (latest preview; implemented, returns 503 until configured):
-https://project--9033a0bc-640c-42ce-a129-772699249f67-dev.lovable.app/api/public/payments/dodo/webhook?env=sandbox
+Dodo must be able to reach the endpoint from the internet. Checked 2026-11-08: the preview address answers 401 (it sits behind Lovable sign-in), so Dodo cannot deliver to it, and the published tugg.lol still answers 410 "Dodo is dormant" because it runs the older PayGlocal-default build. Real Dodo webhooks therefore need a publish of this build (owner decision).
 
-Live endpoint (requires your later publication and PAYMENTS_ENV=live):
+Test endpoint (after publishing, with PAYMENTS_ENV unset or `sandbox`):
+https://tugg.lol/api/public/payments/dodo/webhook?env=sandbox
+
+Live endpoint (after Dodo approval, with PAYMENTS_ENV=live):
 https://tugg.lol/api/public/payments/dodo/webhook?env=live
 
 Dodo → Developer → Webhooks: subscribe to payment.succeeded, payment.failed, refund.succeeded, refund.failed, dispute.opened, dispute.challenged, dispute.accepted, dispute.cancelled, dispute.expired, dispute.won and dispute.lost. Copy each endpoint's generated signing secret to its environment-specific setting. Do not use the legacy Stripe webhook. A single deployment accepts only its current PAYMENTS_ENV, so sandbox and live cannot both fulfill on that same deployment.
@@ -58,18 +62,18 @@ Approved paid matchups reuse the existing moderation/open-round logic. Rejected 
 ## On-page checkout and reconciliation
 Official dodopayments-checkout SDK loads on payment intent, overlay mode, explicit test/live mode and manual redirects. Unsupported/blocked/errored overlay falls back to the same normal hosted checkout. Browser checkout.status is not payment proof. Real overlay/CSP/device handling remains untested until real session URLs exist; no CSP was weakened.
 
-Existing managed five-minute /api/public/jobs/payments schedule is reused and dispatches by provider. Its historical schedule name remains tugg-payglocal-reconcile; there is no second timer or double processing. Quiet day: 288 lightweight scheduler invocations, zero Dodo API calls/provider initialization when no eligible orders exist. Scheduler cannot automatically stop its own invocations; the handler does no payment work on empty batches. Due-only service RPC: older than 5 minutes, younger than 24 hours, max 10 orders, 5/15/60-minute age backoff, 3-second individual HTTP timeout; expires unpaid orders locally at 24 hours. Paid matchups awaiting interrupted moderation can also be recovered; uncertain refunds remain manual review. Real scheduled execution requires owner publication.
+Existing managed five-minute /api/public/jobs/payments schedule is reused and dispatches by the active provider (it runs against the published site, so it keeps doing PayGlocal reconciliation until this build is published). Its historical schedule name remains tugg-payglocal-reconcile; there is no second timer or double processing. Quiet day: 288 lightweight scheduler invocations, zero Dodo API calls/provider initialization when no eligible orders exist. Scheduler cannot automatically stop its own invocations; the handler does no payment work on empty batches. Due-only service RPC: older than 5 minutes, younger than 24 hours, max 10 orders, 5/15/60-minute age backoff, 3-second individual HTTP timeout; expires unpaid orders locally at 24 hours. Paid matchups awaiting interrupted moderation can also be recovered; uncertain refunds remain manual review. Real scheduled execution requires owner publication.
 
 Read-only owner reporting separates live/test revenue, bundles/pulls, refunds and reviews, pending/expired, reconcile outcomes and 7/30-day anonymous funnel. Completion comes from the committed order trigger, not browser claims. Existing admin authorization is unchanged.
 
 ## Tests and remaining checks
-165 automated tests passed across 17 files covering Dodo, PayGlocal rollback, owner access, policy and unchanged sharing suites. Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
+Full suite on 2026-11-08: 300 tests passed across 33 files, 0 failures (includes a provider-copy test proving no policy text hardcodes a provider and PayGlocal wording returns when PAYMENT_PROVIDER=payglocal). Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
 
 Disposable local PostgreSQL tests use the actual existing record_pull and additive migration 0015: all three bundle values, replay, no wallet, inactive-side rollback, wrong amount/environment, failed/expired guard, live totals exclude test pulls, due backoff/expiry, private grants and webhook lease deduplication. Ten concurrent delivery applications create exactly one five-pull bundle. No fake pulls/users/money were stored in the hosted database.
 
 Untested until your real test credentials/product IDs exist: actual checkout/overlay on phones, card payment, Dodo signed webhook delivery, real refunds/disputes, tax-inclusive/adaptive settings, swapped-key rejection by Dodo, scheduled provider recovery and signed-in owner read-back. Successful real Turnstile remains unverified because localhost is not allowed. No live payment or publication performed.
 
-Emails, pricing, rounds, moderation rules and sharing were not changed. Dodo continues existing provider/Dodo receipt behavior; no new app-email hooks/templates were added or claimed. Dodo merchant-of-record receipts must be checked in the real test flow.
+Emails, pricing, rounds, moderation rules and sharing were not changed. Tugg's own purchase receipts and rejected-matchup refund emails are wired only to PayGlocal orders, so with Dodo active Tugg sends neither; buyers get Dodo's merchant-of-record receipt instead (check this in the real test flow). Owner alerts for Dodo disputes and refunds needing review are sent.
 
 ## Official references checked 2026-11-05
 - https://docs.dodopayments.com/api-reference/checkout-sessions/create
@@ -83,4 +87,4 @@ Emails, pricing, rounds, moderation rules and sharing were not changed. Dodo con
 - https://docs.dodopayments.com/miscellaneous/test-mode-vs-live-mode
 - https://docs.dodopayments.com/features/adaptive-currency
 
-Official US test success card: 4242 4242 4242 4242, expiry 06/32, CVV 123. Test only. Banner appears only when sandbox configuration is ready.
+Official US test success card: 4242 4242 4242 4242, expiry 06/32, CVV 123. Test only. The test-card banner appears only in sandbox once Dodo is configured; before that, the banner says checkout is not configured yet.

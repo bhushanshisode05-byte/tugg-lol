@@ -30,7 +30,7 @@ export const config = () => ({
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
   ownerEmail: process.env["OWNER_EMAIL"]?.trim() || "",
   ownerName: process.env["OWNER_NAME"]?.trim() || "",
-  paymentProvider: (process.env["PAYMENT_PROVIDER"] || "payglocal").toLowerCase(),
+  paymentProvider: (process.env["PAYMENT_PROVIDER"] || "dodo").toLowerCase(),
   pullMode: "immediate",
   dodo: (() => {
     const live = (process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live";
