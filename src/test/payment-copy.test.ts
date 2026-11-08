@@ -16,7 +16,7 @@ describe("provider-aware visitor copy", () => {
       const out = activePaymentCopy(text, "dodo");
       expect(out).not.toMatch(/PayGlocal|RBI|\{\{/);
     }
-    expect(activePaymentCopy(policySections["refund-policy"].sections[3].text, "dodo")).toContain("Dodo Payments, as merchant of record, processes payments and refunds for Tugg.");
+    expect(activePaymentCopy(policySections["refund-policy"].sections[3]!.text, "dodo")).toContain("Dodo Payments, as merchant of record, processes payments and refunds for Tugg.");
     expect(approvedAnswer("rejected", "dodo")).toContain("through Dodo Payments");
     expect(paymentProviderText("dodo")).toBe("Payments are processed by Dodo Payments as merchant of record.");
   });
@@ -24,7 +24,7 @@ describe("provider-aware visitor copy", () => {
     expect(approvedAnswer("payment", "payglocal")).toMatch(/^PayGlocal \(RBI-authorised\) processes payments through a hosted checkout\./);
     expect(approvedAnswer("payment", "payglocal")).toContain("checkout email and PayGlocal payment reference");
     expect(approvedAnswer("privacy", "payglocal")).toContain("Billing name, email and address are sent securely to PayGlocal");
-    expect(activePaymentCopy(policySections["about-legal"].sections[1].text, "payglocal")).toMatch(/^PayGlocal \(RBI-authorised\) processes payments for Tugg\./);
+    expect(activePaymentCopy(policySections["about-legal"].sections[1]!.text, "payglocal")).toMatch(/^PayGlocal \(RBI-authorised\) processes payments for Tugg\./);
     for (const text of allPolicyText()) expect(activePaymentCopy(text, "payglocal")).not.toMatch(/Dodo|\{\{/);
   });
   it("rules refund line follows the active provider", () => {
