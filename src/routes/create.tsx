@@ -74,7 +74,7 @@ function CreateForm() {
   const getPayments = useServerFn(getPaymentStatus);
   const [ready, setReady] = useState(false);
   const [provider,setProvider] = useState("dodo");
-  const [message,setMessage] = useState("Checkout is not configured yet. No payment has been taken.");
+  const [message,setMessage] = useState("Dodo checkout is not configured yet. No payment has been taken.");
   const [billing,setBilling] = useState(emptyBilling);
   useEffect(() => {
     getPayments()
