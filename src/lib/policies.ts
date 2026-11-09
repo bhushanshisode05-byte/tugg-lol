@@ -48,7 +48,7 @@ export function approvedAnswer(id: string, provider = "dodo", basket = false) {
   return activePaymentCopy(
     supportAnswers.find((a) => a.id === id)?.text ??
     supportAnswers.find((a) => a.id === "scope")?.text ??
-    "Tugg support answers only published policies.", provider
+    "Tugg support answers only published policies.", provider, basket
   );
 }
 export const policySections = {

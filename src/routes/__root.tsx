@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [{
       type: "application/ld+json",
       children: JSON.stringify([
-        { "@context": "https://schema.org", "@type": "WebSite", name: "Tugg", url: "https://tugg.lol", description: "A global pay-to-pull rivalry game. Each pull is $1, bought in one-time bundles of 5, 10 or 25 applied immediately after verified payment. No credits or stored balance. Rounds close daily at 00:00 UTC. No prizes or payouts." },
+        { "@context": "https://schema.org", "@type": "WebSite", name: "Tugg", url: "https://tugg.lol", description: "A global pay-to-pull rivalry game. Each pull is $1, bought in one-time payments from $5 applied immediately after verified payment. No credits or stored balance. Rounds close daily at 00:00 UTC. No prizes or payouts." },
         { "@context": "https://schema.org", "@type": "Organization", name: "Tugg", url: "https://tugg.lol", logo: "https://tugg.lol/favicon.ico" },
       ]),
     }],
