@@ -21,11 +21,12 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: {
     rpc: state.rpc,
     from(table: string) {
+      let cols = "";
       const q: any = {
-        select: () => q, eq: () => q, is: () => q,
+        select: (c: string) => { cols = c || cols; return q; }, eq: () => q, is: () => q,
         insert(v: any) { state.writes.push({ table, value: v }); return q; },
         update(v: any) { state.writes.push({ table, value: v }); return q; },
-        async single() { return { error: null, data: state.fresh.status ? state.fresh : state.order }; },
+        async single() { return { error: null, data: cols.startsWith("status,basket_refund_cents") ? (state.fresh.status ? state.fresh : state.order) : state.order }; },
         async maybeSingle() { const c = state.refundClaim; state.refundClaim = false; return { error: null, data: c ? { id: state.order.id } : null }; },
         then(r: any) { r({ error: null, data: null }); },
       };
