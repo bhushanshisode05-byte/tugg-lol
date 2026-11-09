@@ -10,7 +10,7 @@ type AdminData = {
   };
   provider: string;
   dodoOrders: Record<string, unknown>[];
-  dodo: { environments: { environment: string; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
+  dodo: { environments: { environment: string; baskets_sold?: number; basket_refund_cents?: number; basket_reviews?: number; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
   payglocal: { environments: { environment: string; revenue_cents: number; bundles_sold: number; pulls_applied: number; refunds: number; refund_reviews: number; pending: number; expired: number; reconcile_checks: number; reconciled_paid: number; reconciled_expired: number }[] };
   funnel: { days: number; environment: string; step: string; count: number }[];
   payglocalOrders: Record<string, unknown>[];
@@ -73,6 +73,7 @@ function Admin() {
                   Refund requests: {active?.refunds ?? 0} · Refund reviews: {active?.refund_reviews ?? 0}<br/>
                   Pending: {active?.pending ?? 0} · Expired: {active?.expired ?? 0}<br/>
                   Reconcile checks: {active?.reconcile_checks ?? 0} · Paid: {active?.reconciled_paid ?? 0} · Expired: {active?.reconciled_expired ?? 0}<br/>
+                  {data.provider === "dodo" && <>Baskets: {dodo?.baskets_sold ?? 0} · Held for review: {dodo?.basket_reviews ?? 0} · Partial refunds owed: ${(Number(dodo?.basket_refund_cents ?? 0) / 100).toFixed(2)}<br/></>}
 
                 </p>
               </div>

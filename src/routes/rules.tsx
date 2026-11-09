@@ -71,7 +71,7 @@ const sections: [string, string[]][] = [
   [
     "Refund policy",
     [
-      "Each pull is $1. Buy one-time bundles of 5/$5, 10/$10 or 25/$25 in USD. All pulls are applied immediately to your selected side after verified payment. No credits or stored balance; failed or expired payments apply nothing.",
+      "Each pull is $1. {{pullOfferShort}} No credits or stored balance; failed or expired payments apply nothing.",
       "Bundles are non-refundable except where required by law. {{providerSentence}} Genuine payment errors must be verified through support.",
       "Matchup creation fees are refunded automatically and in full if the matchup is rejected by moderation.",
     ],
@@ -79,7 +79,7 @@ const sections: [string, string[]][] = [
 ];
 
 function Rules() {
-  const { provider } = Route.useLoaderData();
+  const { provider, basket } = Route.useLoaderData();
   return (
     <Shell>
       <div className="mx-auto max-w-3xl px-4 py-10">
@@ -90,7 +90,7 @@ function Rules() {
               <h2 className="text-2xl font-extrabold">{h}</h2>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                 {ps.map((p) => (
-                  <li key={p}>{activePaymentCopy(p,provider)}</li>
+                  <li key={p}>{activePaymentCopy(p,provider,basket)}</li>
                 ))}
               </ul>
             </section>

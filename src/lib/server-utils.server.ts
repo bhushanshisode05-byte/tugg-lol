@@ -32,6 +32,8 @@ export const config = () => ({
   ownerName: process.env["OWNER_NAME"]?.trim() || "",
   paymentProvider: (process.env["PAYMENT_PROVIDER"] || "dodo").toLowerCase(),
   pullMode: "immediate",
+  /** Dodo-only pull basket ($5-$500 split across up to 10 matchups). Off = fixed 5/10/25 bundles. */
+  pullBasket: flag("PULL_BASKET_ENABLED", false),
   dodo: (() => {
     const live = (process.env["PAYMENTS_ENV"] || "").toLowerCase() === "live";
     const prefix = live ? "DODO_LIVE" : "DODO_TEST";
@@ -42,7 +44,7 @@ export const config = () => ({
       secret: process.env[`${prefix}_WEBHOOK_SECRET`] || "",
       otherKey: process.env[`${other}_API_KEY`] || "",
       otherSecret: process.env[`${other}_WEBHOOK_SECRET`] || "",
-      products: Object.fromEntries(["pull_5", "pull_10", "pull_25", "standard", "featured"].map(kind => [kind, process.env[`${prefix}_PRODUCT_${kind.toUpperCase()}`] || ""])),
+      products: Object.fromEntries(["pull_1", "pull_5", "pull_10", "pull_25", "standard", "featured"].map(kind => [kind, process.env[`${prefix}_PRODUCT_${kind.toUpperCase()}`] || ""])),
     };
   })(),
   payglocal: (() => {

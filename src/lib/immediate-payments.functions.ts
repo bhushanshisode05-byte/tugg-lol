@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { config, moderate } from "./server-utils.server";
 import { billingSchema } from "./payments/billing";
-import { paymentReadiness, selectedProvider, selectedProduct } from "./payments/selection.server";
+import { basketActive, paymentReadiness, selectedProvider, selectedProduct } from "./payments/selection.server";
 import { verifyTurnstileForRequest } from "./turnstile.server";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { hashWalletToken } from "./payments/wallet";
@@ -52,15 +52,21 @@ export const getImmediatePayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const r=await db.from(config().paymentProvider === "dodo" ? "dodo_orders" : "payglocal_orders").select("status,quantity").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
-    return r.data ? { status:r.data.status, quantity:r.data.quantity } : null;
+    if (config().paymentProvider === "dodo") {
+      const d=await db.from("dodo_orders").select("status,quantity,basket_refund_cents").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
+      return d.data ? { status:d.data.status, quantity:d.data.quantity, refundedPulls: Math.floor(d.data.basket_refund_cents/100) } : null;
+    }
+    const r=await db.from("payglocal_orders").select("status,quantity").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
+    return r.data ? { status:r.data.status, quantity:r.data.quantity, refundedPulls: 0 } : null;
   });
 export const getCodeDropConfig = createServerFn({ method: "GET" }).handler(async () => ({
   environment: config().paymentsEnv, provider: config().paymentProvider, codedropId: config().paymentProvider === "payglocal" ? config().payglocal.codedropId : "",
 }));
 export const recordPaymentFunnel = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid(), step: z.enum(["viewed","bundle_selected","turnstile_passed","opened","cancelled","abandoned","failed"]), bundle: z.union([z.literal(5),z.literal(10),z.literal(25)]), mode: z.enum(["none","drawer","redirect"]).default("none") }).strict().parse(d))
+  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid(), step: z.enum(["viewed","bundle_selected","turnstile_passed","opened","cancelled","abandoned","failed"]), bundle: z.number().int().min(5).max(500), mode: z.enum(["none","drawer","redirect"]).default("none") }).strict().parse(d))
   .handler(async ({ data }) => {
+    // Custom basket amounts are only recorded while the Dodo basket is on; fixed bundles otherwise.
+    if (![5,10,25].includes(data.bundle) && !basketActive()) return;
     const { getRequestIP } = await import("@tanstack/react-start/server");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const slot = await db.rpc("take_checkout_slot", { p_ip: `funnel:${await hashWalletToken(getRequestIP({xForwardedFor:true}) || "unknown")}`, p_max: 120, p_window_minutes: 60 });

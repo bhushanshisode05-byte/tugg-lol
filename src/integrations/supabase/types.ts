@@ -117,6 +117,54 @@ export type Database = {
         }
         Relationships: []
       }
+      dodo_basket_lines: {
+        Row: {
+          applied_at: string | null
+          matchup_id: string
+          order_id: string
+          position: number
+          pull_id: string | null
+          quantity: number
+          side_id: string
+          status: string
+        }
+        Insert: {
+          applied_at?: string | null
+          matchup_id: string
+          order_id: string
+          position: number
+          pull_id?: string | null
+          quantity: number
+          side_id: string
+          status?: string
+        }
+        Update: {
+          applied_at?: string | null
+          matchup_id?: string
+          order_id?: string
+          position?: number
+          pull_id?: string | null
+          quantity?: number
+          side_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dodo_basket_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "dodo_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dodo_basket_lines_pull_id_fkey"
+            columns: ["pull_id"]
+            isOneToOne: true
+            referencedRelation: "pulls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dodo_bundle_applications: {
         Row: {
           amount_cents: number
@@ -194,6 +242,7 @@ export type Database = {
       }
       dodo_orders: {
         Row: {
+          basket_refund_cents: number
           checkout_id: string | null
           created_at: string
           display_name: string
@@ -223,6 +272,7 @@ export type Database = {
           wallet_id: string | null
         }
         Insert: {
+          basket_refund_cents?: number
           checkout_id?: string | null
           created_at?: string
           display_name?: string
@@ -252,6 +302,7 @@ export type Database = {
           wallet_id?: string | null
         }
         Update: {
+          basket_refund_cents?: number
           checkout_id?: string | null
           created_at?: string
           display_name?: string
@@ -1122,6 +1173,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_dodo_basket: {
+        Args: {
+          p_env: string
+          p_facts: Json
+          p_order: string
+          p_payment: string
+        }
+        Returns: Json
+      }
       apply_dodo_bundle: {
         Args: {
           p_cents: number
@@ -1180,6 +1240,18 @@ export type Database = {
       cleanup_stale_matchups: { Args: never; Returns: number }
       close_due_rounds: { Args: never; Returns: number }
       close_round: { Args: { p_round: string }; Returns: undefined }
+      create_dodo_basket: {
+        Args: {
+          p_env: string
+          p_funnel: string
+          p_lines: Json
+          p_name: string
+          p_order: string
+          p_product: string
+          p_shout: string
+        }
+        Returns: number
+      }
       credit_dodo_wallet: {
         Args: {
           p_cents: number

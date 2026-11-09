@@ -9,6 +9,12 @@
 - [ ] Owner: retry the reset on a phone with a new, unique passphrase (not yet done with a real link).
 
 
+## Pull basket behind PULL_BASKET_ENABLED (2026-11-09, do not publish)
+- [x] DODO_TEST_PRODUCT_PULL_1 saved; flag default off keeps 5/10/25 bundles exactly; $9/$29 flow, Turnstile, PAUSE_PULLS, webhook verification, reconciliation, emails, moderation, sharing and PayGlocal untouched.
+- [x] One $1-product checkout, quantity = total; $5–$500; up to 10 different matchups, one side each, enforced in browser, server and database; metadata allocation re-verified against stored lines in one locked SQL transaction; review on any mismatch; closed-matchup portion partially refunded once.
+- [x] Tests: 337/337 suite, SQL basket checks incl. tampered metadata, crash mid-basket, round rollover, retired matchup, ten concurrent deliveries.
+- [ ] Real Dodo test purchase of a basket (quantity > 1 on the $1 product), partial refund and metadata round-trip. Blocker: needs a publish so Dodo can reach the webhook, plus a real test-card checkout.
+
 ## Dodo immediate switch (do not publish)
 - [x] Default Dodo provider, forced immediate-only bundles, wallet UI disconnected and all wallet read/buy/spend APIs refused even with PULL_MODE=wallet. PayGlocal remains selectable/dormant; no managed Stripe/Paddle, no publishing, no pricing/round/moderation/email/sharing changes.
 - [x] Reused Dodo POST /checkouts and verified raw-body webhook; official on-demand overlay/manual-return with redirect fallback. Additive migration 0015: private immediate applications and funnel, keyed claims, atomic record_pull/no credits or wallet, pending/expired guards, age-backed reconciliation and owner aggregate reporting. Durable once-only refunds and GET refund verification; ambiguous refunds remain owner review, never retried blindly. Existing five-minute managed job reused with provider dispatch; quiet day 288 timer invocations, zero provider calls when empty.

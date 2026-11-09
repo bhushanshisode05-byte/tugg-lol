@@ -6,7 +6,7 @@ import { PRODUCTS } from "./payments/catalog";
 import { hashWalletToken, newWalletToken, walletTokenPattern } from "./payments/wallet";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { verifyTurnstileForRequest } from "./turnstile.server";
-import { paymentReadiness } from "./payments/selection.server";
+import { basketActive, paymentReadiness } from "./payments/selection.server";
 const tokenSchema = z.string().regex(walletTokenPattern);
 export const getPaymentStatus = createServerFn({ method: "GET" }).handler(async () => {
   let ready = false;
@@ -17,7 +17,7 @@ export const getPaymentStatus = createServerFn({ method: "GET" }).handler(async 
   } catch (e) {
     message = e instanceof Error ? e.message : "Checkout is unavailable. No payment has been taken.";
   }
-  return { environment: config().paymentsEnv, provider: config().paymentProvider, pullMode: config().pullMode, ready, message, paused: config().pausePulls };
+  return { environment: config().paymentsEnv, provider: config().paymentProvider, pullMode: config().pullMode, ready, message, paused: config().pausePulls, basket: basketActive() };
 });
 export const getWallet = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>

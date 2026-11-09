@@ -113,6 +113,13 @@
       "when": 1793846914049,
       "tag": "0015_dodo_immediate_bundles",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794208349190,
+      "tag": "0016_dodo_pull_basket",
+      "breakpoints": true
     }
   ]
 }

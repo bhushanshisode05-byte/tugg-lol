@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PaymentTestModeBanner } from "./PaymentTestModeBanner";
-import { PaymentProviderText } from "./PaymentProviderText";
+import { PaymentProviderText, PullOfferText } from "./PaymentProviderText";
 import { lazy, Suspense } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 const SupportChat = lazy(() => import("./SupportChat").then((m) => ({ default: m.SupportChat })));
@@ -53,7 +53,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:justify-between">
           <p>
-            $1 per pull. One-time bundles of 5, 10 or 25 applied immediately after verified payment. No credits, stored balance, prizes or payouts. Non-refundable except where required by law. <PaymentProviderText/> Rejected matchups are refunded automatically.
+            <PullOfferText/> No credits, stored balance, prizes or payouts. Non-refundable except where required by law. <PaymentProviderText/> Rejected matchups are refunded automatically.
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link to="/rules" className="hover:text-foreground">

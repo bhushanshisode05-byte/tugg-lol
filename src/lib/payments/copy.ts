@@ -20,10 +20,27 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
 const copyFor = (provider: string = "dodo") => (provider === "payglocal" ? COPY.payglocal : COPY.dodo);
 export const paymentProviderName = (provider: string = "dodo") => copyFor(provider).name;
 export const paymentProviderText = (provider: string = "dodo") => copyFor(provider).sentence;
-/** Resolves {{provider}}, {{providerSentence}}, {{providerProcesses}} and {{billingPrivacy}}. */
-export function activePaymentCopy(text: string, provider: string = "dodo") {
+// Pull offer wording. "bundles" is the exact pre-basket text; "basket" applies only with PULL_BASKET_ENABLED on Dodo.
+const OFFER = {
+  bundles: {
+    long: "Buy a one-time bundle of 5 pulls for $5, 10 for $10, or 25 for $25, in US dollars only. Choose a side before paying. After verified payment, the entire bundle is applied immediately to that side;",
+    short: "Buy one-time bundles of 5/$5, 10/$10 or 25/$25 in USD. All pulls are applied immediately to your selected side after verified payment.",
+    footer: "$1 per pull. One-time bundles of 5, 10 or 25 applied immediately after verified payment.",
+  },
+  basket: {
+    long: "Pay once for any whole number of pulls from 5 ($5) to 500 ($500), in US dollars only, split across up to 10 different matchups with one side each. After verified payment, all pulls are applied immediately to the sides you chose, and if a matchup stops taking pulls before your payment is applied, that part is refunded automatically;",
+    short: "Pay once for $5 to $500 in USD, split across up to 10 different matchups with one side each. All pulls are applied immediately to your selected sides after verified payment.",
+    footer: "From $5 · $1 per pull. One-time payments of $5 to $500, split across up to 10 matchups and applied immediately after verified payment.",
+  },
+} as const;
+export const pullOfferFooter = (basket = false) => OFFER[basket ? "basket" : "bundles"].footer;
+/** Resolves {{provider}}, {{providerSentence}}, {{providerProcesses}}, {{billingPrivacy}}, {{pullOffer}} and {{pullOfferShort}}. */
+export function activePaymentCopy(text: string, provider: string = "dodo", basket = false) {
   const c = copyFor(provider);
+  const offer = OFFER[basket && provider !== "payglocal" ? "basket" : "bundles"];
   return text
+    .replaceAll("{{pullOfferShort}}", offer.short)
+    .replaceAll("{{pullOffer}}", offer.long)
     .replaceAll("{{providerSentence}}", c.sentence)
     .replaceAll("{{providerProcesses}}", c.processes)
     .replaceAll("{{billingPrivacy}}", c.billingPrivacy)

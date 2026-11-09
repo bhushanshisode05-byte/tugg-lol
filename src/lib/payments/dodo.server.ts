@@ -21,7 +21,7 @@ export function dodoSettings(env: PaymentsEnv = config().paymentsEnv) {
     prefix,
   };
 }
-export function productId(kind: ProductKind) {
+export function productId(kind: ProductKind | "pull_1") {
   dodoSettings();
   const id = config().dodo.products[kind];
   if (!id) throw new Error(DODO_NOT_READY);
@@ -95,7 +95,7 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 
       const result = await api(
         "/checkouts",
         {
-          product_cart: [{ product_id: input.productId, quantity: 1 }],
+          product_cart: [{ product_id: input.productId, quantity: input.quantity ?? 1 }],
           billing_currency: "USD",
           allowed_payment_method_types: ["credit", "debit", "apple_pay", "google_pay", "cashapp"],
           feature_flags: {
@@ -103,7 +103,7 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 
             allow_discount_code: false,
             allow_tax_id: false,
           },
-          metadata: { tugg_order_id: input.orderId, tugg_environment: environment },
+          metadata: { ...(input.metadata ?? {}), tugg_order_id: input.orderId, tugg_environment: environment },
           return_url: input.returnUrl,
         },
         `checkout-${input.orderId}`,
@@ -130,13 +130,15 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 
       if (payment.payment_id !== id) throw new Error("Payment identity mismatch");
       return payment;
     },
-    async refund(paymentId, orderId) {
+    async refund(paymentId, orderId, partial) {
       const result = await api(
         "/refunds",
         {
           payment_id: paymentId,
-          reason: "Tugg matchup rejected by moderation",
+          reason: partial?.reason ?? "Tugg matchup rejected by moderation",
           metadata: { tugg_order_id: orderId },
+          // Partial refunds name the product line and the tax-inclusive amount in cents.
+          ...(partial ? { items: [{ item_id: partial.itemId, amount: partial.cents, tax_inclusive: true }] } : {}),
         },
         `refund-${orderId}`,
       );

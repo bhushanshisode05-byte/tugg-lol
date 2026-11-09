@@ -14,13 +14,13 @@ export const Route = createFileRoute("/faq")({
       children: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: supportAnswers.map((a) => ({ "@type": "Question", name: a.title, acceptedAnswer: { "@type": "Answer", text: activePaymentCopy(a.text, loaderData?.provider) } })),
+        mainEntity: supportAnswers.map((a) => ({ "@type": "Question", name: a.title, acceptedAnswer: { "@type": "Answer", text: activePaymentCopy(a.text, loaderData?.provider, loaderData?.basket) } })),
       }),
     }],
   }),
   component: Page,
 });
 function Page() {
-  const { email, provider } = Route.useLoaderData();
-  return <PolicyPage id="faq" provider={provider} email={email} />;
+  const { email, provider, basket } = Route.useLoaderData();
+  return <PolicyPage id="faq" provider={provider} basket={basket} email={email} />;
 }

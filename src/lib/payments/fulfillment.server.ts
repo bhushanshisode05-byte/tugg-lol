@@ -3,6 +3,7 @@ import { PRODUCTS } from "./catalog";
 import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { moderate } from "../server-utils.server";
+import { processBasketEvent } from "./basket-fulfillment.server";
 
 export const webhookPayload = z
   .object({
@@ -45,6 +46,10 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
     const result = await db.from("dodo_orders").select("*").eq("id", id).single();
     checked(result);
     const order = result.data;
+    if (order?.kind === "basket") {
+      await processBasketEvent(event, payment, order, provider);
+      return;
+    }
     if (
       !order ||
       order.wallet_id ||
