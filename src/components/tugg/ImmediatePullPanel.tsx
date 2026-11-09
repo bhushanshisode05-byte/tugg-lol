@@ -48,7 +48,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
   },[read,orderId,environment]);
   if(paused)return <p className="mt-8 border-y border-border py-5 text-muted-foreground">Pulls are paused for a moment. Check back soon.</p>;
   return <section ref={section} className="mt-8 border-y-2 border-foreground py-6"><h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
-    <p className="mt-2 text-muted-foreground">One-time bundles. $1 per pull, applied to your side after confirmed payment. No stored balance.</p>
+    <p className="mt-2 text-muted-foreground">From $5 · $1 per pull. One-time bundles, applied to your side after confirmed payment. No stored balance.</p>
     {confirmation && <p role="status" className="mt-3 font-semibold">{confirmation}</p>}
     <div className="mt-4 grid grid-cols-2 gap-3">{sides.map(s=><Button key={s.id} variant={side===s.id?"default":"outline"} aria-pressed={side===s.id} onClick={()=>setSide(s.id)} className="h-auto min-h-16 whitespace-normal py-4"><SideAvatar side={s}/>{s.name}</Button>)}</div>
     <div className="mt-4 grid grid-cols-3 gap-2">{([5,10,25] as const).map(p=><Button key={p} variant={p===pack?"default":"outline"} aria-pressed={p===pack} onClick={()=>{setPack(p);emit("bundle_selected",p);}} className="h-auto flex-col py-3"><span className="font-mono text-xl">${p}</span><span>{p} pulls</span></Button>)}</div>

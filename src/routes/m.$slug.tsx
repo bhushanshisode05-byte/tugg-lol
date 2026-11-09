@@ -195,6 +195,8 @@ function MatchupPage() {
 
         {m.status === "active" ? (
           <PullPanel
+            matchupId={m.id}
+            title={m.title}
             sides={m.sides}
             slug={m.slug}
             paused={data.paused}
