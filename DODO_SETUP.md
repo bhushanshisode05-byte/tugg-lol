@@ -1,11 +1,11 @@
 # Dodo Payments — immediate-bundle setup
 
-Status (2026-11-08): Dodo is the default provider in code — when PAYMENT_PROVIDER is unset, Dodo is active. PAYMENT_PROVIDER is not currently set, so Dodo is active in preview. The published site still runs an older build where PayGlocal was the default, so it stays on PayGlocal until the next publish. PayGlocal is intact and reachable again by setting PAYMENT_PROVIDER=payglocal (no code change). Immediate mode is forced; PULL_MODE is ignored. No wallet, balance, credits, one-tap spending or recovery links are reachable. Nothing published; no managed Stripe/Paddle enabled. Dodo eligibility is subject to their review, not guaranteed approval.
+Status (2026-11-09): optional pull basket added behind PULL_BASKET_ENABLED (off). Earlier status (2026-11-08): Dodo is the default provider in code — when PAYMENT_PROVIDER is unset, Dodo is active. PAYMENT_PROVIDER is not currently set, so Dodo is active in preview. The published site still runs an older build where PayGlocal was the default, so it stays on PayGlocal until the next publish. PayGlocal is intact and reachable again by setting PAYMENT_PROVIDER=payglocal (no code change). Immediate mode is forced; PULL_MODE is ignored. No wallet, balance, credits, one-tap spending or recovery links are reachable. Nothing published; no managed Stripe/Paddle enabled. Dodo eligibility is subject to their review, not guaranteed approval.
 
 Until the Dodo secrets below exist, Dodo checkout fails closed: pull and matchup buttons are disabled with "Dodo checkout is not configured yet", and the webhook answers 503.
 
 ## Add in Project Settings → Secrets
-Keep credentials out of chat and source files. As of 2026-11-08 none of the Dodo secrets below are configured (existing secrets: OWNER_EMAIL, OWNER_NAME, SITE_URL, TURNSTILE_SECRET_KEY, INDEXNOW_KEY plus managed keys). The names must match exactly; the code reads `DODO_TEST_*` when PAYMENTS_ENV is anything other than `live`, and `DODO_LIVE_*` only when PAYMENTS_ENV=live.
+Keep credentials out of chat and source files. As of 2026-11-09 all eight DODO_TEST_* settings below are present (values not shown); no DODO_LIVE_* settings exist. The names must match exactly; the code reads `DODO_TEST_*` when PAYMENTS_ENV is anything other than `live`, and `DODO_LIVE_*` only when PAYMENTS_ENV=live.
 
 Test:
 - DODO_TEST_API_KEY
@@ -15,6 +15,7 @@ Test:
 - DODO_TEST_PRODUCT_PULL_25
 - DODO_TEST_PRODUCT_STANDARD
 - DODO_TEST_PRODUCT_FEATURED
+- DODO_TEST_PRODUCT_PULL_1 (only needed while PULL_BASKET_ENABLED is on; saved 2026-11-09)
 
 Live, only after Dodo approval and successful test verification:
 - DODO_LIVE_API_KEY
@@ -24,6 +25,7 @@ Live, only after Dodo approval and successful test verification:
 - DODO_LIVE_PRODUCT_PULL_25
 - DODO_LIVE_PRODUCT_STANDARD
 - DODO_LIVE_PRODUCT_FEATURED
+- DODO_LIVE_PRODUCT_PULL_1 (only if the pull basket is used live)
 
 Optional settings (do not need adding for Dodo test mode): PAYMENT_PROVIDER — unset or `dodo` uses Dodo, `payglocal` switches back to PayGlocal. PAYMENTS_ENV — unset or anything except `live` means sandbox/Dodo test mode; `live` means Dodo live mode. Preview and the published site read the same secrets, so one PAYMENTS_ENV value applies to both. PAYMENTS_ENV alone selects test/live hosts and all corresponding credentials; TEST_MODE cannot change payment mode. PULL_MODE is always immediate. PAUSE_PULLS=true blocks new checkout. OWNER_EMAIL, OWNER_NAME, SITE_URL and TURNSTILE_SECRET_KEY already exist; keep SITE_URL=https://tugg.lol and the shared Turnstile widget configured for preview and tugg.lol/www.tugg.lol.
 
@@ -39,10 +41,17 @@ Dodo dashboard → Products → create one-time digital product. Use exact USD t
 | Tugg — 25 Pulls | $25 USD | PRODUCT_PULL_25 |
 | Tugg — Standard Matchup | $9 USD | PRODUCT_STANDARD |
 | Tugg — Featured Matchup | $29 USD | PRODUCT_FEATURED |
+| Tugg — 1 Pull (pull basket only) | $1 USD | PRODUCT_PULL_1 |
 
 Each pull costs $1. A product purchase applies the whole selected bundle to the selected side; it never creates an entitlement to spend later. Featured listing remains seven days. Disable subscriptions, pay-what-you-want, discounts, purchasing-power-parity and Adaptive Currency (Settings → Pricing). Products must be tax inclusive so final USD amount is exactly $5/$10/$25/$9/$29. Tugg validates these settings before POST /checkouts and validates amount/currency/cart again before fulfillment. No UPI/INR, adaptive conversion or buyer currency selection; card/debit and eligible USD Apple Pay/Google Pay/Cash App only. Method eligibility depends on Dodo, country and device.
 
-## Webhooks
+## Pull basket (PULL_BASKET_ENABLED, default off)
+Add a secret named PULL_BASKET_ENABLED with value `true` to turn it on; set it to `false` (or delete it) to turn it off. Preview and the published site share the value; the published site only has it after a publish. It only works with Dodo (PayGlocal always keeps fixed bundles) and needs PRODUCT_PULL_1. Off = exactly the 5/10/25 bundles. Keep all products: the 5/10/25 ones are used when off, $9/$29 always.
+
+On: one Dodo checkout of the $1 product with quantity = total pulls ($5–$500, whole dollars; quick picks $5/$10/$25 or custom), split across up to 10 different matchups with one side each. The allocation is stored in the database before checkout and also sent as metadata (tugg_kind, tugg_pulls, tugg_lines, tugg_l0..tugg_l9 = matchup:side:pulls; at most 15 keys, values ≤78 characters, well inside Dodo's 50 keys / 40-character keys / 500-character values).
+
+On payment.succeeded, apply_dodo_basket re-checks, in one locked transaction, the facts read from Dodo's API: USD, amount = pulls × $1, a single cart line of the $1 product with quantity = pulls, checkout session, metadata total and lines equal to the stored allocation, no repeated matchup, each side belongs to its matchup. Any failure applies nothing, marks the order needs_review and records a dodo_basket_review event. Otherwise each line goes through record_pull into that matchup's currently open round (a round that closed after payment rolls into the new one). A matchup that is no longer active has only its portion marked for refund; one partial Dodo refund (items = $1 product, amount in cents) is claimed once and never blindly retried; reconciliation picks up a refund interrupted before it was requested.
+
 Dodo must be able to reach the endpoint from the internet. Checked 2026-11-08: the preview address answers 401 (it sits behind Lovable sign-in), so Dodo cannot deliver to it, and the published tugg.lol still answers 410 "Dodo is dormant" because it runs the older PayGlocal-default build. Real Dodo webhooks therefore need a publish of this build (owner decision).
 
 Test endpoint (after publishing, with PAYMENTS_ENV unset or `sandbox`):
@@ -53,7 +62,7 @@ https://tugg.lol/api/public/payments/dodo/webhook?env=live
 
 Dodo → Developer → Webhooks: subscribe to payment.succeeded, payment.failed, refund.succeeded, refund.failed, dispute.opened, dispute.challenged, dispute.accepted, dispute.cancelled, dispute.expired, dispute.won and dispute.lost. Copy each endpoint's generated signing secret to its environment-specific setting. Do not use the legacy Stripe webhook. A single deployment accepts only its current PAYMENTS_ENV, so sandbox and live cannot both fulfill on that same deployment.
 
-Raw-body Standard Webhooks HMAC-SHA256 verifies webhook-id, webhook-timestamp and webhook-signature with ±300 seconds. Durable environment-prefixed webhook IDs/leases deduplicate retries; payment IDs are unique. Server GET /payments/{payment_id} validates stored order, checkout session, cart quantity=1, product, currency, amount and environment metadata. Browser return/overlay events only prompt stored-status reads.
+Raw-body Standard Webhooks HMAC-SHA256 verifies webhook-id, webhook-timestamp and webhook-signature with ±300 seconds. Durable environment-prefixed webhook IDs/leases deduplicate retries; payment IDs are unique. Server GET /payments/{payment_id} validates stored order, checkout session, cart quantity=1 (basket: quantity = pulls), product, currency, amount and environment metadata. Browser return/overlay events only prompt stored-status reads.
 
 Immediate bundle application calls apply_dodo_bundle and existing record_pull inside one locked SQL transaction; unique application/payment/pull IDs prevent concurrent replay. No wallet or credit/debit records are written. Terminal failed/expired orders never become paid from late callbacks; late success is logged for review.
 
@@ -67,7 +76,7 @@ Existing managed five-minute /api/public/jobs/payments schedule is reused and di
 Read-only owner reporting separates live/test revenue, bundles/pulls, refunds and reviews, pending/expired, reconcile outcomes and 7/30-day anonymous funnel. Completion comes from the committed order trigger, not browser claims. Existing admin authorization is unchanged.
 
 ## Tests and remaining checks
-Full suite on 2026-11-08: 300 tests passed across 33 files, 0 failures (includes a provider-copy test proving no policy text hardcodes a provider and PayGlocal wording returns when PAYMENT_PROVIDER=payglocal). Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
+Full suite on 2026-11-09: 337 tests passed across 36 files, 0 failures (adds pull-basket rules, checkout, confirmation, tamper and panel tests). Basket database checks (src/test/dodo-basket.sql, dodo-basket-concurrency.py) pass on disposable PostgreSQL with migrations 0000–0016. Earlier on 2026-11-08: 300 tests passed across 33 files, 0 failures (includes a provider-copy test proving no policy text hardcodes a provider and PayGlocal wording returns when PAYMENT_PROVIDER=payglocal). Real cryptographic HMAC valid/tampered/expired/wrong environment, durable webhook ID replay, exact product prices, USD-only methods, checkout mocks, PAUSE_PULLS/Turnstile, dormant wallet endpoints, refunds/once-only ambiguous handling, reconciliation/empty batches and overlay fallback covered.
 
 Disposable local PostgreSQL tests use the actual existing record_pull and additive migration 0015: all three bundle values, replay, no wallet, inactive-side rollback, wrong amount/environment, failed/expired guard, live totals exclude test pulls, due backoff/expiry, private grants and webhook lease deduplication. Ten concurrent delivery applications create exactly one five-pull bundle. No fake pulls/users/money were stored in the hosted database.
 
