@@ -1,0 +1,55 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+const mocks = vi.hoisted(() => ({ getPaymentStatus: vi.fn(), buyPullBasket: vi.fn(), listBasketMatchups: vi.fn(), buyImmediateBundle: vi.fn() }));
+vi.mock("@/lib/payments.functions", () => ({ getPaymentStatus: mocks.getPaymentStatus }));
+vi.mock("@/lib/basket-payments.functions", () => ({ buyPullBasket: mocks.buyPullBasket, listBasketMatchups: mocks.listBasketMatchups }));
+vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: mocks.buyImmediateBundle, getImmediatePayment: vi.fn(), recordPaymentFunnel: vi.fn(async () => {}), getCodeDropConfig: vi.fn(async () => ({ environment: "sandbox", codedropId: "" })) }));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
+vi.mock("@/components/tugg/Turnstile", () => ({ Turnstile: ({ onToken }: any) => <button onClick={() => onToken("public-turnstile-fixture")}>Mock security check</button> }));
+vi.mock("@/components/tugg/SideAvatar", () => ({ SideAvatar: () => null }));
+vi.mock("@/lib/payments/dodo-overlay", () => ({ openDodoOverlay: vi.fn(async () => true) }));
+import { PullPanel } from "@/components/tugg/PullPanel";
+const sides: any[] = [{ id: "12345678-1234-4234-8234-123456789abc", name: "Pizza", emoji: "🍕" }, { id: "22345678-1234-4234-8234-123456789abc", name: "Burgers", emoji: "🍔" }];
+const panel = () => render(<PullPanel matchupId="32345678-1234-4234-8234-123456789abc" title="Pizza vs Burgers" sides={sides} slug="pizza-vs-burgers" paused={false} onPulled={vi.fn()} />);
+beforeEach(() => {
+  Object.values(mocks).forEach((f) => f.mockReset());
+  history.replaceState(null, "", "/");
+  mocks.listBasketMatchups.mockResolvedValue([]);
+});
+it("flag off shows the fixed 5/10/25 bundles with the From $5 line", async () => {
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", ready: true, basket: false });
+  panel();
+  await waitFor(() => expect(mocks.getPaymentStatus).toHaveBeenCalled());
+  expect(screen.getByText(/From \$5 · \$1 per pull/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "$25 25 pulls" })).toBeInTheDocument();
+  expect(screen.queryByRole("textbox", { name: "Custom amount in dollars" })).toBeNull();
+});
+it("flag on offers quick picks and a custom whole-dollar amount from 5 to 500", async () => {
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", ready: true, basket: true });
+  panel();
+  const custom = await screen.findByRole("textbox", { name: "Custom amount in dollars" });
+  expect(screen.getByText(/From \$5 · \$1 per pull/)).toBeInTheDocument();
+  for (const p of [5, 10, 25]) expect(screen.getByRole("button", { name: `$${p} ${p} pulls` })).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Mock security check"));
+  fireEvent.change(custom, { target: { value: "17" } });
+  expect(screen.getByRole("button", { name: /Pay \$17 · 17 pulls for Pizza/ })).toBeEnabled();
+  fireEvent.change(custom, { target: { value: "4" } });
+  expect(screen.getByText(/whole dollar amount from \$5 to \$500/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Pay \$5/ })).toBeEnabled();
+  fireEvent.change(custom, { target: { value: "501" } });
+  expect(screen.getByRole("textbox", { name: "Custom amount in dollars" })).toHaveValue("501");
+  expect(screen.getByText(/whole dollar amount from \$5 to \$500/)).toBeInTheDocument();
+});
+it("flag on sends the allocation with one side per matchup", async () => {
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", ready: true, basket: true });
+  mocks.buyPullBasket.mockResolvedValue({ error: "fixture stop" });
+  panel();
+  await screen.findByRole("textbox", { name: "Custom amount in dollars" });
+  fireEvent.click(screen.getByRole("button", { name: "$10 10 pulls" }));
+  fireEvent.click(screen.getByRole("button", { name: /Burgers/ }));
+  fireEvent.click(screen.getByText("Mock security check"));
+  fireEvent.click(screen.getByRole("button", { name: /Pay \$10/ }));
+  await screen.findByText("fixture stop");
+  expect(mocks.buyPullBasket.mock.calls[0][0].data.lines).toEqual([{ matchupId: "32345678-1234-4234-8234-123456789abc", sideId: sides[1].id, pulls: 10 }]);
+  expect(mocks.buyImmediateBundle).not.toHaveBeenCalled();
+});
