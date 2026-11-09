@@ -1,6 +1,7 @@
 # Payment integrity
 
 - Dodo immediate orders, bundle applications and webhook leases are service-only durable state; apply_dodo_bundle locks the order and calls record_pull atomically with unique payment/order guards and no wallet entries. Legacy wallet orders are refused. Why: concurrent deliveries must not duplicate pulls or create balances.
+- Dodo pull baskets are created by create_dodo_basket and applied only by apply_dodo_basket, which re-checks Dodo-read facts and metadata against stored lines and calls record_pull per line in one locked transaction; integrity failures mark needs_review with nothing applied, inactive matchups become a single durable partial refund. Why: hostile metadata or crashes can never apply part of, or more than, what was paid.
 - Refund POSTs are claimed durably once; uncertain outcomes require reconciliation and are never blindly retried because Dodo refund idempotency is undocumented. Why: avoid duplicate refunds.
 - Recovery tokens travel only in URL fragments and request bodies; browser storage is environment-scoped and the database stores only SHA-256 hashes. Why: wallet links are bearer credentials.
 - Legacy Stripe modules remain disconnected and their webhook is disabled until real Dodo sandbox verification permits deletion. Why: preserve the requested staged migration without allowing legacy writes.
