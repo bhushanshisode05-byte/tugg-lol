@@ -51,8 +51,8 @@ export const buyPullBasket = createServerFn({ method: "POST" })
       const created = await db.rpc("create_dodo_basket", {
         p_order: id, p_env: provider.environment, p_product: product,
         p_lines: lines.map((l) => ({ matchup_id: l.matchupId, side_id: l.sideId, quantity: l.pulls })),
-        p_name: name, p_shout: shout, p_funnel: data.funnelId ?? null,
-      } as never);
+        p_name: name, p_shout: shout, p_funnel: (data.funnelId ?? null) as string,
+      });
       if (created.error) {
         const key = Object.keys(BASKET_ERRORS).find((k) => created.error!.message.includes(k));
         return { error: key ? BASKET_ERRORS[key]! : "Could not start checkout. No payment has been taken." };
