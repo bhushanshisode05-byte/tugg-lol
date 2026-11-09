@@ -35,7 +35,8 @@ it("flag on offers quick picks and a custom whole-dollar amount from 5 to 500", 
   expect(screen.getByRole("button", { name: /Pay \$17 · 17 pulls for Pizza/ })).toBeEnabled();
   fireEvent.change(custom, { target: { value: "4" } });
   expect(screen.getByText(/whole dollar amount from \$5 to \$500/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /Pay \$5/ })).toBeEnabled();
+  // An invalid amount never changes the charge: the last valid total stays.
+  expect(screen.getByRole("button", { name: /Pay \$17 · 17 pulls/ })).toBeInTheDocument();
   fireEvent.change(custom, { target: { value: "501" } });
   expect(screen.getByRole("textbox", { name: "Custom amount in dollars" })).toHaveValue("501");
   expect(screen.getByText(/whole dollar amount from \$5 to \$500/)).toBeInTheDocument();
