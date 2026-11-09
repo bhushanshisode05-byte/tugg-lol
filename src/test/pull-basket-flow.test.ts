@@ -4,7 +4,7 @@ const state = vi.hoisted(() => ({
   verify: vi.fn(), checkout: vi.fn(), validate: vi.fn(), rpc: vi.fn(), writes: [] as any[],
   order: {} as any, fresh: {} as any, refundClaim: true, basket: true,
 }));
-vi.mock("@tanstack/react-start", () => ({ createServerFn: () => ({ inputValidator(v: any) { this.v = v; return this; }, handler(fn: any) { const v = (this as any).v; return (arg: any) => fn({ data: v ? v(arg.data) : arg.data }); } }) }));
+vi.mock("@tanstack/react-start", () => ({ createServerFn: () => { let v: any; const b: any = { inputValidator(x: any) { v = x; return b; }, handler(fn: any) { return (arg: any) => fn({ data: v ? v(arg.data) : arg.data }); } }; return b; } }));
 vi.mock("@tanstack/react-start/server", () => ({ getRequest: () => new Request("https://tugg.lol/m/a"), getRequestIP: () => "local-fixture" }));
 vi.mock("@/lib/turnstile.server", () => ({ verifyTurnstileForRequest: state.verify }));
 vi.mock("@/lib/payments/selection.server", () => ({

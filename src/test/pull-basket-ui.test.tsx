@@ -51,6 +51,6 @@ it("flag on sends the allocation with one side per matchup", async () => {
   fireEvent.click(screen.getByText("Mock security check"));
   fireEvent.click(screen.getByRole("button", { name: /Pay \$10/ }));
   await screen.findByText("fixture stop");
-  expect(mocks.buyPullBasket.mock.calls[0][0].data.lines).toEqual([{ matchupId: "32345678-1234-4234-8234-123456789abc", sideId: sides[1].id, pulls: 10 }]);
+  expect(mocks.buyPullBasket.mock.calls[0]?.[0].data.lines).toEqual([{ matchupId: "32345678-1234-4234-8234-123456789abc", sideId: sides[1].id, pulls: 10 }]);
   expect(mocks.buyImmediateBundle).not.toHaveBeenCalled();
 });
