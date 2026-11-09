@@ -4,7 +4,7 @@ export const supportAnswers = [
   {
     id: "pulls",
     title: "What does a pull buy?",
-    text: "Each pull costs exactly $1. Buy a one-time bundle of 5 pulls for $5, 10 for $10, or 25 for $25, in US dollars only. Choose a side before paying. After verified payment, the entire bundle is applied immediately to that side; there are no credits, stored balances or unused pulls to carry over. Bundles are non-refundable except where required by law. Failed or expired payments apply nothing. There are no prizes, payouts, or winnings. Losing a round does not qualify for a refund.",
+    text: "Each pull costs exactly $1. {{pullOffer}} there are no credits, stored balances or unused pulls to carry over. Bundles are non-refundable except where required by law. Failed or expired payments apply nothing. There are no prizes, payouts, or winnings. Losing a round does not qualify for a refund.",
   },
   {
     id: "rounds",
@@ -44,7 +44,7 @@ export const supportAnswers = [
   },
 ] as const;
 export type AnswerId = (typeof supportAnswers)[number]["id"];
-export function approvedAnswer(id: string, provider = "dodo") {
+export function approvedAnswer(id: string, provider = "dodo", basket = false) {
   return activePaymentCopy(
     supportAnswers.find((a) => a.id === id)?.text ??
     supportAnswers.find((a) => a.id === "scope")?.text ??
