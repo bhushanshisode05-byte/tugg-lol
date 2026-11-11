@@ -29,7 +29,8 @@ BEGIN
   IF c.total_a_cents <> 500 OR c.total_b_cents <> 2500 OR c.display_name <> 'Harry' OR c.amount_cents <> 500 THEN RAISE EXCEPTION 'card read wrong'; END IF;
   IF EXISTS (SELECT 1 FROM tugg_pull_card(true, p2)) THEN RAISE EXCEPTION 'live mode exposed a test pull'; END IF;
   IF NOT EXISTS (SELECT 1 FROM tugg_pull_card(true, p3)) THEN RAISE EXCEPTION 'live pull missing in live mode'; END IF;
-  SELECT string_agg(attname, ',' ORDER BY attnum) INTO cols FROM pg_attribute WHERE attrelid = (SELECT prorettype FROM pg_proc WHERE proname='tugg_pull_card')::regtype::text::regclass AND attnum > 0;
+  SELECT pg_get_function_result('public.tugg_pull_card(boolean,uuid)'::regprocedure) INTO cols;
+  IF cols ~* '(session|email|payment|checkout|country|environment|shout)' THEN RAISE EXCEPTION 'private column in public read: %', cols; END IF;
   -- Derived fallback for a pull whose snapshot is missing.
   UPDATE pulls SET round_a_after_cents=NULL, round_b_after_cents=NULL WHERE id=p2;
   SELECT * INTO c FROM tugg_pull_card(false, p2);
