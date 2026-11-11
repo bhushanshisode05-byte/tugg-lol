@@ -16,8 +16,9 @@ import { Route as ResultImage } from "@/routes/api/public/og/r.$id";
 import { Route as PullImage } from "@/routes/api/public/og/p.$id";
 import {
   IMMUTABLE_CACHE, SHORT_CACHE, cardDisplayName, cardVersion, matchupCardInput, matchupImagePath,
-  pullHeadline, pullImagePath, resultCardInput, resultImagePath, versionedCache,
+  PULL_CARD_DESIGN, pullHeadline, pullImagePath, receiptHeadline, resultCardInput, resultImagePath, versionedCache,
 } from "@/lib/og/card";
+import { SITE_COLORS, SITE_TOKENS, oklchToHex } from "@/lib/og/theme";
 import { decodePng } from "@/lib/og/raster";
 import { renderCard } from "@/lib/og/render.server";
 import { shareImagePath, shareText } from "@/lib/share";
@@ -30,7 +31,7 @@ const ronaldo = { id: "b2222222-2222-4222-8222-222222222222", position: 1, name:
 const round = (a: number, b: number) => ({ id: "r1", starts_at: "2026-11-11T00:00:00+00:00", total_a_cents: a, total_b_cents: b });
 const matchup = (a: number, b: number) => ({ slug: "messi-vs-ronaldo", title: "Messi vs Ronaldo", sides: [messi, ronaldo], round: round(a, b) });
 const PULL_ID = "c3333333-3333-4333-8333-333333333333";
-const pullCard = (over: Record<string, unknown> = {}) => ({ id: PULL_ID, slug: "messi-vs-ronaldo", title: "Messi vs Ronaldo", sides: [messi, ronaldo], sideId: ronaldo.id, pulls: 25, by: null, day: "2026-11-11", totalA: 0, totalB: 2500, ...over });
+const pullCard = (over: Record<string, unknown> = {}) => ({ id: PULL_ID, slug: "messi-vs-ronaldo", title: "Messi vs Ronaldo", sides: [messi, ronaldo], sideId: ronaldo.id, pulls: 25, by: null, day: "2026-11-11", totalA: 0, totalB: 2500, sideAllTime: 2500, ...over });
 
 async function fetchImage(route: any, path: string, params: Record<string, string>) {
   const res: Response = await get(route)({ request: new Request(`https://tugg.lol${path}`), params });
@@ -111,9 +112,19 @@ describe("cache rules", () => {
 });
 
 describe("personal pull card", () => {
-  it("headline is first person, or credits a display name", () => {
+  it("the card's headline is the receipt's own second-person wording", () => {
+    expect(receiptHeadline(25, "Messi")).toBe("You pulled 25 for Messi!");
+    const line = { matchupId: "m1", slug: "messi-vs-ronaldo", title: "Messi vs Ronaldo", sides: [messi, ronaldo] as any, sideId: messi.id, pulls: 25, totalA: 2500, totalB: 2500, pull: null };
+    const { container } = render(<PaymentReceipt receipt={{ amountCents: 2500, pulls: 25, refundedPulls: 0, siteUrl: "https://tugg.lol", lines: [line] } as any} />);
+    expect(container.querySelector("#receipt-title")!.textContent).toBe(receiptHeadline(25, "Messi"));
+  });
+  it("share text stays first person, or credits a display name", () => {
     expect(pullHeadline(null, 25, "Ronaldo")).toBe("I pulled 25 for Ronaldo");
     expect(pullHeadline("Harry", 25, "Ronaldo")).toBe("Harry pulled 25 for Ronaldo");
+  });
+  it("pull card links carry the design number so a redesign never serves the old cached image", () => {
+    expect(PULL_CARD_DESIGN).toBe(2);
+    expect(pullImagePath(PULL_ID, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=2`);
   });
   it("names that look private or are blank fall back to the first-person form", () => {
     expect(cardDisplayName("Harry")).toBe("Harry");
@@ -133,9 +144,9 @@ describe("personal pull card", () => {
       expect([img?.w, img?.h]).toEqual({ link: [1200, 630], square: [1080, 1080], story: [1080, 1920] }[size]);
     }, 30000);
 
-  it("a display name changes the image; an undrawable name falls back to 'I'", async () => {
+  it("a display name adds a credit line; an undrawable name is left off", async () => {
     const base = pullCard();
-    const input = (by: string | null) => ({ kind: "pull" as const, day: base.day, a: { ...messi, cents: 0 }, b: { ...ronaldo, cents: 2500 }, pull: { side: 1 as const, count: 25, by, title: base.title } });
+    const input = (by: string | null) => ({ kind: "pull" as const, day: base.day, a: { ...messi, cents: 0 }, b: { ...ronaldo, cents: 2500 }, pull: { side: 1 as const, count: 25, by, title: base.title, allTimeCents: 2500 } });
     const [me, harry, boxes] = await Promise.all([renderCard(input(null), "link"), renderCard(input("Harry"), "link"), renderCard(input("ハリー"), "link")]);
     if (out) { writeFileSync(`${out}/pull-harry-link.png`, harry); }
     expect(same(me, harry)).toBe(false);
@@ -168,7 +179,7 @@ describe("receipt wiring", () => {
     const m = JSON.parse(container.querySelector("[data-share]")!.getAttribute("data-share")!);
     expect(m.pull).toEqual({ id: PULL_ID, count: 25, sideName: "Ronaldo" });
     expect([m.a, m.b]).toEqual([0, 2500]);
-    expect(shareImagePath(m, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story`);
+    expect(shareImagePath(m, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=2`);
   });
   it("without a recorded pull it falls back to the live matchup card", () => {
     const { container } = render(<PaymentReceipt receipt={receipt(null)} />);
@@ -176,6 +187,27 @@ describe("receipt wiring", () => {
     expect(m.pull).toBeUndefined();
     expect(shareImagePath(m, "story")).toMatch(/^\/api\/public\/og\/m\/messi-vs-ronaldo\?size=story/);
   });
+});
+
+describe("pull card colours are the site's real tokens", () => {
+  it("token values are copied verbatim from :root in src/styles.css", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    const root = css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {")));
+    for (const [name, value] of Object.entries(SITE_TOKENS)) expect(root).toContain(`--${name}: ${value};`);
+  });
+  it("converts them to the sRGB colours the browser shows", () => {
+    expect(SITE_COLORS.background).toBe("#08090d");
+    expect(SITE_COLORS.card).toBe("#121419");
+    expect(SITE_COLORS.foreground).toBe("#f6f5ee");
+    expect(SITE_COLORS.primary).toBe("#e1f32a");
+    expect(SITE_COLORS["muted-foreground"]).toBe("#999eab");
+    expect(oklchToHex("oklch(1 0 0)")).toBe("#ffffff");
+  });
+  it("the pull card's page background is the site background", async () => {
+    data.pull = pullCard();
+    const img = (await decodePng((await fetchImage(PullImage, pullImagePath(PULL_ID), { id: PULL_ID })).bytes))!;
+    expect(Array.from(img.rgba.slice(0, 3))).toEqual([0x08, 0x09, 0x0d]);
+  }, 30000);
 });
 
 describe("no private field can reach an image", () => {
@@ -187,8 +219,13 @@ describe("no private field can reach an image", () => {
     for (const secret of ["stripe_session_id", "buyer_email", "payment_id", "checkout_id", "dodo_orders", "country", "environment,"]) expect(returns).not.toContain(secret);
     expect(fn).not.toMatch(/dodo_orders|payglocal_orders|buyer_email|stripe_session_id/);
   });
+  it("the public all-time read returns one number and touches no private table or column", () => {
+    const prior = readFileSync("drizzle/migrations/0020_pull_card_side_prior_total.sql", "utf8");
+    expect(prior).toMatch(/RETURNS bigint/);
+    expect(prior).not.toMatch(/dodo_orders|payglocal_orders|buyer_email|stripe_session_id|country|shout_out/);
+  });
   it("image routes and the card loader never mention private fields", () => {
-    const files = ["src/routes/api/public/og/p.$id.ts", "src/routes/api/public/og/m.$slug.ts", "src/routes/api/public/og/r.$id.ts", "src/lib/og/card.ts", "src/lib/og/render.server.ts"];
+    const files = ["src/routes/api/public/og/p.$id.ts", "src/routes/api/public/og/m.$slug.ts", "src/routes/api/public/og/r.$id.ts", "src/lib/og/card.ts", "src/lib/og/render.server.ts", "src/lib/og/pull-card.server.ts", "src/lib/og/theme.ts"];
     const loader = readFileSync("src/lib/tugg.functions.ts", "utf8").split("export async function loadPullCard")[1]!;
     for (const text of [...files.map((f) => readFileSync(f, "utf8")), loader])
       expect(text).not.toMatch(/buyer_email|stripe_session_id|payment_id|checkout_id|dodo_orders|payglocal_orders|customer/i);

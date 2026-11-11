@@ -1,12 +1,15 @@
 import opentype from "opentype.js";
 import displayFontUrl from "@/assets/fonts/display-800.ttf?inline";
 import monoFontUrl from "@/assets/fonts/mono-800.ttf?inline";
+import regularFontUrl from "@/assets/fonts/display-400.ttf?inline";
+import semiboldFontUrl from "@/assets/fonts/display-600.ttf?inline";
 import { Raster, hex, flattenCommands, encodePng, decodePng, type RGBA } from "./raster";
 import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
-// Brand palette (matches the site's dark theme tokens).
+// Live and result card palette. These cards keep their established colours so their cached images stay valid;
+// the personal pull card uses the site's real tokens from ./theme instead.
 const BG = "#111218";
 const FG = "#f6f6ee";
 const MUTED = "#9fa1b3";
@@ -16,7 +19,7 @@ const ROPE = "#d8b37a";
 const ROPE_DARK = "#a77f48";
 
 type Font = opentype.Font;
-let fonts: { display: Font; mono: Font } | null = null;
+let fonts: { display: Font; mono: Font; regular: Font; semibold: Font } | null = null;
 function dataUrlToBuffer(u: string) {
   const b64 = u.slice(u.indexOf(",") + 1);
   const bin = atob(b64);
@@ -24,11 +27,13 @@ function dataUrlToBuffer(u: string) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
-function getFonts() {
+export function getFonts() {
   if (!fonts)
     fonts = {
       display: opentype.parse(dataUrlToBuffer(displayFontUrl)),
       mono: opentype.parse(dataUrlToBuffer(monoFontUrl)),
+      regular: opentype.parse(dataUrlToBuffer(regularFontUrl)),
+      semibold: opentype.parse(dataUrlToBuffer(semiboldFontUrl)),
     };
   return fonts;
 }
@@ -58,7 +63,7 @@ async function loadEmoji(emoji: string) {
   return img;
 }
 
-async function loadSide(side: import("./card").CardSide) {
+export async function loadSide(side: import("./card").CardSide) {
   if (SIDE_IMAGES_ENABLED && side.image_id && side.image_status === "ok") {
     try {
       const { loadRendererSideImage } = await import("../side-image-render.server");
@@ -100,14 +105,6 @@ function text(r: Raster, f: Font, s: string, x: number, y: number, size: number,
 /** True when the font can draw every visible character (no empty boxes in a public image). */
 export function drawable(f: Pick<Font, "charToGlyphIndex">, s: string) {
   return Array.from(s).every((ch) => /\s/.test(ch) || f.charToGlyphIndex(ch) > 0);
-}
-
-type Seg = [string, RGBA];
-function segments(r: Raster, f: Font, segs: Seg[], x: number, y: number, size: number) {
-  for (const [seg, c] of segs) {
-    text(r, f, seg, x, y, size, c);
-    x += width(f, seg, size);
-  }
 }
 
 type Metrics = {
@@ -211,52 +208,9 @@ const fmtDay = (day: string) =>
     })
     .toUpperCase();
 
-/** Personal pull headline ("I pulled 25 for Ronaldo") with the matchup title underneath. */
-function drawPullTitle(r: Raster, pull: NonNullable<CardInput["pull"]>, sideName: string, sideColor: RGBA, m: Metrics, W: number, inner: number) {
-  const { display } = getFonts();
-  const block = m.titleBottom - m.titleTop;
-  // A name the font cannot draw would show empty boxes: keep the first-person form instead.
-  const by = pull.by && drawable(display, pull.by) ? pull.by : null;
-  const fg = hex(FG);
-  const segs: Seg[] = [
-    [`${by ?? "I"} pulled `, fg],
-    [String(pull.count), hex(LIME)],
-    [" for ", fg],
-    [sideName, sideColor],
-  ];
-  const subMax = m.titleMax * 0.34;
-  const sub = fit(display, pull.title.trim(), inner, subMax, m.titleMin * 0.5);
-  const headBlock = block - sub.size * 1.5;
-  const headMax = m.titleMax * 0.92;
-  const oneW = segs.reduce((n, [t]) => n + width(display, t, headMax), 0);
-  const one = Math.min(headMax, (headMax * inner) / oneW);
-  const x0 = (w: number) => (m.centered ? (W - w) / 2 : m.pad);
-  let bottom: number;
-  if (one >= headMax * 0.6) {
-    const w = segs.reduce((n, [t]) => n + width(display, t, one), 0);
-    bottom = m.titleTop + (headBlock + one * 0.72) / 2;
-    segments(r, display, segs, x0(w), bottom, one);
-  } else {
-    // Two lines: "Harry pulled 25 for" / "Ronaldo". A long name is shortened, never the verb or the count.
-    const lineMax = Math.min(headMax, headBlock / 2.15);
-    const who = by ?? "I";
-    const tail = (n: number) => width(display, ` pulled ${pull.count} for`, n);
-    const whole = width(display, `${who} pulled ${pull.count} for`, lineMax);
-    const s1 = Math.max(m.titleMin, Math.min(lineMax, (lineMax * inner) / whole));
-    const name = fit(display, who, Math.max(inner - tail(s1), inner * 0.25), s1, s1);
-    const l1w = name.w + tail(s1);
-    const l2 = fit(display, sideName, inner, lineMax, m.titleMin);
-    const h = s1 * 0.92 + l2.size * 0.92;
-    let y = m.titleTop + (headBlock - h) / 2 + s1 * 0.8;
-    segments(r, display, [[`${name.text} pulled `, fg], [String(pull.count), hex(LIME)], [" for", fg]], x0(l1w), y, s1);
-    y += l2.size * 0.95;
-    text(r, display, l2.text, x0(l2.w), y, l2.size, sideColor);
-    bottom = y;
-  }
-  text(r, display, sub.text, x0(sub.w), Math.min(m.titleBottom, bottom + sub.size * 1.35), sub.size, hex(MUTED));
-}
-
 export async function renderCard(input: CardInput, size: CardSize): Promise<Uint8Array> {
+  // The personal pull card mirrors the on-screen receipt; it has its own layout.
+  if (input.kind === "pull" && input.pull) return (await import("./pull-card.server")).renderPullCard(input, size);
   const [W, H] = CARD_SIZES[size];
   const m = METRICS[size];
   const { display, mono } = getFonts();
@@ -274,9 +228,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   const header =
     input.kind === "live"
       ? `LIVE ROUND · ${fmtDay(input.day)} · UTC`
-      : input.kind === "pull"
-        ? `PULLED ON TUGG · ROUND OF ${fmtDay(input.day)} · UTC`
-        : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
+      : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
   const hd = fit(mono, header, inner, m.header, m.header * 0.6);
   text(r, mono, hd.text, m.centered ? (W - hd.w) / 2 : m.pad, m.headerY, hd.size, hex(MUTED));
 
@@ -284,8 +236,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   const A = input.a.name.trim(),
     B = input.b.name.trim();
   const block = m.titleBottom - m.titleTop;
-  if (input.kind === "pull" && input.pull) drawPullTitle(r, input.pull, input.pull.side === 0 ? A : B, input.pull.side === 0 ? ca : cb, m, W, inner);
-  else {
+  {
   const one = `${A} vs ${B}`;
   const oneW = width(display, one, m.titleMax);
   const oneSize = Math.min(m.titleMax, (m.titleMax * inner) / oneW);
@@ -335,11 +286,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
       m.centered ? side.x + (colW - w) / 2 : side.align === "left" ? side.x : side.x + colW - w;
     if (side.e) r.image(side.e, ax(m.emoji), m.emojiY, m.emoji, m.emoji);
     const label =
-      input.kind === "result" && input.winner === i
-        ? "WINNER"
-        : input.kind === "pull" && input.pull?.side === i
-          ? `+${usd(input.pull.count * 100)}`
-          : null;
+      input.kind === "result" && input.winner === i ? "WINNER" : null;
     if (label) {
       const ls = m.name * 0.5;
       const lw = width(mono, label, ls) + ls * 1.4;

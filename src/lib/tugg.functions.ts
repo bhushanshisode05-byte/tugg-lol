@@ -580,13 +580,17 @@ export type PullCard = {
   /** Round totals immediately after this pull (a permanent snapshot). */
   totalA: number;
   totalB: number;
+  /** The pulled side's all-time total right after this pull (earlier rounds + this round's snapshot). */
+  sideAllTime: number;
 };
 
 /** Public snapshot of one pull for its share card. Reads only public facts: never email, payment or session ids. */
 export async function loadPullCard(id: string): Promise<PullCard | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { data, error } = await publicDb().rpc("tugg_pull_card", { p_live: liveOnly(), p_pull: id });
+  const db = publicDb(), args = { p_live: liveOnly(), p_pull: id };
+  const [{ data, error }, prior] = await Promise.all([db.rpc("tugg_pull_card", args), db.rpc("tugg_pull_side_prior_cents", args)]);
   if (error) throw new Error(error.message);
+  if (prior.error) throw new Error(prior.error.message);
   const p = (data ?? [])[0];
   if (!p) return null;
   const [m] = await loadMatchups({ ids: [p.matchup_id] });
@@ -602,5 +606,8 @@ export async function loadPullCard(id: string): Promise<PullCard | null> {
     day: String(p.round_starts_at).slice(0, 10),
     totalA: Number(p.total_a_cents ?? 0),
     totalB: Number(p.total_b_cents ?? 0),
+    sideAllTime:
+      Number(prior.data ?? 0) +
+      Number((m.sides.find((s) => s.id === p.side_id)?.position === 0 ? p.total_a_cents : p.total_b_cents) ?? 0),
   };
 }

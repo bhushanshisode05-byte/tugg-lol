@@ -11,6 +11,7 @@ def sql(q):
 m = sql("insert into matchups(slug,title) values('snapc-'||gen_random_uuid(),'C') returning id").splitlines()[0]
 a = sql(f"insert into sides(matchup_id,position,name) values('{m}',0,'A') returning id").splitlines()[0]
 b = sql(f"insert into sides(matchup_id,position,name) values('{m}',1,'B') returning id").splitlines()[0]
+sql(f"select ensure_open_round('{m}')")  # live matchups already have an open round; avoid a fixture-only race
 jobs = [(f"snapc:{m}:{i}", a if i % 3 else b, 100 * (i + 1)) for i in range(20)]
 try:
     with ThreadPoolExecutor(max_workers=20) as pool:
