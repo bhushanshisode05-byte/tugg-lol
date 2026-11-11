@@ -40,7 +40,7 @@ export function PaymentReceipt({ receipt, extras }: { receipt: Receipt; extras?:
   const sideName = single?.sides.find((s) => s.id === single.sideId)?.name;
   const applied = receipt.pulls - receipt.refundedPulls;
   return <section ref={ref} aria-labelledby="receipt-title" className="mt-4 rounded-2xl border-2 border-primary bg-primary/10 p-4 sm:p-5" data-receipt>
-    <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+    <div className={extras ? "grid gap-4 sm:grid-cols-[1fr_auto]" : "grid gap-4"}>
       <div role="status">
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Payment confirmed</p>
         <h3 id="receipt-title" className="font-display text-2xl font-extrabold leading-tight">
