@@ -1,6 +1,7 @@
 import { SideAvatar } from "@/components/tugg/SideAvatar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShareButton } from "@/components/tugg/ShareButton";
+import { cardVersion, matchupCardInput } from "@/lib/og/card";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getHome, type Matchup } from "@/lib/tugg.functions";
@@ -52,6 +53,7 @@ const toShare = (m: Matchup) => ({
   sides: m.sides,
   a: m.round?.total_a_cents ?? 0,
   b: m.round?.total_b_cents ?? 0,
+  v: (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })(),
 });
 
 function total(m: Matchup) {

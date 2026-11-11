@@ -37,7 +37,7 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
   const [savedNotice, setSavedNotice] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const story = useRef<{ key: string; blob: Blob | null; pending: Promise<Blob> } | null>(null);
-  const imageKey = shareImagePath(m, "story");
+  const imageKey = `${shareImagePath(m, "story")}:${m.a}:${m.b}`;
   const preload = useCallback(() => {
     if (story.current?.key === imageKey) return story.current.pending;
     const entry = { key: imageKey, blob: null as Blob | null, pending: fetchImage(m, "story") };
