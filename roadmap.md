@@ -1,5 +1,12 @@
 # Tugg roadmap
 
+## Post-payment screen, receipt and private buyer email (2026-11-11, do not publish)
+- [ ] Keep checking an order until paid/failed/expired/refunded with gradual backoff for 10 minutes; calm "don't pay again" message if still unconfirmed; failure only for genuinely failed/expired.
+- [ ] Close Dodo's on-page checkout when it hands control back, so its own "processing" view never sits over the confirmed result; checkout events never undo a confirmed result.
+- [ ] Receipt: amount, pulls, side, matchup, side's new totals, rope animating to its new position, share button from the existing share images, a reserved spot for future badges (no badges now).
+- [ ] Store the buyer email Dodo returns on the payment, privately, against the order; never in any public read; /privacy updated.
+- [ ] Tests incl. late confirmation recovering without an error.
+
 ## Owner password reset fix (2026-11-06)
 - [x] Diagnosed 01:43–01:45 UTC failure from auth logs: leaked-password rejection, then a burned reset link, a reset-email cooldown, and finally "same as current password".
 - [x] Rejected passwords no longer burn the one-use reset link (retry within the same recovery session, held only in page memory).
