@@ -4,6 +4,7 @@ import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { moderate } from "../server-utils.server";
 import { processBasketEvent } from "./basket-fulfillment.server";
+import { storeBuyerEmail } from "./buyer-email.server";
 
 export const webhookPayload = z
   .object({
@@ -46,6 +47,8 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
     const result = await db.from("dodo_orders").select("*").eq("id", id).single();
     checked(result);
     const order = result.data;
+    // Private buyer email from the verified Dodo payment; best-effort and outside the fulfilment transaction.
+    if (order && event.type === "payment.succeeded") await storeBuyerEmail(db, payment, order);
     if (order?.kind === "basket") {
       await processBasketEvent(event, payment, order, provider);
       return;
