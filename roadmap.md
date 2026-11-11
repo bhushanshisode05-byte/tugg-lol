@@ -166,3 +166,4 @@
 - [x] All 65 automated tests pass; four simulated phone flows pass (image supported, text-only, silent AbortError, error download/dialog), with tap-time activation and exact text/link confirmed. Desktop has exactly six items and three save sizes; no page errors. Downloaded tugg-pizza-vs-burgers.png is 1080×1920 and visually matches Pizza vs Burgers $0/$0. Build OK.
 - [ ] Real-phone native sheet and installed-app image/text handoff (requires a real phone).
 - [x] Redesign the personal pull share card to mirror the on-screen receipt (real site colours, three sizes, story/square two-by-two fields); live and result cards unchanged; do not publish.
+- [x] Side emoji on the website drawn as the same Twemoji artwork as share cards (unpublished)
