@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
-import { CARD_SIZES, CARD_SIZE_LABELS, matchupImagePath, type CardSize } from "@/lib/og/card";
+import { CARD_SIZES, CARD_SIZE_LABELS, matchupImagePath, pullImagePath, type CardSize } from "@/lib/og/card";
 import { trackShare, SHARE_CHANNELS } from "@/lib/recap.functions";
 import { shareText, shareUrl, shareLinks, type ShareInput } from "@/lib/share";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,11 @@ import { sharePhoneImage, PHONE_SAVE_NOTICE, shareFailureName, isShareCancelled 
 
 type Channel = (typeof SHARE_CHANNELS)[number];
 
-const fetchImage = async (slug: string, size: CardSize) => {
-  const response = await fetch(matchupImagePath(slug, size));
+/** Receipt shares use the personal pull card; everywhere else uses the live, score-versioned matchup card. */
+export const shareImagePath = (m: Pick<ShareInput, "slug" | "v" | "pull">, size: CardSize) =>
+  m.pull ? pullImagePath(m.pull.id, size) : matchupImagePath(m.slug, size, m.v);
+const fetchImage = async (m: Pick<ShareInput, "slug" | "v" | "pull">, size: CardSize) => {
+  const response = await fetch(shareImagePath(m, size));
   if (!response.ok) throw new DOMException("Image unavailable", "NetworkError");
   return response.blob();
 };
@@ -34,16 +37,17 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
   const [savedNotice, setSavedNotice] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const story = useRef<{ key: string; blob: Blob | null; pending: Promise<Blob> } | null>(null);
-  const imageKey = `${m.slug}:${m.a}:${m.b}`;
+  const imageKey = shareImagePath(m, "story");
   const preload = useCallback(() => {
     if (story.current?.key === imageKey) return story.current.pending;
-    const entry = { key: imageKey, blob: null as Blob | null, pending: fetchImage(m.slug, "story") };
+    const entry = { key: imageKey, blob: null as Blob | null, pending: fetchImage(m, "story") };
     story.current = entry;
     void entry.pending.then((blob) => { entry.blob = blob; }, () => {
       if (story.current === entry) story.current = null;
     });
     return entry.pending;
-  }, [imageKey, m.slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageKey]);
   useEffect(() => {
     const available = typeof navigator.share === "function";
     setNativeAvailable(available);
@@ -77,7 +81,7 @@ export function ShareButton({ m, siteUrl, className = "" }: { m: ShareInput; sit
   };
   const saveImage = async (size: CardSize) => {
     try {
-      download(await fetchImage(m.slug, size), `tugg-${m.slug}-${size}.png`);
+      download(await fetchImage(m, size), `tugg-${m.slug}-${size}.png`);
       track("image_save");
       toast.success("Image saved. Upload it to any post, story or message.");
     } catch (error) {
