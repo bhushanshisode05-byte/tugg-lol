@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { imageVisible, sideImagePath } from "@/lib/side-image";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
+import { SideEmoji } from "./SideEmoji";
 export function SideAvatar({
   side,
   size = "sm",
@@ -37,7 +38,7 @@ export function SideAvatar({
           style={{ borderColor: side.color }}
         />
       ) : (
-        <span aria-label={side.name}>{side.emoji}</span>
+        <SideEmoji emoji={side.emoji} />
       )}
     </span>
   );

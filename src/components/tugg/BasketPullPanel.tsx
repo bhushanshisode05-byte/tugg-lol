@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Turnstile, type TurnstileHandle } from "./Turnstile";
 import { SideAvatar } from "./SideAvatar";
+import { SideEmoji } from "./SideEmoji";
 import { buyPullBasket, listBasketMatchups } from "@/lib/basket-payments.functions";
 import { getImmediatePayment, recordPaymentFunnel } from "@/lib/immediate-payments.functions";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
@@ -74,7 +75,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
         <div className="flex items-center justify-between gap-2"><p className="font-semibold">{l.title}</p>
           {i > 0 && <Button variant="ghost" size="sm" onClick={() => setLines((c) => c.filter((_, j) => j !== i))} aria-label={`Remove ${l.title}`}>Remove</Button>}</div>
         <div className="mt-2 grid grid-cols-2 gap-2">{l.sides.map((s) => <Button key={s.id} variant={l.sideId === s.id ? "default" : "outline"} aria-pressed={l.sideId === s.id} onClick={() => updateLine(i, { sideId: s.id })} className="h-auto min-h-12 whitespace-normal py-3">
-          {i === 0 ? <SideAvatar side={sides.find((x) => x.id === s.id)} /> : <span aria-hidden>{s.emoji}</span>}{s.name}</Button>)}</div>
+          {i === 0 ? <SideAvatar side={sides.find((x) => x.id === s.id)} /> : <span aria-hidden><SideEmoji emoji={s.emoji} /></span>}{s.name}</Button>)}</div>
         {lines.length > 1 && <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">Pulls
           <Input aria-label={`Pulls for ${l.title}`} inputMode="numeric" className="h-9 w-20 font-mono" value={String(l.pulls)} onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, "").slice(0, 3)); updateLine(i, { pulls: Math.max(1, n || 1) }); setCustom(""); }} />
           <span>${l.pulls}</span></label>}
