@@ -1,6 +1,6 @@
 // Visitor-facing payment wording. Shared policy text uses {{tokens}} instead of a hardcoded
 // provider name so every page follows the active PAYMENT_PROVIDER.
-type ProviderCopy = { name: string; sentence: string; processes: string; billingPrivacy: string };
+type ProviderCopy = { name: string; sentence: string; processes: string; billingPrivacy: string; buyerEmail: string };
 const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
   dodo: {
     name: "Dodo Payments",
@@ -8,6 +8,8 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
     processes: "Dodo Payments, as merchant of record, processes payments",
     billingPrivacy:
       "Dodo Payments, as merchant of record, collects billing and card details on its hosted checkout to process digital purchases, taxes and risk checks; card data never touches Tugg servers.",
+    buyerEmail:
+      "When you pay, Dodo Payments shares the email address you entered at its checkout with Tugg, and we store it privately with your order.",
   },
   payglocal: {
     name: "PayGlocal",
@@ -15,6 +17,7 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
     processes: "PayGlocal (RBI-authorised) processes payments",
     billingPrivacy:
       "Billing name, email and address are sent securely to PayGlocal to process digital purchases and risk checks. PayGlocal handles card details on its hosted checkout; card data never touches Tugg servers.",
+    buyerEmail: "We store the email address you enter at checkout privately with your order.",
   },
 };
 const copyFor = (provider: string = "dodo") => (provider === "payglocal" ? COPY.payglocal : COPY.dodo);
@@ -34,7 +37,7 @@ const OFFER = {
   },
 } as const;
 export const pullOfferFooter = (basket = false) => OFFER[basket ? "basket" : "bundles"].footer;
-/** Resolves {{provider}}, {{providerSentence}}, {{providerProcesses}}, {{billingPrivacy}}, {{pullOffer}} and {{pullOfferShort}}. */
+/** Resolves {{provider}}, {{providerSentence}}, {{providerProcesses}}, {{billingPrivacy}}, {{buyerEmailPrivacy}}, {{pullOffer}} and {{pullOfferShort}}. */
 export function activePaymentCopy(text: string, provider: string = "dodo", basket = false) {
   const c = copyFor(provider);
   const offer = OFFER[basket && provider !== "payglocal" ? "basket" : "bundles"];
@@ -44,5 +47,6 @@ export function activePaymentCopy(text: string, provider: string = "dodo", baske
     .replaceAll("{{providerSentence}}", c.sentence)
     .replaceAll("{{providerProcesses}}", c.processes)
     .replaceAll("{{billingPrivacy}}", c.billingPrivacy)
+    .replaceAll("{{buyerEmailPrivacy}}", c.buyerEmail)
     .replaceAll("{{provider}}", c.name);
 }
