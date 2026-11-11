@@ -139,6 +139,11 @@ export function versionedCache(input: CardInput, token: string | null, unversion
   return drawsPicture(input) ? PICTURE_CACHE : IMMUTABLE_CACHE;
 }
 
+/** Payment/order style references (pay_…, uuids, long mixed letter-digit tokens) are never drawn. */
+const looksLikeReference = (name: string) =>
+  /\b(pay|pdt|cks|cus|ord|txn|sub|ref|gid)_[a-z0-9]/i.test(name) ||
+  /[0-9a-f]{8}-[0-9a-f]{4}/i.test(name) ||
+  name.split(" ").some((w) => w.length >= 12 && /\d/.test(w) && /[a-z]/i.test(w));
 const BLOCKED_NAME = /@|https?:|www\.|\.(com|net|org|io|lol|app|co|me|xyz|gg|ly)\b|\b\d{6,}\b/i;
 /**
  * Public credit for a pull card: the already-moderated display name, tidied for drawing.
@@ -147,7 +152,7 @@ const BLOCKED_NAME = /@|https?:|www\.|\.(com|net|org|io|lol|app|co|me|xyz|gg|ly)
 export function cardDisplayName(raw: string | null | undefined): string | null {
   // eslint-disable-next-line no-control-regex
   const name = (raw ?? "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/g, "").replace(/\s+/g, " ").trim();
-  if (!name || name.length > 40 || BLOCKED_NAME.test(name)) return null;
+  if (!name || name.length > 40 || BLOCKED_NAME.test(name) || looksLikeReference(name)) return null;
   if (/^(anonymous|anon|i|me)$/i.test(name)) return null;
   return name;
 }

@@ -3,18 +3,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
-import { CARD_SIZES, CARD_SIZE_LABELS, matchupImagePath, pullImagePath, type CardSize } from "@/lib/og/card";
+import { CARD_SIZES, CARD_SIZE_LABELS, type CardSize } from "@/lib/og/card";
 import { trackShare, SHARE_CHANNELS } from "@/lib/recap.functions";
-import { shareText, shareUrl, shareLinks, type ShareInput } from "@/lib/share";
+import { shareImagePath, shareText, shareUrl, shareLinks, type ShareInput } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { sharePhoneImage, PHONE_SAVE_NOTICE, shareFailureName, isShareCancelled } from "@/lib/phone-share";
 
 type Channel = (typeof SHARE_CHANNELS)[number];
 
-/** Receipt shares use the personal pull card; everywhere else uses the live, score-versioned matchup card. */
-export const shareImagePath = (m: Pick<ShareInput, "slug" | "v" | "pull">, size: CardSize) =>
-  m.pull ? pullImagePath(m.pull.id, size) : matchupImagePath(m.slug, size, m.v);
 const fetchImage = async (m: Pick<ShareInput, "slug" | "v" | "pull">, size: CardSize) => {
   const response = await fetch(shareImagePath(m, size));
   if (!response.ok) throw new DOMException("Image unavailable", "NetworkError");

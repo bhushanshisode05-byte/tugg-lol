@@ -20,8 +20,7 @@ import {
 } from "@/lib/og/card";
 import { decodePng } from "@/lib/og/raster";
 import { renderCard } from "@/lib/og/render.server";
-import { shareImagePath } from "@/components/tugg/ShareButton";
-import { shareText } from "@/lib/share";
+import { shareImagePath, shareText } from "@/lib/share";
 import { PaymentReceipt } from "@/components/tugg/PaymentReceipt";
 
 const get = (route: any) => (route.options ?? route).server.handlers.GET;

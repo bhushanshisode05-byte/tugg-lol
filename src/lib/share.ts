@@ -1,4 +1,5 @@
 import { usd } from "@/components/tugg/Rope";
+import { matchupImagePath, pullImagePath, type CardSize } from "@/lib/og/card";
 
 export type ShareInput = {
   slug: string;
@@ -13,6 +14,10 @@ export type ShareInput = {
 };
 
 export const SHARE_CHANNELS = ["native", "copy", "x", "whatsapp", "facebook", "linkedin", "image_save", "share_error"] as const;
+
+/** Receipt shares use the personal pull card; everywhere else uses the live, score-versioned matchup card. */
+export const shareImagePath = (m: Pick<ShareInput, "slug" | "v" | "pull">, size: CardSize) =>
+  m.pull ? pullImagePath(m.pull.id, size) : matchupImagePath(m.slug, size, m.v);
 
 export const shareUrl = (siteUrl: string, slug: string) => `${siteUrl.replace(/\/$/, "")}/m/${slug}`;
 
