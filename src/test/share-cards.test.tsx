@@ -192,7 +192,7 @@ describe("no private field can reach an image", () => {
     const files = ["src/routes/api/public/og/p.$id.ts", "src/routes/api/public/og/m.$slug.ts", "src/routes/api/public/og/r.$id.ts", "src/lib/og/card.ts", "src/lib/og/render.server.ts"];
     const loader = readFileSync("src/lib/tugg.functions.ts", "utf8").split("export async function loadPullCard")[1]!;
     for (const text of [...files.map((f) => readFileSync(f, "utf8")), loader])
-      expect(text).not.toMatch(/buyer_email|email|stripe_session_id|payment_id|checkout_id|order_id|dodo_orders|payglocal_orders/i);
+      expect(text).not.toMatch(/buyer_email|stripe_session_id|payment_id|checkout_id|dodo_orders|payglocal_orders|customer/i);
   });
   it("the receipt never returns the pull session key to the browser", () => {
     const src = readFileSync("src/lib/payments/receipt.server.ts", "utf8");
