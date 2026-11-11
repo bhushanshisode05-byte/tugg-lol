@@ -564,3 +564,43 @@ export const getResult = createServerFn({ method: "GET" })
     const [rr] = await withLiveTotals([r]);
     return toCard(rr, await matchupMap());
   });
+
+export type PullCard = {
+  id: string;
+  slug: string;
+  title: string;
+  sides: Side[];
+  sideId: string;
+  /** Whole $1 pulls in this pull. */
+  pulls: number;
+  /** Moderated public display name tidied for drawing, or null for "I". */
+  by: string | null;
+  day: string;
+  /** Round totals immediately after this pull (a permanent snapshot). */
+  totalA: number;
+  totalB: number;
+};
+
+/** Public snapshot of one pull for its share card. Reads only public facts: never email, payment or session ids. */
+export async function loadPullCard(id: string): Promise<PullCard | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { cardDisplayName } = await import("./og/card");
+  const { data, error } = await publicDb().rpc("tugg_pull_card", { p_live: liveOnly(), p_pull: id });
+  if (error) throw new Error(error.message);
+  const p = (data ?? [])[0];
+  if (!p) return null;
+  const [m] = await loadMatchups({ ids: [p.matchup_id] });
+  if (!m || !m.sides.some((s) => s.id === p.side_id) || m.sides.length < 2) return null;
+  return {
+    id: p.id,
+    slug: m.slug,
+    title: m.title,
+    sides: m.sides,
+    sideId: p.side_id,
+    pulls: Math.floor(Number(p.amount_cents) / 100),
+    by: cardDisplayName(p.display_name),
+    day: String(p.round_starts_at).slice(0, 10),
+    totalA: Number(p.total_a_cents ?? 0),
+    totalB: Number(p.total_b_cents ?? 0),
+  };
+}
