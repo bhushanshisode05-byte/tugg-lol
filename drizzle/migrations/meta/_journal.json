@@ -141,6 +141,13 @@
       "when": 1794366262076,
       "tag": "0019_pull_card_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794368148743,
+      "tag": "0020_pull_card_side_prior_total",
+      "breakpoints": true
     }
   ]
 }

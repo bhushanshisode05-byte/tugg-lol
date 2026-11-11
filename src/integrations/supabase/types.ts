@@ -1343,6 +1343,10 @@ export type Database = {
           total_b_cents: number
         }[]
       }
+      tugg_pull_side_prior_cents: {
+        Args: { p_live: boolean; p_pull: string }
+        Returns: number
+      }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {
