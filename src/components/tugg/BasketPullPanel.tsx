@@ -10,6 +10,8 @@ import { getImmediatePayment, recordPaymentFunnel } from "@/lib/immediate-paymen
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { openDodoOverlay } from "@/lib/payments/dodo-overlay";
 import { paymentProviderText } from "@/lib/payments/copy";
+import { usePaymentConfirmation } from "@/hooks/use-payment-confirmation";
+import { PaymentConfirmation } from "./PaymentReceipt";
 import { BASKET_MAX_MATCHUPS, BASKET_MAX_PULLS, BASKET_MIN_PULLS, BASKET_QUICK_PICKS, basketTotal, isWholeBasketAmount, splitPulls } from "@/lib/payments/basket";
 import type { Side } from "@/lib/tugg.functions";
 
@@ -23,7 +25,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
   const [lines, setLines] = useState<Line[]>([{ matchupId, title, sides, sideId: sides[0]?.id || "", pulls: 5 }]);
   const [custom, setCustom] = useState(""), [options, setOptions] = useState<Option[] | null>(null);
   const [name, setName] = useState(""), [shout, setShout] = useState(""), [token, setToken] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [confirmation, setConfirmation] = useState(""), [orderId, setOrderId] = useState("");
+  const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [environment, setEnvironment] = useState<"sandbox" | "live">("sandbox");
   const ts = useRef<TurnstileHandle>(null), funnelId = useRef(""), section = useRef<HTMLElement>(null), viewed = useRef(false), completed = useRef(false);
   const total = basketTotal(lines);
@@ -40,33 +42,13 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
   };
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("payment");
-    if (id && /^[0-9a-f-]{36}$/i.test(id)) setOrderId(id);
+    if (id && /^[0-9a-f-]{36}$/i.test(id)) confirm.track(id);
     const el = section.current; if (!el || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting) && !viewed.current) { viewed.current = true; void emit("viewed"); observer.disconnect(); } });
     observer.observe(el); return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const pulledRef = useRef(onPulled);
-  useEffect(() => { pulledRef.current = onPulled; }, [onPulled]);
-  useEffect(() => {
-    const id = orderId; if (!id) return;
-    let stop = false, n = 0, timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = async () => {
-      const r = await read({ data: { orderId: id } }); if (stop) return;
-      if (r?.status === "paid") {
-        completed.current = true;
-        const applied = r.quantity - r.refundedPulls;
-        setConfirmation(r.refundedPulls > 0
-          ? `${applied} pulls applied. ${r.refundedPulls} pulls are being refunded because a matchup stopped taking pulls before your payment was applied.`
-          : `${r.quantity} pulls applied to your chosen sides.`);
-        pulledRef.current();
-      } else if (r?.status === "needs_review") setConfirmation("Your payment is being reviewed. No pulls have been applied yet; please do not pay again.");
-      else if (r?.status === "failed" || r?.status === "expired") setConfirmation("Payment failed or expired. No pulls were applied.");
-      else { setConfirmation("Payment confirmation pending. Please do not pay again."); if (n++ < 30) timer = setTimeout(tick, 4000); }
-    };
-    tick().catch(() => setConfirmation("Payment confirmation pending."));
-    return () => { stop = true; if (timer) clearTimeout(timer); };
-  }, [read, orderId]);
+  const confirm = usePaymentConfirmation((id) => read({ data: { orderId: id } }), () => { completed.current = true; onPulled(); });
   const loadOptions = () => { if (!options) void list().then(setOptions).catch(() => setOptions([])); };
   const addMatchup = (id: string) => {
     const m = options?.find((o) => o.id === id); if (!m || lines.length >= BASKET_MAX_MATCHUPS || lines.some((l) => l.matchupId === id)) return;
@@ -78,7 +60,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
   return <section ref={section} className="mt-8 border-y-2 border-foreground py-6" aria-label="Pull the rope">
     <h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
     <p className="mt-2 text-muted-foreground">From $5 · $1 per pull. One payment can cover up to {BASKET_MAX_MATCHUPS} different matchups, applied immediately after confirmed payment. No stored balance.</p>
-    {confirmation && <p role="status" className="mt-3 font-semibold">{confirmation}</p>}
+    <PaymentConfirmation state={confirm.state} onCheckAgain={confirm.checkAgain} paidText={(() => { const r = confirm.state.result; if (!r) return "Pulls applied to your chosen sides."; return r.refundedPulls > 0 ? `${r.quantity - r.refundedPulls} pulls applied. ${r.refundedPulls} pulls are being refunded because a matchup stopped taking pulls before your payment was applied.` : `${r.quantity} pulls applied to your chosen sides.`; })()} />
     <div className="mt-4 grid grid-cols-4 gap-2">
       {BASKET_QUICK_PICKS.map((p) => <Button key={p} variant={p === total ? "default" : "outline"} aria-pressed={p === total} onClick={() => { setCustom(""); setTotal(p); }} className="h-auto flex-col py-3"><span className="font-mono text-xl">${p}</span><span>{p} pulls</span></Button>)}
       <label className="flex flex-col justify-center rounded-md border border-input px-2 py-1 text-xs text-muted-foreground">Custom $
@@ -116,9 +98,9 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
         const r = await buy({ data: { funnelId: funnelId.current || (funnelId.current = crypto.randomUUID()), lines: lines.map((l) => ({ matchupId: l.matchupId, sideId: l.sideId, pulls: l.pulls })), name, shout, returnUrl: `${window.location.origin}/m/${slug}`, turnstileToken: token ?? undefined } });
         if ("error" in r) { setError(r.error); void emit("failed"); return; }
         setEnvironment(r.environment); completed.current = false;
-        const drawer = await openDodoOverlay(r.url, r.environment, (result) => { if (result === "closed") void emit("cancelled", r.total, "drawer"); setOrderId(r.orderId); setConfirmation("Payment confirmation pending. Please do not pay again."); });
+        const drawer = await openDodoOverlay(r.url, r.environment, (result) => { if (result === "closed") void emit("cancelled", r.total, "drawer"); confirm.track(r.orderId); confirm.signal(result); });
         await emit("opened", r.total, drawer ? "drawer" : "redirect");
-        if (drawer) { setOrderId(r.orderId); setConfirmation("Payment confirmation pending. Please do not pay again."); } else window.location.assign(r.url);
+        if (drawer) confirm.track(r.orderId); else window.location.assign(r.url);
       } catch { setError("Checkout could not open. No unverified pulls applied."); void emit("failed"); }
       finally { ts.current?.reset(); setBusy(false); }
     }}>Pay ${total} · {total} pulls{lines.length > 1 ? ` across ${lines.length} matchups` : ` for ${lines[0]?.sides.find((s) => s.id === lines[0]?.sideId)?.name ?? ""}`}</Button>
