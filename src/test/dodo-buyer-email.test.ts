@@ -18,7 +18,9 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   },
 }));
 vi.mock("@/lib/server-utils.server", () => ({ moderate: vi.fn(async () => ({ allowed: true, reason: "ok" })), config: () => ({ siteUrl: "https://tugg.lol" }) }));
+vi.mock("@/lib/tugg.functions", () => ({ loadMatchups: async () => [{ id: "m1", slug: "notion-vs-obsidian", title: "Notion vs Obsidian", sides: [{ id, name: "Notion" }, { id: "s2", name: "Obsidian" }], round: { total_a_cents: 3000, total_b_cents: 500 } }] }));
 import { processDodoEvent } from "@/lib/payments/fulfillment.server";
+import { dodoReceipt } from "@/lib/payments/receipt.server";
 import { buyerEmailFrom } from "@/lib/payments/buyer-email.server";
 import type { PaymentProvider, VerifiedPayment } from "@/lib/payments/provider";
 
@@ -81,6 +83,14 @@ describe("the buyer email cannot leak publicly", () => {
   });
   it("the webhook still stores no customer details", () => {
     const src = readFileSync("src/routes/api/public/payments/dodo/webhook.ts", "utf8");
-    expect(src).not.toMatch(/customer/i.source.replace("customer", "customer\\b(?! details)") ? /data\.customer|customer:/ : /x/);
+    expect(src).not.toMatch(/data\.customer|customer:/);
   });
+});
+
+it("the receipt is built from public matchup data and never carries the email or payment references", async () => {
+  const db: any = { from: () => { const q: any = { select: () => q, eq: () => q, order: () => q, single: async () => ({ error: null, data: { id, matchup_id: "m1", buyer_email: "buyer@example.com" } }) }; return q; } };
+  const receipt = await dodoReceipt(db, { id, kind: "pull_5", quantity: 5, expected_cents: 500, basket_refund_cents: 0, side_id: id });
+  const text = JSON.stringify(receipt);
+  expect(receipt?.lines[0]).toMatchObject({ slug: "notion-vs-obsidian", pulls: 5, totalA: 3000, sideId: id });
+  expect(text).not.toMatch(/@|buyer|pay_|cks_/);
 });
