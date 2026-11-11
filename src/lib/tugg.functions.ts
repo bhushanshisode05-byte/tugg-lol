@@ -72,13 +72,15 @@ export type PullRow = {
   created_at: string;
 };
 
-async function loadMatchups(filter?: { slug?: string }) {
+/** Public matchup reads (live-only totals when live). `ids` loads specific matchups whatever their status. */
+export async function loadMatchups(filter?: { slug?: string; ids?: string[] }) {
   const db = publicDb();
   let q = db
     .from("matchups")
     .select("id,slug,title,description,category,source,status,featured_until,created_at,sides(*)")
     .order("created_at", { ascending: true });
   if (filter?.slug) q = q.eq("slug", filter.slug);
+  else if (filter?.ids) q = q.in("id", filter.ids.length ? filter.ids : ["00000000-0000-0000-0000-000000000000"]);
   else q = q.eq("status", "active");
   const { data, error } = await q;
   if (error) throw new Error(error.message);
