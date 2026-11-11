@@ -43,7 +43,8 @@ export function matchupItems(ms: HomeM[]) {
   });
 }
 
-type Card = { id: string; slug: string; title: string; ends_at: string; winner: { name: string }; loser: { name: string }; winner_cents: number; loser_cents: number; pullers: number; note: string | null };
+type CardSideLite = { name: string; emoji: string; color: string; image_id?: string | null; image_status?: string | null };
+type Card = { id: string; slug: string; title: string; ends_at: string; winner: CardSideLite & { position: number }; loser: CardSideLite; winner_cents: number; loser_cents: number; pullers: number; note: string | null };
 export function resultItems(cards: Card[]) {
   return cards.map((c) => ({
     id: c.id,
