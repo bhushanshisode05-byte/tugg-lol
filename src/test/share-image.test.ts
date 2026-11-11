@@ -21,13 +21,13 @@ const cases: Record<string, CardInput> = {
     b: { name: "Supercalifragilisticexpialidocious Mega Burgers Deluxe", emoji: "🍔", color: "#22c55e", cents: 99900 },
   },
   result: { ...base, kind: "result", a: { ...base.a, cents: 1000 }, b: { ...base.b, cents: 2000 }, winner: 1, pullers: 3 },
-  pull: { ...base, kind: "pull", a: { ...base.a, cents: 2500 }, b: { ...base.b, cents: 500 }, pull: { side: 0, count: 25, by: null, title: "Pizza vs Burgers" } },
+  pull: { ...base, kind: "pull", a: { ...base.a, cents: 2500 }, b: { ...base.b, cents: 500 }, pull: { side: 0, count: 25, by: null, title: "Pizza vs Burgers", allTimeCents: 2500 } },
   pullLong: {
     ...base,
     kind: "pull",
     a: { name: "The Extraordinarily Long Side Name Of Champions United", emoji: "🏆", color: "#111111", cents: 123456700 },
     b: { name: "Supercalifragilisticexpialidocious Mega Burgers Deluxe", emoji: "🍔", color: "#22c55e", cents: 99900 },
-    pull: { side: 1, count: 500, by: "Maximilian Alexander-Featherstonehaugh", title: "The longest matchup title anybody ever wrote on Tugg" },
+    pull: { side: 1, count: 500, by: "Maximilian Alexander-Featherstonehaugh", title: "The longest matchup title anybody ever wrote on Tugg", allTimeCents: 99900 },
   },
 };
 
