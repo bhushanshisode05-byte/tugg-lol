@@ -6,6 +6,7 @@ import { billingSchema } from "./payments/billing";
 import { PRODUCTS } from "./payments/catalog";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { SIDE_IMAGES_ENABLED } from "./feature-flags";
+import { cardDisplayName } from "./og/card";
 
 /** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
 async function turnstileGate(
@@ -584,7 +585,6 @@ export type PullCard = {
 /** Public snapshot of one pull for its share card. Reads only public facts: never email, payment or session ids. */
 export async function loadPullCard(id: string): Promise<PullCard | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { cardDisplayName } = await import("./og/card");
   const { data, error } = await publicDb().rpc("tugg_pull_card", { p_live: liveOnly(), p_pull: id });
   if (error) throw new Error(error.message);
   const p = (data ?? [])[0];
