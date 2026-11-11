@@ -243,6 +243,7 @@ export type Database = {
       dodo_orders: {
         Row: {
           basket_refund_cents: number
+          buyer_email: string | null
           checkout_id: string | null
           created_at: string
           display_name: string
@@ -273,6 +274,7 @@ export type Database = {
         }
         Insert: {
           basket_refund_cents?: number
+          buyer_email?: string | null
           checkout_id?: string | null
           created_at?: string
           display_name?: string
@@ -303,6 +305,7 @@ export type Database = {
         }
         Update: {
           basket_refund_cents?: number
+          buyer_email?: string | null
           checkout_id?: string | null
           created_at?: string
           display_name?: string
