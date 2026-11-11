@@ -31,8 +31,10 @@ export async function dodoReceipt(db: SupabaseClient<any>, order: Order): Promis
 /** Public pull ids and their snapshot totals only; the session key is used for lookup and never returned. */
 async function recordedPulls(db: SupabaseClient<any>, sessions: string[]): Promise<Map<string, ReceiptPull>> {
   if (!sessions.length) return new Map();
-  const { data, error } = await db.from("pulls").select("id,stripe_session_id,round_a_after_cents,round_b_after_cents").in("stripe_session_id", sessions);
   // The share card is a bonus: a failed lookup falls back to the live matchup card, never hides the receipt.
+  const { data, error } = await Promise.resolve()
+    .then(() => db.from("pulls").select("id,stripe_session_id,round_a_after_cents,round_b_after_cents").in("stripe_session_id", sessions))
+    .catch(() => ({ data: null, error: true }));
   if (error) return new Map();
   return new Map((data ?? []).filter((p: any) => p.round_a_after_cents != null && p.round_b_after_cents != null)
     .map((p: any) => [p.stripe_session_id, { id: p.id, totalA: Number(p.round_a_after_cents), totalB: Number(p.round_b_after_cents) }]));
