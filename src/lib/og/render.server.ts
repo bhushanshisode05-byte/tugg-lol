@@ -2,7 +2,7 @@ import opentype from "opentype.js";
 import displayFontUrl from "@/assets/fonts/display-800.ttf?inline";
 import monoFontUrl from "@/assets/fonts/mono-800.ttf?inline";
 import { Raster, hex, flattenCommands, encodePng, decodePng, type RGBA } from "./raster";
-import { CARD_SIZES, pullHeadline, type CardInput, type CardSize } from "./card";
+import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
@@ -218,7 +218,6 @@ function drawPullTitle(r: Raster, pull: NonNullable<CardInput["pull"]>, sideName
   // A name the font cannot draw would show empty boxes: keep the first-person form instead.
   const by = pull.by && drawable(display, pull.by) ? pull.by : null;
   const fg = hex(FG);
-  const lead = pullHeadline(by, pull.count, sideName).slice(0, -sideName.trim().length).trimEnd();
   const segs: Seg[] = [
     [`${by ?? "I"} pulled `, fg],
     [String(pull.count), hex(LIME)],
@@ -238,16 +237,18 @@ function drawPullTitle(r: Raster, pull: NonNullable<CardInput["pull"]>, sideName
     bottom = m.titleTop + (headBlock + one * 0.72) / 2;
     segments(r, display, segs, x0(w), bottom, one);
   } else {
-    // Two lines: "Harry pulled 25 for" / "Ronaldo".
+    // Two lines: "Harry pulled 25 for" / "Ronaldo". A long name is shortened, never the verb or the count.
     const lineMax = Math.min(headMax, headBlock / 2.15);
-    const l1 = fit(display, lead, inner, lineMax, m.titleMin);
+    const who = by ?? "I";
+    const tail = (n: number) => width(display, ` pulled ${pull.count} for`, n);
+    const whole = width(display, `${who} pulled ${pull.count} for`, lineMax);
+    const s1 = Math.max(m.titleMin, Math.min(lineMax, (lineMax * inner) / whole));
+    const name = fit(display, who, Math.max(inner - tail(s1), inner * 0.25), s1, s1);
+    const l1w = name.w + tail(s1);
     const l2 = fit(display, sideName, inner, lineMax, m.titleMin);
-    const h = l1.size * 0.92 + l2.size * 0.92;
-    let y = m.titleTop + (headBlock - h) / 2 + l1.size * 0.8;
-    // Re-colour the count inside line one when it survived truncation.
-    const prefix = `${by ?? "I"} pulled `;
-    if (l1.text === lead) segments(r, display, [[prefix, fg], [String(pull.count), hex(LIME)], [" for", fg]], x0(l1.w), y, l1.size);
-    else text(r, display, l1.text, x0(l1.w), y, l1.size, fg);
+    const h = s1 * 0.92 + l2.size * 0.92;
+    let y = m.titleTop + (headBlock - h) / 2 + s1 * 0.8;
+    segments(r, display, [[`${name.text} pulled `, fg], [String(pull.count), hex(LIME)], [" for", fg]], x0(l1w), y, s1);
     y += l2.size * 0.95;
     text(r, display, l2.text, x0(l2.w), y, l2.size, sideColor);
     bottom = y;
