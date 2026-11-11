@@ -206,7 +206,7 @@ function layout(f: ReturnType<typeof getFonts>, facts: Facts, size: CardSize, ca
     const sumS = 14 * u, sumLh = 20 * u, sumTop = iy;
     const sum = wrap(
       [{ t: facts.summary.strong, f: f.semibold, c: FG }, { t: facts.summary.rest, f: f.regular, c: MUTED }],
-      sumS, cw, 3,
+      sumS, cw, 4,
     );
     iy += sumLh * sum.length + ip + ib;
     const ph = iy - top;
