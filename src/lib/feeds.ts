@@ -1,5 +1,5 @@
 import { usd } from "@/components/tugg/Rope";
-import { PUBLIC_SITE, matchupImagePath, resultImagePath } from "@/lib/og/card";
+import { PUBLIC_SITE, cardVersion, matchupCardInput, matchupImagePath, resultCardInput, resultImagePath } from "@/lib/og/card";
 
 export const FEED_HEADERS = { "Cache-Control": "public, max-age=300, s-maxage=300", "Access-Control-Allow-Origin": "*" };
 export const FEED_NOTE = "Real Tugg data only. Amounts are US dollars actually paid. Rounds close daily at 00:00 UTC. No prizes or payouts.";
@@ -21,7 +21,7 @@ export function rss(title: string, path: string, description: string, items: Rss
 }
 export const json = (data: unknown) => Response.json(data, { headers: FEED_HEADERS });
 
-type HomeM = { slug: string; title: string; category: string; source: string; created_at: string; sides: { name: string; emoji: string }[]; round: { starts_at: string; ends_at: string; total_a_cents: number; total_b_cents: number; pullers: number } | null };
+type HomeM = { slug: string; title: string; category: string; source: string; created_at: string; sides: { name: string; emoji: string; color: string; position: number; image_id?: string | null; image_status?: string | null }[]; round: { starts_at: string; ends_at: string; total_a_cents: number; total_b_cents: number; pullers: number } | null };
 export function matchupItems(ms: HomeM[]) {
   return ms.map((m) => {
     const [a, b] = m.sides;
@@ -31,7 +31,7 @@ export function matchupItems(ms: HomeM[]) {
       title: m.title,
       url: `${PUBLIC_SITE}/m/${m.slug}`,
       rivalry_url: `${PUBLIC_SITE}/rivalries/${m.slug}`,
-      image: `${PUBLIC_SITE}${matchupImagePath(m.slug, "link")}`,
+      image: `${PUBLIC_SITE}${matchupImagePath(m.slug, "link", (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })())}`,
       category: m.category,
       added_by: m.source === "ai" ? "Tugg" : m.source === "seed" ? "Tugg" : "player",
       created_at: m.created_at,
@@ -50,7 +50,7 @@ export function resultItems(cards: Card[]) {
     matchup: c.title,
     matchup_url: `${PUBLIC_SITE}/m/${c.slug}`,
     url: `${PUBLIC_SITE}/results/${c.id}`,
-    image: `${PUBLIC_SITE}${resultImagePath(c.id, "link")}`,
+    image: `${PUBLIC_SITE}${resultImagePath(c.id, "link", cardVersion(resultCardInput(c)))}`,
     round_day_utc: new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
     ended_at: c.ends_at,
     winner: c.winner.name,

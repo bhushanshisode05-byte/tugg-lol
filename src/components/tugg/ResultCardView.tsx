@@ -1,7 +1,7 @@
 import { SideAvatar } from "./SideAvatar";
 import { Link } from "@tanstack/react-router";
 import type { ResultCard } from "@/lib/tugg.functions";
-import { resultImagePath } from "@/lib/og/card";
+import { cardVersion, resultCardInput, resultImagePath } from "@/lib/og/card";
 import { usd } from "./Rope";
 
 /** Round result card: the same generated image used for sharing, plus readable text for everyone. */
@@ -12,7 +12,7 @@ export function ResultCardView({ c, big }: { c: ResultCard; big?: boolean }) {
       className={`overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-pop ${big ? "" : ""}`}
     >
       <img
-        src={resultImagePath(c.id, "link")}
+        src={resultImagePath(c.id, "link", cardVersion(resultCardInput(c)))}
         alt={`${c.winner.name} beat ${c.loser.name} ${usd(c.winner_cents)} to ${usd(c.loser_cents)} in ${c.title}, round of ${date} UTC`}
         width={1200}
         height={630}

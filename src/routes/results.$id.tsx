@@ -5,7 +5,7 @@ import { RouteError, NotFoundBlock } from "@/components/tugg/RouteError";
 import { ResultCardView } from "@/components/tugg/ResultCardView";
 import { usd } from "@/components/tugg/Rope";
 import { getResult } from "@/lib/tugg.functions";
-import { resultImagePath, PUBLIC_SITE } from "@/lib/og/card";
+import { cardVersion, resultCardInput, resultImagePath, PUBLIC_SITE } from "@/lib/og/card";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const rq = (id: string) => queryOptions({ queryKey: ["result", id], queryFn: () => (UUID.test(id) ? getResult({ data: { id } }) : null) });
@@ -26,11 +26,11 @@ export const Route = createFileRoute("/results/$id")({
           { property: "og:description", content: `${usd(c.winner_cents)} to ${usd(c.loser_cents)} from ${c.pullers} pullers. Pick your side for the next round.` },
           { property: "og:type", content: "article" },
           { property: "og:url", content: `/results/${params.id}` },
-          { property: "og:image", content: `${PUBLIC_SITE}${resultImagePath(c.id, "link")}` },
+          { property: "og:image", content: `${PUBLIC_SITE}${resultImagePath(c.id, "link", cardVersion(resultCardInput(c)))}` },
           { property: "og:image:width", content: "1200" },
           { property: "og:image:height", content: "630" },
           { name: "twitter:card", content: "summary_large_image" },
-          { name: "twitter:image", content: `${PUBLIC_SITE}${resultImagePath(c.id, "link")}` },
+          { name: "twitter:image", content: `${PUBLIC_SITE}${resultImagePath(c.id, "link", cardVersion(resultCardInput(c)))}` },
         ]
       : [{ title: "Result unavailable | Tugg" }, { name: "robots", content: "noindex" }],
     links: [{ rel: "canonical", href: `/results/${params.id}` }],
