@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/public/og/p/$id")({
             day: c.day,
             a: side(a, c.totalA),
             b: side(b, c.totalB),
-            pull: { side: pulledA ? 0 : 1, count: c.pulls, by: c.by, title: c.title },
+            pull: { side: pulledA ? 0 : 1, count: c.pulls, by: c.by, title: c.title, allTimeCents: c.sideAllTime },
           };
           const { renderCard } = await import("@/lib/og/render.server");
           const png = await renderCard(input, size);

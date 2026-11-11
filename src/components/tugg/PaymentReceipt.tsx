@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Rope, usd } from "./Rope";
 import { SideAvatar } from "./SideAvatar";
 import { ShareButton } from "./ShareButton";
+import { receiptHeadline } from "@/lib/og/card";
 import { CONFIRM_MESSAGES, totalsBefore, type ConfirmState, type PaymentReceipt as Receipt, type ReceiptLine } from "@/lib/payments/confirmation";
 
 /** Rope that starts where it was before this payment and slides to its new position. */
@@ -47,7 +48,7 @@ export function PaymentReceipt({ receipt, extras }: { receipt: Receipt; extras?:
       <div role="status">
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Payment confirmed</p>
         <h3 id="receipt-title" className="font-display text-2xl font-extrabold leading-tight">
-          {single ? `You pulled ${applied} for ${sideName}!` : `You pulled ${applied} across ${receipt.lines.length} matchups!`}
+          {single ? receiptHeadline(applied, sideName ?? "") : `You pulled ${applied} across ${receipt.lines.length} matchups!`}
         </h3>
       </div>
       {extras ? <aside data-slot="receipt-extras" className="sm:row-span-2">{extras}</aside> : null}

@@ -29,8 +29,10 @@ export type CardPull = {
   count: number;
   /** Moderated public display name, or null for the first-person "I". */
   by: string | null;
-  /** Matchup title shown under the headline. */
+  /** Matchup title, as on the receipt. */
   title: string;
+  /** The pulled side's all-time total right after this pull (cents). */
+  allTimeCents: number;
 };
 export type CardInput = {
   kind: "live" | "result" | "pull";
@@ -157,15 +159,25 @@ export function cardDisplayName(raw: string | null | undefined): string | null {
   return name;
 }
 
-/** First-person headline other people read: "I pulled 25 for Ronaldo" or "Harry pulled 25 for Ronaldo". */
+/** First-person share text form: "I pulled 25 for Ronaldo" or "Harry pulled 25 for Ronaldo". */
 export const pullHeadline = (by: string | null, count: number, sideName: string) =>
   `${by ?? "I"} pulled ${count} for ${sideName.trim()}`;
+
+/** The receipt's own headline, used verbatim on screen and on the personal pull card. */
+export const receiptHeadline = (count: number, sideName: string) => `You pulled ${count} for ${sideName.trim()}!`;
+/** Display-name credit under the receipt headline on the pull card. */
+export const receiptCredit = (by: string) => `Pulled by ${by}`;
 
 const q = (size: CardSize, v?: string | null) => `?size=${size}${v ? `&v=${encodeURIComponent(v)}` : ""}`;
 export const matchupImagePath = (slug: string, size: CardSize = "link", v?: string | null) =>
   `/api/public/og/m/${encodeURIComponent(slug)}${q(size, v)}`;
 export const resultImagePath = (id: string, size: CardSize = "link", v?: string | null) =>
   `/api/public/og/r/${encodeURIComponent(id)}${q(size, v)}`;
-/** Personal pull cards are permanent snapshots keyed by the public pull id; no version needed. */
+/**
+ * Bump when the pull card's design changes. Pull cards are permanent snapshots cached for a year, so the
+ * design number is part of the URL; the route ignores it and always draws the current design.
+ */
+export const PULL_CARD_DESIGN = 2;
+/** Personal pull cards are permanent snapshots keyed by the public pull id; no score token needed. */
 export const pullImagePath = (pullId: string, size: CardSize = "link") =>
-  `/api/public/og/p/${encodeURIComponent(pullId)}?size=${size}`;
+  `/api/public/og/p/${encodeURIComponent(pullId)}?size=${size}&d=${PULL_CARD_DESIGN}`;
