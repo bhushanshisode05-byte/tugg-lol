@@ -219,6 +219,11 @@ describe("no private field can reach an image", () => {
     for (const secret of ["stripe_session_id", "buyer_email", "payment_id", "checkout_id", "dodo_orders", "country", "environment,"]) expect(returns).not.toContain(secret);
     expect(fn).not.toMatch(/dodo_orders|payglocal_orders|buyer_email|stripe_session_id/);
   });
+  it("the public all-time read returns one number and touches no private table or column", () => {
+    const prior = readFileSync("drizzle/migrations/0020_pull_card_side_prior_total.sql", "utf8");
+    expect(prior).toMatch(/RETURNS bigint/);
+    expect(prior).not.toMatch(/dodo_orders|payglocal_orders|buyer_email|stripe_session_id|country|shout_out/);
+  });
   it("image routes and the card loader never mention private fields", () => {
     const files = ["src/routes/api/public/og/p.$id.ts", "src/routes/api/public/og/m.$slug.ts", "src/routes/api/public/og/r.$id.ts", "src/lib/og/card.ts", "src/lib/og/render.server.ts", "src/lib/og/pull-card.server.ts", "src/lib/og/theme.ts"];
     const loader = readFileSync("src/lib/tugg.functions.ts", "utf8").split("export async function loadPullCard")[1]!;
