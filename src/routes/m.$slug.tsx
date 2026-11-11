@@ -107,7 +107,8 @@ function MatchupPage() {
   });
   const lead = a === b ? null : a > b ? ([A, B, a, b] as const) : ([B, A, b, a] as const);
   const sideById = new Map(m.sides.map((s) => [s.id, s]));
-  const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b };
+  const card = matchupCardInput(m);
+  const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b, v: card ? cardVersion(card) : null };
 
   return (
     <Shell>
