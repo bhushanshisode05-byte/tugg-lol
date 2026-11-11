@@ -13,7 +13,7 @@ import { Countdown } from "@/components/tugg/Countdown";
 import { PullPanel } from "@/components/tugg/PullPanel";
 import { useLive } from "@/hooks/use-live";
 
-import { imageBucket, matchupImagePath } from "@/lib/og/card";
+import { cardVersion, matchupCardInput, matchupImagePath } from "@/lib/og/card";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -35,7 +35,8 @@ export const Route = createFileRoute("/m/$slug")({
       aCents: m.round?.total_a_cents ?? 0,
       bCents: m.round?.total_b_cents ?? 0,
       siteUrl: d.siteUrl || "https://tugg.lol",
-      bucket: imageBucket(),
+      // Score-derived cache key: the image URL changes whenever the score changes.
+      version: (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })(),
     };
   },
   head: ({ loaderData: l }) => {
@@ -45,8 +46,8 @@ export const Route = createFileRoute("/m/$slug")({
       };
     const score = `${l.a} ${usd(l.aCents)} vs ${l.b} ${usd(l.bCents)}`;
     const url = `${l.siteUrl}/m/${l.slug}`;
-    // Own live image; the 5-minute bucket makes crawlers re-fetch a fresh score.
-    const img = `${l.siteUrl}${matchupImagePath(l.slug, "link")}&v=${l.bucket}`;
+    // Own live image; the score token gives every score its own URL, so previews never show an old score.
+    const img = `${l.siteUrl}${matchupImagePath(l.slug, "link", l.version)}`;
     const desc = `Live now: ${score} in today's round. Pull the rope for your side on Tugg. Rounds end at 00:00 UTC.`;
     return {
       meta: [
@@ -106,7 +107,8 @@ function MatchupPage() {
   });
   const lead = a === b ? null : a > b ? ([A, B, a, b] as const) : ([B, A, b, a] as const);
   const sideById = new Map(m.sides.map((s) => [s.id, s]));
-  const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b };
+  const card = matchupCardInput(m);
+  const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b, v: card ? cardVersion(card) : null };
 
   return (
     <Shell>

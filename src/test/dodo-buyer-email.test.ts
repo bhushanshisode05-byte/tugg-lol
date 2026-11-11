@@ -88,9 +88,14 @@ describe("the buyer email cannot leak publicly", () => {
 });
 
 it("the receipt is built from public matchup data and never carries the email or payment references", async () => {
-  const db: any = { from: () => { const q: any = { select: () => q, eq: () => q, order: () => q, single: async () => ({ error: null, data: { id, matchup_id: "m1", buyer_email: "buyer@example.com" } }) }; return q; } };
+  const pullId = "7f000000-0000-4000-8000-000000000001";
+  const db: any = { from: (table: string) => { const q: any = { select: () => q, eq: () => q, order: () => q,
+    in: async () => ({ error: null, data: table === "pulls" ? [{ id: pullId, stripe_session_id: `dodo:${id}`, round_a_after_cents: 3000, round_b_after_cents: 500 }] : [] }),
+    single: async () => ({ error: null, data: { id, matchup_id: "m1", buyer_email: "buyer@example.com" } }) }; return q; } };
   const receipt = await dodoReceipt(db, { id, kind: "pull_5", quantity: 5, expected_cents: 500, basket_refund_cents: 0, side_id: id });
   const text = JSON.stringify(receipt);
-  expect(receipt?.lines[0]).toMatchObject({ slug: "notion-vs-obsidian", pulls: 5, totalA: 3000, sideId: id });
+  expect(receipt?.lines[0]).toMatchObject({ slug: "notion-vs-obsidian", pulls: 5, totalA: 3000, sideId: id, pull: { id: pullId, totalA: 3000, totalB: 500 } });
+  // The pull lookup key (which embeds the order id) never reaches the browser.
+  expect(text).not.toContain("dodo:");
   expect(text).not.toMatch(/@|buyer|pay_|cks_/);
 });

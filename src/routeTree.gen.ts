@@ -53,6 +53,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as ApiPublicOgMSlugRouteImport } from './routes/api/public/og/m.$slug'
+import { Route as ApiPublicOgPIdRouteImport } from './routes/api/public/og/p.$id'
 import { Route as ApiPublicOgRIdRouteImport } from './routes/api/public/og/r.$id'
 import { Route as ApiPublicPaymentsDodoWebhookRouteImport } from './routes/api/public/payments/dodo/webhook'
 import { Route as ApiPublicPaymentsPayglocalCallbackRouteImport } from './routes/api/public/payments/payglocal/callback'
@@ -281,6 +282,11 @@ const ApiPublicOgMSlugRoute = ApiPublicOgMSlugRouteImport.update({
   path: '/api/public/og/m/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOgPIdRoute = ApiPublicOgPIdRouteImport.update({
+  id: '/api/public/og/p/$id',
+  path: '/api/public/og/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOgRIdRoute = ApiPublicOgRIdRouteImport.update({
   id: '/api/public/og/r/$id',
   path: '/api/public/og/r/$id',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/p/$id': typeof ApiPublicOgPIdRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
   '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/p/$id': typeof ApiPublicOgPIdRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
   '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/og/m/$slug': typeof ApiPublicOgMSlugRoute
+  '/api/public/og/p/$id': typeof ApiPublicOgPIdRoute
   '/api/public/og/r/$id': typeof ApiPublicOgRIdRoute
   '/api/public/payments/dodo/webhook': typeof ApiPublicPaymentsDodoWebhookRoute
   '/api/public/payments/payglocal/callback': typeof ApiPublicPaymentsPayglocalCallbackRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
+    | '/api/public/og/p/$id'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
     | '/api/public/payments/payglocal/callback'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
+    | '/api/public/og/p/$id'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
     | '/api/public/payments/payglocal/callback'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/og/m/$slug'
+    | '/api/public/og/p/$id'
     | '/api/public/og/r/$id'
     | '/api/public/payments/dodo/webhook'
     | '/api/public/payments/payglocal/callback'
@@ -637,6 +649,7 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiPublicOgMSlugRoute: typeof ApiPublicOgMSlugRoute
+  ApiPublicOgPIdRoute: typeof ApiPublicOgPIdRoute
   ApiPublicOgRIdRoute: typeof ApiPublicOgRIdRoute
   ApiPublicPaymentsDodoWebhookRoute: typeof ApiPublicPaymentsDodoWebhookRoute
   ApiPublicPaymentsPayglocalCallbackRoute: typeof ApiPublicPaymentsPayglocalCallbackRoute
@@ -952,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOgMSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/og/p/$id': {
+      id: '/api/public/og/p/$id'
+      path: '/api/public/og/p/$id'
+      fullPath: '/api/public/og/p/$id'
+      preLoaderRoute: typeof ApiPublicOgPIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/og/r/$id': {
       id: '/api/public/og/r/$id'
       path: '/api/public/og/r/$id'
@@ -1031,6 +1051,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiPublicOgMSlugRoute: ApiPublicOgMSlugRoute,
+  ApiPublicOgPIdRoute: ApiPublicOgPIdRoute,
   ApiPublicOgRIdRoute: ApiPublicOgRIdRoute,
   ApiPublicPaymentsDodoWebhookRoute: ApiPublicPaymentsDodoWebhookRoute,
   ApiPublicPaymentsPayglocalCallbackRoute:

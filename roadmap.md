@@ -1,5 +1,12 @@
 # Tugg roadmap
 
+## Fresh share images and personal pull card (2026-11-11, do not publish)
+- [x] Live matchup, rivalry and result images and their link-preview tags carry a score token (?v=<A cents>-<B cents>-<fingerprint>); matching tokens are cached for a year, old or missing tokens still draw current data with a 60-second cache.
+- [x] Personal pull card at /api/public/og/p/<pull id> (link/square/story), first person or moderated display name, permanent snapshot of totals right after that pull; receipt Share uses it, matchup Share keeps the live card.
+- [x] Tests: 396 pass across 40 files; disposable database snapshot checks and 20 concurrent pulls pass; preview checked on desktop and phone with the real $25 Ronaldo order.
+- [ ] Shared links (not images) from the receipt still preview the live matchup card on X/WhatsApp. Blocker: owner decision on adding a pull-specific link.
+- [ ] Real phone share after a real purchase on tugg.lol. Blocker: needs a publish (owner decision).
+
 ## Post-payment screen, receipt and private buyer email (2026-11-11, do not publish)
 - [x] Cause found: the page did confirm both real payments within ~3 s, but Dodo's own window (opened in "we handle the redirect" mode) was never closed, so it sat on its processing view; closing it then reset the message to "pending" with no further checks. Fixed both; reproduced with the previous screen in a test.
 - [x] Checks until paid/failed/expired/refunded (or review) with backoff 2 s → 15 s for 10 minutes, then a calm "still confirming, don't pay again" note with Check again; checks again when the tab comes back; network errors never show as failure.

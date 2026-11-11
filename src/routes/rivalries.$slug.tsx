@@ -7,7 +7,7 @@ import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
 import { useLive } from "@/hooks/use-live";
 import { getMatchup } from "@/lib/tugg.functions";
-import { imageBucket, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
+import { cardVersion, matchupCardInput, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -70,6 +70,8 @@ export const Route = createFileRoute("/rivalries/$slug")({
         meta: [{ title: "Rivalry unavailable | Tugg" }, { name: "robots", content: "noindex" }],
       };
     const f = facts(loaderData);
+    const card = matchupCardInput(loaderData.matchup);
+    const img = `${loaderData.siteUrl || PUBLIC_SITE}${matchupImagePath(params.slug, "link", card ? cardVersion(card) : null)}`;
     const title = `Who is winning, ${f.A.name} or ${f.B.name}? Live results | Tugg`;
     return {
       meta: [
@@ -81,14 +83,14 @@ export const Route = createFileRoute("/rivalries/$slug")({
         { property: "og:url", content: `/rivalries/${params.slug}` },
         {
           property: "og:image",
-          content: `${loaderData.siteUrl || PUBLIC_SITE}${matchupImagePath(params.slug, "link")}&v=${imageBucket()}`,
+          content: img,
         },
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },
         { name: "twitter:card", content: "summary_large_image" },
         {
           name: "twitter:image",
-          content: `${loaderData.siteUrl || PUBLIC_SITE}${matchupImagePath(params.slug, "link")}&v=${imageBucket()}`,
+          content: img,
         },
       ],
       links: [{ rel: "canonical", href: `/rivalries/${params.slug}` }],

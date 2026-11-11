@@ -97,6 +97,19 @@ function text(r: Raster, f: Font, s: string, x: number, y: number, size: number,
   r.fill(flattenCommands(f.getPath(s, x, y, size, { kerning: true }).commands as never), c);
 }
 
+/** True when the font can draw every visible character (no empty boxes in a public image). */
+export function drawable(f: Pick<Font, "charToGlyphIndex">, s: string) {
+  return Array.from(s).every((ch) => /\s/.test(ch) || f.charToGlyphIndex(ch) > 0);
+}
+
+type Seg = [string, RGBA];
+function segments(r: Raster, f: Font, segs: Seg[], x: number, y: number, size: number) {
+  for (const [seg, c] of segs) {
+    text(r, f, seg, x, y, size, c);
+    x += width(f, seg, size);
+  }
+}
+
 type Metrics = {
   pad: number;
   header: number;
@@ -198,6 +211,51 @@ const fmtDay = (day: string) =>
     })
     .toUpperCase();
 
+/** Personal pull headline ("I pulled 25 for Ronaldo") with the matchup title underneath. */
+function drawPullTitle(r: Raster, pull: NonNullable<CardInput["pull"]>, sideName: string, sideColor: RGBA, m: Metrics, W: number, inner: number) {
+  const { display } = getFonts();
+  const block = m.titleBottom - m.titleTop;
+  // A name the font cannot draw would show empty boxes: keep the first-person form instead.
+  const by = pull.by && drawable(display, pull.by) ? pull.by : null;
+  const fg = hex(FG);
+  const segs: Seg[] = [
+    [`${by ?? "I"} pulled `, fg],
+    [String(pull.count), hex(LIME)],
+    [" for ", fg],
+    [sideName, sideColor],
+  ];
+  const subMax = m.titleMax * 0.34;
+  const sub = fit(display, pull.title.trim(), inner, subMax, m.titleMin * 0.5);
+  const headBlock = block - sub.size * 1.5;
+  const headMax = m.titleMax * 0.92;
+  const oneW = segs.reduce((n, [t]) => n + width(display, t, headMax), 0);
+  const one = Math.min(headMax, (headMax * inner) / oneW);
+  const x0 = (w: number) => (m.centered ? (W - w) / 2 : m.pad);
+  let bottom: number;
+  if (one >= headMax * 0.6) {
+    const w = segs.reduce((n, [t]) => n + width(display, t, one), 0);
+    bottom = m.titleTop + (headBlock + one * 0.72) / 2;
+    segments(r, display, segs, x0(w), bottom, one);
+  } else {
+    // Two lines: "Harry pulled 25 for" / "Ronaldo". A long name is shortened, never the verb or the count.
+    const lineMax = Math.min(headMax, headBlock / 2.15);
+    const who = by ?? "I";
+    const tail = (n: number) => width(display, ` pulled ${pull.count} for`, n);
+    const whole = width(display, `${who} pulled ${pull.count} for`, lineMax);
+    const s1 = Math.max(m.titleMin, Math.min(lineMax, (lineMax * inner) / whole));
+    const name = fit(display, who, Math.max(inner - tail(s1), inner * 0.25), s1, s1);
+    const l1w = name.w + tail(s1);
+    const l2 = fit(display, sideName, inner, lineMax, m.titleMin);
+    const h = s1 * 0.92 + l2.size * 0.92;
+    let y = m.titleTop + (headBlock - h) / 2 + s1 * 0.8;
+    segments(r, display, [[`${name.text} pulled `, fg], [String(pull.count), hex(LIME)], [" for", fg]], x0(l1w), y, s1);
+    y += l2.size * 0.95;
+    text(r, display, l2.text, x0(l2.w), y, l2.size, sideColor);
+    bottom = y;
+  }
+  text(r, display, sub.text, x0(sub.w), Math.min(m.titleBottom, bottom + sub.size * 1.35), sub.size, hex(MUTED));
+}
+
 export async function renderCard(input: CardInput, size: CardSize): Promise<Uint8Array> {
   const [W, H] = CARD_SIZES[size];
   const m = METRICS[size];
@@ -216,17 +274,21 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   const header =
     input.kind === "live"
       ? `LIVE ROUND · ${fmtDay(input.day)} · UTC`
-      : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
+      : input.kind === "pull"
+        ? `PULLED ON TUGG · ROUND OF ${fmtDay(input.day)} · UTC`
+        : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
   const hd = fit(mono, header, inner, m.header, m.header * 0.6);
   text(r, mono, hd.text, m.centered ? (W - hd.w) / 2 : m.pad, m.headerY, hd.size, hex(MUTED));
 
   // Title "A vs B": one line when it fits large enough, otherwise stacked lines.
   const A = input.a.name.trim(),
     B = input.b.name.trim();
+  const block = m.titleBottom - m.titleTop;
+  if (input.kind === "pull" && input.pull) drawPullTitle(r, input.pull, input.pull.side === 0 ? A : B, input.pull.side === 0 ? ca : cb, m, W, inner);
+  else {
   const one = `${A} vs ${B}`;
   const oneW = width(display, one, m.titleMax);
   const oneSize = Math.min(m.titleMax, (m.titleMax * inner) / oneW);
-  const block = m.titleBottom - m.titleTop;
   if (oneSize >= m.titleMax * 0.62) {
     const sz = oneSize;
     const total = width(display, one, sz);
@@ -259,6 +321,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
       text(r, display, f.text, m.centered ? (W - f.w) / 2 : m.pad, y - f.size * 0.12, f.size, f.c);
     }
   }
+  }
 
   // Side columns: emoji, name, current total — A on the left, B on the right.
   const colW = (inner - m.pad) / 2;
@@ -271,9 +334,13 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
     const ax = (w: number) =>
       m.centered ? side.x + (colW - w) / 2 : side.align === "left" ? side.x : side.x + colW - w;
     if (side.e) r.image(side.e, ax(m.emoji), m.emojiY, m.emoji, m.emoji);
-    const won = input.kind === "result" && input.winner === i;
-    if (won) {
-      const label = "WINNER";
+    const label =
+      input.kind === "result" && input.winner === i
+        ? "WINNER"
+        : input.kind === "pull" && input.pull?.side === i
+          ? `+${usd(input.pull.count * 100)}`
+          : null;
+    if (label) {
       const ls = m.name * 0.5;
       const lw = width(mono, label, ls) + ls * 1.4;
       let bx = ax(lw),
@@ -336,7 +403,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
 
   // Call to action + domain.
   const cta =
-    input.kind === "live"
+    input.kind !== "result"
       ? "Pull your side →"
       : `Final totals · ${input.pullers ?? 0} puller${input.pullers === 1 ? "" : "s"} · Pull your side today`;
   const ct = fit(display, cta, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);

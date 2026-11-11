@@ -2,7 +2,9 @@
 // Browser callbacks (Dodo overlay, PayGlocal drawer) only prompt an earlier check; they never decide the outcome.
 import type { Side } from "@/lib/tugg.functions";
 
-export type ReceiptLine = { matchupId: string; slug: string; title: string; sides: Side[]; sideId: string; pulls: number; totalA: number; totalB: number };
+/** `pull` is the public pull id plus the round totals right after it, for the personal share card. */
+export type ReceiptPull = { id: string; totalA: number; totalB: number };
+export type ReceiptLine = { matchupId: string; slug: string; title: string; sides: Side[]; sideId: string; pulls: number; totalA: number; totalB: number; pull?: ReceiptPull | null | undefined };
 export type PaymentReceipt = { amountCents: number; pulls: number; refundedPulls: number; lines: ReceiptLine[]; siteUrl: string };
 export type PaymentResult = { status: string; quantity: number; refundedPulls: number; receipt?: PaymentReceipt | null | undefined };
 
