@@ -33,7 +33,7 @@ const DASH = mix(SITE_COLORS["muted-foreground"], 0.5, INNER);
 const LAYOUT: Record<CardSize, { mx: number; my: number; uMax: number; cols: 2 | 4; headline: number; lines: number; brand: number; brandBelow: boolean }> = {
   link: { mx: 36, my: 28, uMax: 1.6, cols: 4, headline: 34, lines: 2, brand: 13, brandBelow: false },
   square: { mx: 48, my: 44, uMax: 2.3, cols: 2, headline: 42, lines: 3, brand: 44, brandBelow: true },
-  story: { mx: 56, my: 120, uMax: 2.7, cols: 2, headline: 46, lines: 3, brand: 64, brandBelow: true },
+  story: { mx: 56, my: 120, uMax: 2.7, cols: 2, headline: 50, lines: 3, brand: 64, brandBelow: true },
 };
 
 type Seg = { t: string; f: Font; c: RGBA };
@@ -139,7 +139,8 @@ function layout(f: ReturnType<typeof getFonts>, facts: Facts, size: CardSize, ca
   // Headline (font-display text-2xl font-extrabold leading-tight, -0.03em), larger here so it reads at a glance.
   {
     let hs = L.headline * u;
-    const ls = -0.03;
+    // The site sets h3 at -0.03em on a small optical size; the large 96pt cut drawn here is already tighter.
+    const ls = -0.012;
     let lines = wrap([{ t: facts.headline, f: f.display, c: FG }], hs, innerW, L.lines, ls);
     // Never cut the headline: shrink until it fits on the allowed lines.
     while (hs > 18 * u && (lines.some((l) => l.some((s) => s.t.endsWith("…"))) || lines.length > L.lines)) {
@@ -245,6 +246,8 @@ function drawRope(r: Raster, x: number, top: number, w: number, h: number, u: nu
   r.roundRect(fx - 2 * u, gTop + 20 * u, 4 * u, 40 * u, 2 * u, FG);
 }
 
+const nb = (s: string) => (s.length <= 16 ? s.replace(/ /g, "\u00a0") : s);
+
 export async function renderPullCard(input: CardInput, size: CardSize): Promise<Uint8Array> {
   const pull = input.pull!;
   const [W, H] = CARD_SIZES[size];
@@ -273,8 +276,9 @@ export async function renderPullCard(input: CardInput, size: CardSize): Promise<
     emojiB,
     pos: ropePosition(input.a.cents, input.b.cents),
     summary: {
+      // Non-breaking spaces keep "Ronaldo $25" and "Messi all-time $25" together when the line wraps.
       strong: `${name} now ${usd(pulled.cents)} `,
-      rest: `in today's round vs ${otherName} ${usd(other.cents)} · ${name} all-time ${usd(pull.allTimeCents)}`,
+      rest: `in today's round vs ${otherName}\u00a0${usd(other.cents)} · ${nb(name)}\u00a0all-time\u00a0${usd(pull.allTimeCents)}`,
     },
   };
 
