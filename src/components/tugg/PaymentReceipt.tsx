@@ -22,7 +22,10 @@ function LineResult({ line, siteUrl }: { line: ReceiptLine; siteUrl: string }) {
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{line.title}</p>
         <p className="font-semibold"><SideAvatar side={side} /> {side?.name} · {line.pulls} {line.pulls === 1 ? "pull" : "pulls"}</p>
       </div>
-      <ShareButton siteUrl={siteUrl} m={{ slug: line.slug, title: line.title, sides: line.sides, a: line.totalA, b: line.totalB }} />
+      <ShareButton siteUrl={siteUrl} m={line.pull && side
+        // The personal pull card: a permanent snapshot of what this buyer did.
+        ? { slug: line.slug, title: line.title, sides: line.sides, a: line.pull.totalA, b: line.pull.totalB, pull: { id: line.pull.id, count: line.pulls, sideName: side.name } }
+        : { slug: line.slug, title: line.title, sides: line.sides, a: line.totalA, b: line.totalB }} />
     </div>
     <div className="mt-2"><RopeMove line={line} /></div>
     <p className="mt-1 text-sm text-muted-foreground">
