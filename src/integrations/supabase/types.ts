@@ -824,6 +824,8 @@ export type Database = {
           environment: string
           id: string
           matchup_id: string
+          round_a_after_cents: number | null
+          round_b_after_cents: number | null
           round_id: string
           shout_out: string | null
           side_id: string
@@ -838,6 +840,8 @@ export type Database = {
           environment?: string
           id?: string
           matchup_id: string
+          round_a_after_cents?: number | null
+          round_b_after_cents?: number | null
           round_id: string
           shout_out?: string | null
           side_id: string
@@ -852,6 +856,8 @@ export type Database = {
           environment?: string
           id?: string
           matchup_id?: string
+          round_a_after_cents?: number | null
+          round_b_after_cents?: number | null
           round_id?: string
           shout_out?: string | null
           side_id?: string
@@ -1324,6 +1330,19 @@ export type Database = {
       tugg_dodo_summary: { Args: never; Returns: Json }
       tugg_payglocal_funnel: { Args: never; Returns: Json }
       tugg_payglocal_summary: { Args: never; Returns: Json }
+      tugg_pull_card: {
+        Args: { p_live: boolean; p_pull: string }
+        Returns: {
+          amount_cents: number
+          display_name: string
+          id: string
+          matchup_id: string
+          round_starts_at: string
+          side_id: string
+          total_a_cents: number
+          total_b_cents: number
+        }[]
+      }
       tugg_recent_pulls: {
         Args: { p_limit?: number; p_live: boolean; p_matchup?: string }
         Returns: {
