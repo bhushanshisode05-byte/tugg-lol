@@ -7,6 +7,7 @@ import { Raster, hex, flattenCommands, encodePng, decodePng, type RGBA } from ".
 import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
+import { emojiCode, twemojiUrl } from "@/lib/twemoji";
 
 // Live and result card palette. These cards keep their established colours so their cached images stay valid;
 // the personal pull card uses the site's real tokens from ./theme instead.
@@ -39,21 +40,15 @@ export function getFonts() {
 }
 
 const emojiCache = new Map<string, Awaited<ReturnType<typeof decodePng>>>();
-export function emojiCode(emoji: string) {
-  const cps = Array.from(emoji.trim()).map((c) => c.codePointAt(0)!.toString(16));
-  const zwj = cps.includes("200d");
-  return cps.filter((c) => zwj || c !== "fe0f").join("-");
-}
+export { emojiCode };
 async function loadEmoji(emoji: string) {
   const code = emojiCode(emoji);
-  if (!code || !/^[0-9a-f-]+$/.test(code)) return null;
+  const url = twemojiUrl(emoji, "png");
+  if (!url) return null;
   if (emojiCache.has(code)) return emojiCache.get(code) ?? null;
   let img: Awaited<ReturnType<typeof decodePng>> = null;
   try {
-    const res = await fetch(
-      `https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/${code}.png`,
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
     if (res.ok) img = await decodePng(new Uint8Array(await res.arrayBuffer()));
   } catch {
     img = null;

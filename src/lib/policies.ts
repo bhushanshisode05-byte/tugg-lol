@@ -101,7 +101,7 @@ export const policySections = {
       { title: "Information we use", text: supportAnswers[6].text },
       {
         title: "Why we use it",
-        text: "We use this information to fulfill purchases, moderate submissions, show public rivalry results, reply to support requests, prevent abuse, and investigate payment errors. Payment and hosting providers may process information outside your country.",
+        text: "We use this information to fulfill purchases, moderate submissions, show public rivalry results, reply to support requests, prevent abuse, and investigate payment errors. Payment and hosting providers may process information outside your country. Pages load fonts and emoji images from public content networks (Google Fonts and jsDelivr), which receive your IP address and browser details to deliver those files.",
       },
       {
         title: "Your checkout email",
@@ -141,6 +141,10 @@ export const policySections = {
       {
         title: "Payments and content",
         text: "{{providerProcesses}} for Tugg. Brands, teams, and places named in matchups are not sponsors or partners unless explicitly stated. Tugg does not claim ownership of their names.",
+      },
+      {
+        title: "Emoji artwork",
+        text: "Side emoji on Tugg pages and share images are Twemoji graphics by Twitter, Inc. and other contributors (jdecked/twemoji), licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/. Tugg shows them resized but otherwise unchanged.",
       },
     ],
   },
