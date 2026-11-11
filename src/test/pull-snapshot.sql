@@ -32,6 +32,8 @@ BEGIN
   SELECT pg_get_function_result('public.tugg_pull_card(boolean,uuid)'::regprocedure) INTO cols;
   IF cols ~* '(session|email|payment|checkout|country|environment|shout)' THEN RAISE EXCEPTION 'private column in public read: %', cols; END IF;
   -- Derived fallback for a pull whose snapshot is missing.
+  -- (One test transaction gives every pull the same now(); real pulls commit separately, so spread them out.)
+  UPDATE pulls SET created_at = created_at + interval '1 second' * substring(stripe_session_id from 6)::int WHERE matchup_id=m;
   UPDATE pulls SET round_a_after_cents=NULL, round_b_after_cents=NULL WHERE id=p2;
   SELECT * INTO c FROM tugg_pull_card(false, p2);
   IF c.total_a_cents <> 500 OR c.total_b_cents <> 2500 THEN RAISE EXCEPTION 'derived fallback wrong: % %', c.total_a_cents, c.total_b_cents; END IF;
