@@ -53,8 +53,14 @@ export const getImmediatePayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     if (config().paymentProvider === "dodo") {
-      const d=await db.from("dodo_orders").select("status,quantity,basket_refund_cents").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
-      return d.data ? { status:d.data.status, quantity:d.data.quantity, refundedPulls: Math.floor(d.data.basket_refund_cents/100) } : null;
+      // Public-safe columns only: the private buyer email is never selected here.
+      const d=await db.from("dodo_orders").select("id,status,quantity,basket_refund_cents,kind,expected_cents,side_id").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
+      if (!d.data) return null;
+      const result = { status:d.data.status, quantity:d.data.quantity, refundedPulls: Math.floor(d.data.basket_refund_cents/100) };
+      if (d.data.status !== "paid" || !d.data.side_id && d.data.kind !== "basket") return result;
+      // A receipt that cannot be built never hides the confirmed payment.
+      const receipt = await (await import("./payments/receipt.server")).dodoReceipt(db, d.data).catch(() => null);
+      return { ...result, receipt };
     }
     const r=await db.from("payglocal_orders").select("status,quantity").eq("id",data.orderId).eq("environment",config().paymentsEnv).single();
     return r.data ? { status:r.data.status, quantity:r.data.quantity, refundedPulls: 0 } : null;

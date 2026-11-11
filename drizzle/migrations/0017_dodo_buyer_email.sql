@@ -1,0 +1,3 @@
+ALTER TABLE public.dodo_orders ADD COLUMN buyer_email text CHECK (buyer_email IS NULL OR (char_length(buyer_email) <= 254 AND buyer_email !~ '[\r\n]' AND buyer_email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'));
+COMMENT ON COLUMN public.dodo_orders.buyer_email IS 'Private buyer email read from the verified Dodo payment (merchant of record). Service-only; used only to credit pulls to a person later. Never included in public pages, APIs, feeds, share images, leaderboards or Hall of Fame.';
+REVOKE ALL (buyer_email) ON public.dodo_orders FROM PUBLIC, anon, authenticated;

@@ -1,5 +1,14 @@
 # Tugg roadmap
 
+## Post-payment screen, receipt and private buyer email (2026-11-11, do not publish)
+- [x] Cause found: the page did confirm both real payments within ~3 s, but Dodo's own window (opened in "we handle the redirect" mode) was never closed, so it sat on its processing view; closing it then reset the message to "pending" with no further checks. Fixed both; reproduced with the previous screen in a test.
+- [x] Checks until paid/failed/expired/refunded (or review) with backoff 2 s → 15 s for 10 minutes, then a calm "still confirming, don't pay again" note with Check again; checks again when the tab comes back; network errors never show as failure.
+- [x] Receipt: amount, pulls, side, matchup, side's round and all-time totals, rope sliding from its earlier position, existing share button/images, reserved spot for future badges (empty). Verified in the preview on desktop and phone with the real $5 order from 02:12 UTC.
+- [x] Buyer email: confirmed Dodo returns customer.email on GET /payments/{id} (all three real sandbox payments); new private column on Dodo orders, captured from the verified payment only; anonymous and signed-in visitors now refused at the table; /privacy explains it.
+- [x] Tests: 369/369 across 39 files, incl. 79-second and 5-minute late confirmations, closing Dodo's window after confirmation, 10-minute give-up, network errors, email capture/leak checks.
+- [ ] Real phone purchase on the published site to see Dodo's window close itself and the receipt appear. Blocker: needs a publish (owner decision) and a test-card checkout.
+- [ ] Optional: fill in buyer emails for the three sandbox orders already paid (Dodo still has them). Blocker: owner decision; not done.
+
 ## Owner password reset fix (2026-11-06)
 - [x] Diagnosed 01:43–01:45 UTC failure from auth logs: leaked-password rejection, then a burned reset link, a reset-email cooldown, and finally "same as current password".
 - [x] Rejected passwords no longer burn the one-use reset link (retry within the same recovery session, held only in page memory).
