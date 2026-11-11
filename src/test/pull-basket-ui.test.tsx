@@ -5,6 +5,7 @@ vi.mock("@/lib/payments.functions", () => ({ getPaymentStatus: mocks.getPaymentS
 vi.mock("@/lib/basket-payments.functions", () => ({ buyPullBasket: mocks.buyPullBasket, listBasketMatchups: mocks.listBasketMatchups }));
 vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: mocks.buyImmediateBundle, getImmediatePayment: vi.fn(), recordPaymentFunnel: vi.fn(async () => {}), getCodeDropConfig: vi.fn(async () => ({ environment: "sandbox", codedropId: "" })) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
+vi.mock("@/components/tugg/ShareButton", () => ({ ShareButton: () => null }));
 vi.mock("@/components/tugg/Turnstile", () => ({ Turnstile: ({ onToken }: any) => <button onClick={() => onToken("public-turnstile-fixture")}>Mock security check</button> }));
 vi.mock("@/components/tugg/SideAvatar", () => ({ SideAvatar: () => null }));
 vi.mock("@/lib/payments/dodo-overlay", () => ({ openDodoOverlay: vi.fn(async () => true) }));

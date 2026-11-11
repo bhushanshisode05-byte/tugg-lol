@@ -10,6 +10,7 @@ vi.mock("@/lib/payments.functions", () => mocks);
 vi.mock("@/lib/immediate-payments.functions", () => ({ buyImmediateBundle: vi.fn(), getImmediatePayment: vi.fn(), recordPaymentFunnel: vi.fn(async()=>{}), getCodeDropConfig: vi.fn(async()=>({environment:"sandbox",codedropId:""})) }));
 vi.mock("@/lib/basket-payments.functions", () => ({ buyPullBasket: vi.fn(), listBasketMatchups: vi.fn(async()=>[]) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
+vi.mock("@/components/tugg/ShareButton", () => ({ ShareButton: () => null }));
 vi.mock("@/components/tugg/Turnstile", () => ({
   Turnstile: ({ onToken }: any) => (
     <button onClick={() => onToken("public-turnstile-fixture")}>Mock security check</button>
