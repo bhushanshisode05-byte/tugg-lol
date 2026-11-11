@@ -25,7 +25,7 @@
 - Daily jobs (recap, AI generator) run through the managed-schedule route /api/public/jobs/daily and lock once per UTC day in job_runs; AI 402/403 pauses them in job_state. Why: no duplicate runs or runaway AI spend.
 - Recap summaries are built in code from stored facts; AI only writes prose from those facts. Why: numbers can never be invented.
 - Turnstile tokens are verified server-side (src/lib/turnstile.server.ts) with a per-operation action before any side effect, failing closed; all widgets share public src/lib/turnstile-config.ts, optionally overridden by VITE_TURNSTILE_SITE_KEY, with an existing server-function fallback for empty configuration. Why: widget alone is not protection and public keys are not secrets.
-- Share images render in pure JS (src/lib/og) at /api/public/og/*; live/result URLs carry a cardVersion token, immutable only on match; pull cards are permanent snapshots. Why: no native image libs at the edge; caches must never show an old score.
+- Share images render in pure JS (src/lib/og); live/result URLs carry a cardVersion token, immutable only on match; pull cards are snapshots. Why: no edge image libs; no stale scores.
 - Native sharing uses a synchronous tap-time call with a visibility-preloaded story Blob; clipboard runs without blocking the sheet, unsupported files use text-only sharing, and errors use the shared download fallback. Why: preserve user activation and avoid app-specific menus while logging only safe error names.
 - SEO surfaces (sitemap via route staticData.sitemap, /feeds/*, llms.txt, IndexNow after the daily recap) read only public data. Why: crawlers must never see private fields.
 
