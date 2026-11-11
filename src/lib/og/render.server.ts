@@ -107,14 +107,6 @@ export function drawable(f: Pick<Font, "charToGlyphIndex">, s: string) {
   return Array.from(s).every((ch) => /\s/.test(ch) || f.charToGlyphIndex(ch) > 0);
 }
 
-type Seg = [string, RGBA];
-function segments(r: Raster, f: Font, segs: Seg[], x: number, y: number, size: number) {
-  for (const [seg, c] of segs) {
-    text(r, f, seg, x, y, size, c);
-    x += width(f, seg, size);
-  }
-}
-
 type Metrics = {
   pad: number;
   header: number;
