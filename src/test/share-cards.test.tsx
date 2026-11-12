@@ -221,7 +221,7 @@ describe("every share card's colours are the site's real tokens", () => {
   const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const wash = (side: string) => rgb(SITE_COLORS.background).map((v, i) => v + (rgb(side)[i]! - v) * 0.13);
   const near = (got: number[], want: number[]) => got.forEach((v, i) => expect(Math.abs(v - want[i]!)).toBeLessThanOrEqual(2));
-  const sides = { a: { ...messi, emoji: null, cents: 1000 }, b: { ...ronaldo, emoji: null, cents: 1000 } } as const;
+  const sides = { a: { ...messi, emoji: "", cents: 1000 }, b: { ...ronaldo, emoji: "", cents: 1000 } } as const;
   const cards: Record<"live" | "result", CardInput> = {
     live: { kind: "live", title: "Messi vs Ronaldo", day: "2026-11-16", period: "week", ...sides } as CardInput,
     result: { kind: "result", title: "Messi vs Ronaldo", day: "2026-11-16", period: "week", winner: 0, pullers: 3, ...sides } as CardInput,
