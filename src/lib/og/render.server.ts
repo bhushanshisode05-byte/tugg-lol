@@ -8,16 +8,16 @@ import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { emojiArtUrl, emojiCode } from "@/lib/emoji-art";
+import { SITE_COLORS } from "./theme";
 
-// Live and result card palette. These cards keep their established colours so their cached images stay valid;
-// the personal pull card uses the site's real tokens from ./theme instead.
-const BG = "#111218";
-const FG = "#f6f6ee";
-const MUTED = "#9fa1b3";
-const LIME = "#e2ff3d";
-const PINK = "#ff2e7a";
-const ROPE = "#d8b37a";
-const ROPE_DARK = "#a77f48";
+// Live and result card palette: the site's real tokens from ./theme, the same single source the pull card reads.
+const BG = SITE_COLORS.background;
+const FG = SITE_COLORS.foreground;
+const MUTED = SITE_COLORS["muted-foreground"];
+const LIME = SITE_COLORS.primary;
+const PINK = SITE_COLORS.accent;
+const ROPE = SITE_COLORS.rope;
+const ROPE_DARK = SITE_COLORS["rope-dark"];
 
 type Font = opentype.Font;
 let fonts: { display: Font; mono: Font; regular: Font; semibold: Font } | null = null;
@@ -124,7 +124,7 @@ type Metrics = {
   brand: number;
   centered: boolean;
 };
-const METRICS: Record<CardSize, Metrics> = {
+export const METRICS: Record<CardSize, Metrics> = {
   link: {
     pad: 56,
     header: 22,

@@ -70,7 +70,7 @@ export type CardInput = {
 export const PUBLIC_SITE = "https://tugg.lol";
 
 /** Bump when the drawing code changes so every versioned (immutable) image URL changes too. */
-export const CARD_RENDER_VERSION = 3; // 3: side emoji drawn as Noto Color Emoji (was Twemoji)
+export const CARD_RENDER_VERSION = 4; // 3: Noto Color Emoji (was Twemoji); 4: live/result cards use the site colour tokens
 /** Versioned URLs identify their content, so they may be cached for a year. */
 export const IMMUTABLE_CACHE = "public, max-age=31536000, s-maxage=31536000, immutable";
 /** Unversioned or out-of-date URLs still render current data but are only briefly cached. */

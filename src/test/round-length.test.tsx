@@ -107,17 +107,20 @@ describe("round names and boundaries", () => {
 });
 
 describe("share-image tokens", () => {
-  // Locked values. They changed once, on purpose, when side emoji moved from Twemoji to Noto (render version 3),
-  // so no year-cached card with the old artwork is ever served under a current URL.
+  // Locked values. They changed on purpose when side emoji moved from Twemoji to Noto (render version 3) and when
+  // live/result cards moved onto the site colour tokens (render version 4), so no year-cached card with old
+  // artwork or the old palette is ever served under a current URL.
   const liveDaily = { sides, round: { starts_at: "2026-11-11T00:00:00+00:00", total_a_cents: 0, total_b_cents: 2500, round_length: "daily" }, history: { rounds: 3, last: null } };
   const resultDaily = { id: "r", ends_at: "2026-11-12T00:00:00Z", starts_at: "2026-11-11T00:00:00Z", round_length: "daily", pullers: 3, winner_cents: 2500, loser_cents: 500, winner: sides[1], loser: sides[0] };
-  it("daily live and result tokens moved off the Twemoji-era values and are stable", () => {
+  it("daily live and result tokens moved off the Twemoji-era and old-palette values and are stable", () => {
     const live = cardVersion(matchupCardInput(liveDaily)!);
     const result = cardVersion(resultCardInput(resultDaily));
     expect(live).not.toBe("0-2500-g6b77v"); // Twemoji-era token
     expect(result).not.toBe("500-2500-1jf0wtw"); // Twemoji-era token
-    expect(live).toBe("0-2500-vuc9c4");
-    expect(result).toBe("500-2500-vw2pif");
+    expect(live).not.toBe("0-2500-vuc9c4"); // Noto with the old hand-copied palette
+    expect(result).not.toBe("500-2500-vw2pif"); // Noto with the old hand-copied palette
+    expect(live).toBe("0-2500-f0vz1l");
+    expect(result).toBe("500-2500-erfu5u");
   });
   it("a weekly round is named by its week and gets its own token", () => {
     const weekly = { ...liveDaily, round: { ...liveDaily.round, starts_at: "2026-11-12T00:00:30Z", round_length: "weekly" } };

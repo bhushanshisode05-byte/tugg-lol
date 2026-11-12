@@ -15,12 +15,12 @@ import { Route as MatchupImage } from "@/routes/api/public/og/m.$slug";
 import { Route as ResultImage } from "@/routes/api/public/og/r.$id";
 import { Route as PullImage } from "@/routes/api/public/og/p.$id";
 import {
-  IMMUTABLE_CACHE, SHORT_CACHE, cardDisplayName, cardVersion, matchupCardInput, matchupImagePath,
+  CARD_SIZES, type CardInput, type CardSize, IMMUTABLE_CACHE, SHORT_CACHE, cardDisplayName, cardVersion, matchupCardInput, matchupImagePath,
   PULL_CARD_DESIGN, pullHeadline, pullImagePath, receiptHeadline, resultCardInput, resultImagePath, versionedCache,
 } from "@/lib/og/card";
 import { SITE_COLORS, SITE_TOKENS, oklchToHex } from "@/lib/og/theme";
 import { decodePng } from "@/lib/og/raster";
-import { renderCard } from "@/lib/og/render.server";
+import { METRICS, renderCard } from "@/lib/og/render.server";
 import { shareImagePath, shareText } from "@/lib/share";
 import { PaymentReceipt } from "@/components/tugg/PaymentReceipt";
 
@@ -189,7 +189,7 @@ describe("receipt wiring", () => {
   });
 });
 
-describe("pull card colours are the site's real tokens", () => {
+describe("every share card's colours are the site's real tokens", () => {
   it("token values are copied verbatim from :root in src/styles.css", () => {
     const css = readFileSync("src/styles.css", "utf8");
     const root = css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {")));
@@ -208,6 +208,37 @@ describe("pull card colours are the site's real tokens", () => {
     const img = (await decodePng((await fetchImage(PullImage, pullImagePath(PULL_ID), { id: PULL_ID })).bytes))!;
     expect(Array.from(img.rgba.slice(0, 3))).toEqual([0x08, 0x09, 0x0d]);
   }, 30000);
+  it("the renderers define no colours of their own; theme.ts is the only palette", () => {
+    for (const f of ["src/lib/og/render.server.ts", "src/lib/og/pull-card.server.ts"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src).toContain('from "./theme"');
+      expect(src.match(/#[0-9a-f]{3,8}\b|rgba?\(|oklch\(/gi)).toBeNull();
+    }
+  });
+
+  // Sample known pixels of the live and result cards: background (under each side's 13% wash), the rope between
+  // two hatch marks, and the flag cloth. Equal totals put the flag at the centre, clear of the sampled rope.
+  const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const wash = (side: string) => rgb(SITE_COLORS.background).map((v, i) => v + (rgb(side)[i]! - v) * 0.13);
+  const near = (got: number[], want: number[]) => got.forEach((v, i) => expect(Math.abs(v - want[i]!)).toBeLessThanOrEqual(2));
+  const sides = { a: { ...messi, emoji: null, cents: 1000 }, b: { ...ronaldo, emoji: null, cents: 1000 } } as const;
+  const cards: Record<"live" | "result", CardInput> = {
+    live: { kind: "live", title: "Messi vs Ronaldo", day: "2026-11-16", period: "week", ...sides } as CardInput,
+    result: { kind: "result", title: "Messi vs Ronaldo", day: "2026-11-16", period: "week", winner: 0, pullers: 3, ...sides } as CardInput,
+  };
+  for (const kind of ["live", "result"] as const)
+    for (const size of Object.keys(CARD_SIZES) as CardSize[])
+      it(`the ${kind} card at ${size} size draws background, rope and flag in the site tokens`, async () => {
+        const img = (await decodePng(await renderCard(cards[kind], size)))!;
+        const [W, H] = CARD_SIZES[size];
+        const m = METRICS[size], t = m.rope;
+        const px = (x: number, y: number) => { const i = (Math.round(y) * W + Math.round(x)) * 4; return Array.from(img.rgba.slice(i, i + 3)); };
+        near(px(2, H - 3), wash(messi.color));
+        near(px(W - 3, H - 3), wash(ronaldo.color));
+        near(px(m.pad + t + t * 1.5, m.ropeY), rgb(SITE_COLORS.rope));
+        near(px(m.pad + t + t * 1.7, m.ropeY), rgb(SITE_COLORS.rope));
+        near(px(W / 2 + t * 0.5, m.ropeY - t * 2.2 + t * 0.55), rgb(SITE_COLORS.accent));
+      }, 30000);
 });
 
 describe("no private field can reach an image", () => {

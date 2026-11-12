@@ -180,3 +180,4 @@
 - [ ] Real-phone native sheet and installed-app image/text handoff (requires a real phone).
 - [x] Redesign the personal pull share card to mirror the on-screen receipt (real site colours, three sizes, story/square two-by-two fields); live and result cards unchanged; do not publish.
 - [x] Side emoji on the website drawn as the same Twemoji artwork as share cards (unpublished)
+- [x] Live and result cards use the site colour tokens like the pull card (render version 4; unpublished)
