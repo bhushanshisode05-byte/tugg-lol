@@ -22,7 +22,9 @@ export function lastRound(m: M) {
   const last = m.history?.last;
   if (!last) return null;
   const [A, B] = m.sides;
-  const name = closedRoundName(last.round_length, last.starts_at, last.ends_at);
+  // A daily round is labelled by its closing date elsewhere; say "ended" so it never reads as today's round.
+  const closed = closedRoundName(last.round_length, last.starts_at, last.ends_at);
+  const name = last.round_length === "weekly" ? closed : `ended ${closed}`;
   const a = last.total_a_cents, b = last.total_b_cents;
   const winner = a + b > 0 && last.winner_side_id ? m.sides.find((s) => s.id === last.winner_side_id) : undefined;
   const result = winner

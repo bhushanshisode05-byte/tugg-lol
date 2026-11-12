@@ -2,6 +2,7 @@ import { Output } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayRunIdFetch } from "./ai/run-id.ts";
 import { config, liveOnly, moderate, slugify } from "./server-utils.server";
+import { roundLengthOf, type RoundLength } from "./rounds";
 
 export const AI_DAILY = 3;
 export const AI_ACTIVE_CAP = 30;
@@ -171,20 +172,50 @@ export type RecapFacts = {
   total_cents: number;
   pulls: number;
   countries: { country: string; pulls: number; cents: number }[];
-  rounds: { title: string; slug: string; a: string; b: string; a_cents: number; b_cents: number; pullers: number; winner: string | null; note: string | null }[];
+  /** Rounds that closed at the end of this day (00:00 UTC), with their final totals. */
+  rounds: { title: string; slug: string; a: string; b: string; a_cents: number; b_cents: number; pullers: number; winner: string | null; note: string | null; length?: RoundLength }[];
+  /** This day's pulls per matchup, whatever round they belong to (rounds may still be running). Absent on older recaps. */
+  activity?: { title: string; slug: string; a: string; b: string; a_cents: number; b_cents: number; pulls: number }[];
 };
 
 const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 /** Deterministic, quotable summary built only from stored facts. */
+/** Rounds that closed with a winner and real money, biggest first. */
+export const recapChampions = (f: RecapFacts) =>
+  f.rounds.filter((r) => r.winner && r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
+
+/** That day's most-pulled ropes: per-day activity when stored, otherwise (older recaps) the closed rounds. */
+export const recapActivity = (f: RecapFacts) =>
+  (f.activity ?? f.rounds.map((r) => ({ title: r.title, slug: r.slug, a: r.a, b: r.b, a_cents: r.a_cents, b_cents: r.b_cents, pulls: 0 })))
+    .filter((r) => r.a_cents + r.b_cents > 0)
+    .sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
+
+/**
+ * Deterministic, quotable summary built only from stored facts. Published every day whatever the round length:
+ * the day's pulls across the site, plus any rounds (weekly or daily) that closed at the end of that day.
+ */
 export function recapSummary(f: RecapFacts) {
   const date = new Date(`${f.day}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-  if (!f.pulls) return `On ${date} (UTC), there was no activity on Tugg: no pulls were made, and all ${f.rounds.length} rounds closed empty at 00:00 UTC.`;
-  const active = f.rounds.filter((r) => r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
-  const big = active[0];
-  const parts = [`On ${date} (UTC), Tugg players made ${f.pulls} pull${f.pulls === 1 ? "" : "s"} totalling ${usd(f.total_cents)} across ${active.length} matchup${active.length === 1 ? "" : "s"}.`];
-  if (big) parts.push(`The biggest rope was ${big.title} at ${usd(big.a_cents + big.b_cents)}${big.winner ? `, won by ${big.winner}` : ""}.`);
-  if (f.countries.length) parts.push(`Pulls came from ${f.countries.length} countr${f.countries.length === 1 ? "y" : "ies"}.`);
+  const active = recapActivity(f);
+  const champs = recapChampions(f);
+  const parts: string[] = [];
+  if (!f.pulls) parts.push(`On ${date} (UTC), there was no activity on Tugg: no pulls were made.`);
+  else {
+    parts.push(`On ${date} (UTC), Tugg players made ${f.pulls} pull${f.pulls === 1 ? "" : "s"} totalling ${usd(f.total_cents)} across ${active.length} matchup${active.length === 1 ? "" : "s"}.`);
+    const big = active[0];
+    if (big) parts.push(`The most pulled rope was ${big.title} at ${usd(big.a_cents + big.b_cents)}.`);
+  }
+  if (f.rounds.length) {
+    const kind = f.rounds.every((r) => r.length === "weekly") ? "weekly round" : f.rounds.some((r) => r.length === "weekly") ? "round (weekly and daily)" : "round";
+    const n = f.rounds.length;
+    const noun = n === 1 ? kind : kind === "round (weekly and daily)" ? "rounds (weekly and daily)" : `${kind}s`;
+    if (champs.length) {
+      const named = champs.slice(0, 3).map((r) => `${r.winner} won ${r.title} ${usd(Math.max(r.a_cents, r.b_cents))} to ${usd(Math.min(r.a_cents, r.b_cents))}`);
+      parts.push(`${n} ${noun} closed at 00:00 UTC: ${named.join("; ")}${champs.length > 3 ? `; and ${champs.length - 3} more` : ""}.`);
+    } else parts.push(`${n} ${noun} closed at 00:00 UTC without pulls.`);
+  }
+  if (f.pulls && f.countries.length) parts.push(`Pulls came from ${f.countries.length} countr${f.countries.length === 1 ? "y" : "ies"}.`);
   return parts.join(" ");
 }
 
@@ -193,16 +224,22 @@ export async function collectFacts(day: string): Promise<RecapFacts> {
   const live = liveOnly();
   const from = new Date(`${day}T00:00:00Z`);
   const to = new Date(from.getTime() + 86400000);
-  const [{ data: dayAgg }, { data: rounds }] = await Promise.all([
+  const [{ data: dayAgg }, { data: rounds }, { data: dayM }] = await Promise.all([
     db.rpc("tugg_day_facts", { p_live: live, p_from: from.toISOString(), p_to: to.toISOString() }),
     db
       .from("rounds")
-      .select("id,winner_side_id,result_note,matchups!inner(slug,title,status,sides(id,position,name))")
+      .select("id,winner_side_id,result_note,round_length,matchups!inner(slug,title,status,sides(id,position,name))")
       .eq("status", "closed")
       .gte("ends_at", to.toISOString())
       .lt("ends_at", new Date(to.getTime() + 3600000).toISOString())
       .in("matchups.status", ["active", "retired"]),
+    db.rpc("tugg_day_matchups", { p_live: live, p_from: from.toISOString(), p_to: to.toISOString() }),
   ]);
+  const mids = (dayM ?? []).map((d: any) => d.matchup_id as string);
+  const { data: dayMeta } = mids.length
+    ? await db.from("matchups").select("id,slug,title,sides(position,name)").in("id", mids)
+    : { data: [] as any[] };
+  const meta = new Map((dayMeta ?? []).map((m: any) => [m.id, m]));
   const ids = (rounds ?? []).map((r) => r.id);
   const { data: tot } = ids.length ? await db.rpc("tugg_round_totals", { p_live: live, p_rounds: ids }) : { data: [] as any[] };
   const tm = new Map((tot ?? []).map((t: any) => [t.round_id, t]));
@@ -221,7 +258,14 @@ export async function collectFacts(day: string): Promise<RecapFacts> {
         pullers: t?.pullers ?? 0,
         winner: a_cents + b_cents > 0 ? sides.find((s: any) => s.id === r.winner_side_id)?.name ?? null : null,
         note: r.result_note,
+        length: roundLengthOf(r.round_length),
       };
+    }),
+    activity: (dayM ?? []).flatMap((d: any) => {
+      const m: any = meta.get(d.matchup_id);
+      if (!m) return [];
+      const sides = [...(m.sides ?? [])].sort((x: any, y: any) => x.position - y.position);
+      return [{ title: m.title, slug: m.slug, a: sides[0]?.name, b: sides[1]?.name, a_cents: Number(d.a_cents), b_cents: Number(d.b_cents), pulls: Number(d.pulls) }];
     }),
   };
 }
@@ -241,14 +285,15 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
 
   const facts = await collectFacts(day);
   const summary = recapSummary(facts);
-  let body: z.infer<typeof recapSchema> = { headline: facts.pulls ? `Yesterday on Tugg` : `A quiet day on Tugg`, paragraphs: [] };
-  if (facts.pulls && !(await paused("recap"))) {
-    const compact = { ...facts, rounds: facts.rounds.filter((r) => r.a_cents + r.b_cents > 0) };
+  const champs = recapChampions(facts);
+  let body: z.infer<typeof recapSchema> = { headline: facts.pulls ? `Yesterday on Tugg` : champs.length ? `Round winners crowned` : `A quiet day on Tugg`, paragraphs: [] };
+  if ((facts.pulls || champs.length) && !(await paused("recap"))) {
+    const compact = { ...facts, rounds: facts.rounds.filter((r) => r.a_cents + r.b_cents > 0), activity: recapActivity(facts) };
     try {
       body = await aiObject(
         "recap",
         recapSchema,
-        "Write a short, lively 'Yesterday on Tugg' recap (2–4 short paragraphs, plain English, a punchy headline). Amounts are in US cents: convert to dollars. Use ONLY names and numbers present in the JSON. Never invent numbers, people, quotes or matchups. Do not mention money being won or paid out — it's bragging rights only.",
+        "Write a short, lively 'Yesterday on Tugg' recap (2–4 short paragraphs, plain English, a punchy headline). Amounts are in US cents: convert to dollars. 'activity' is that day's pulls per matchup; those rounds may still be running, so never call them won. 'rounds' are rounds that closed at the end of that day ('length' is weekly or daily) with their final totals and winners. Use ONLY names and numbers present in the JSON. Never invent numbers, people, quotes or matchups. Do not mention money being won or paid out — it's bragging rights only.",
         JSON.stringify(compact),
       );
     } catch (e) {
@@ -257,9 +302,11 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
   }
   await db.from("recaps").upsert({ day, summary, body: body as any, facts: facts as any });
   await finish("recap", day, "done", { pulls: facts.pulls });
-  // Tell search engines what changed after the 00:00 UTC close (only on the public domain with a key).
+  // Every day, whatever the round length: tell search engines about the new dated recap and the pages that changed
+  // (only on the public domain with a key).
   const { pingIndexNow } = await import("./indexnow.server");
-  const changed = ["/", "/recap", `/recap/${day}`, "/leaderboards", "/hall-of-fame", "/stats", ...facts.rounds.flatMap((r) => [`/m/${r.slug}`, `/rivalries/${r.slug}`])];
+  const slugs = [...new Set([...facts.rounds, ...(facts.activity ?? [])].map((r) => r.slug))];
+  const changed = ["/", "/recap", `/recap/${day}`, "/leaderboards", "/hall-of-fame", "/stats", ...slugs.flatMap((s) => [`/m/${s}`, `/rivalries/${s}`])];
   const indexnow = await pingIndexNow(changed);
   await db.from("events").insert({ kind: "indexnow_ping", detail: { day, ...indexnow } });
   return { day, summary, indexnow };

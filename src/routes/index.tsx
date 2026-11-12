@@ -26,6 +26,7 @@ const CATEGORIES = [
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
+  loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery),
   head: ({ loaderData }) => {
     const cadence = cadenceSummary((loaderData?.matchups ?? []).flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
     return {
@@ -47,7 +48,6 @@ export const Route = createFileRoute("/")({
     ],
     };
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery),
   component: Home,
 });
 

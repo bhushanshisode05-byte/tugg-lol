@@ -402,11 +402,11 @@ function drawHistory(r: Raster, h: NonNullable<CardInput["history"]>, A: string,
     ? `Rounds won: ${A} ${h.winsA} ${dash} ${B} ${h.winsB} over ${h.rounds} round${h.rounds === 1 ? "" : "s"}`
     : "";
   const maxW = m.centered ? inner : inner * 0.92;
-  const y1 = m.ropeY - m.rope * 0.6;
+  const y1 = m.ropeY - m.rope;
   const l1 = fit(display, line1, maxW, m.pull * 0.95, m.pull * 0.45);
   text(r, display, l1.text, m.centered ? (W - l1.w) / 2 : m.pad, y1, l1.size, hex(FG));
   if (line2) {
     const l2 = fit(display, line2, maxW, m.header * 1.05, m.header * 0.6);
-    text(r, display, l2.text, m.centered ? (W - l2.w) / 2 : m.pad, y1 + l1.size * 1.3, l2.size, hex(MUTED));
+    text(r, display, l2.text, m.centered ? (W - l2.w) / 2 : m.pad, y1 + l1.size * 1.2, l2.size, hex(MUTED));
   }
 }

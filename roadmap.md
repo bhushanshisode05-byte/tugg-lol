@@ -1,5 +1,14 @@
 # Tugg roadmap
 
+## Weekly rounds and permanent all-time score (2026-11-12, do not publish)
+- [x] Round length setting: global default (weekly-ready) plus per-matchup override, each round remembers its own length; weekly rounds close Monday 00:00 UTC; daily still works.
+- [x] All-time score panel ("never resets") on matchup and rivalry pages; empty rounds lead with last round + all-time, on the page and the share card.
+- [x] Daily recap and IndexNow ping stay daily; weekly close adds champions; copy across site, feeds, llms.txt follows each matchup's length.
+- [x] Tests: 437 app tests, round-length SQL tests (weekly winner, Hall of Fame, tie-break, empty round, extension), 20-pull concurrency at a weekly close; existing payment SQL tests pass; daily share images byte-identical.
+- [ ] Switch the global default from daily to weekly. Blocker: owner publishes first (preview and tugg.lol share one database; live pages still say daily).
+- [ ] public/llms.txt still says payments are processed by Stripe. Blocker: owner decision on wording.
+- [ ] Check the new pages and cards on a real phone. Blocker: needs a publish (owner decision).
+
 ## Fresh share images and personal pull card (2026-11-11, do not publish)
 - [x] Live matchup, rivalry and result images and their link-preview tags carry a score token (?v=<A cents>-<B cents>-<fingerprint>); matching tokens are cached for a year, old or missing tokens still draw current data with a 60-second cache.
 - [x] Personal pull card at /api/public/og/p/<pull id> (link/square/story), first person or moderated display name, permanent snapshot of totals right after that pull; receipt Share uses it, matchup Share keeps the live card.

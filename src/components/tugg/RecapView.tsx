@@ -52,9 +52,12 @@ export function RecapView({ recap, archive }: { recap: Recap | null; archive: { 
 
 function Facts({ recap }: { recap: Recap }) {
   const f = recap.facts;
-  const active = (f.rounds ?? []).filter((r) => r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
-  if (!f.pulls) return null;
-  const cards = active.filter((r) => r.winner && recap.resultIds?.[r.slug]).slice(0, 6);
+  const rounds = f.rounds ?? [];
+  // Closed rounds with a winner (weekly or daily) and that day's most-pulled ropes, which may still be running.
+  const champs = rounds.filter((r) => r.winner && r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
+  const activity = (f.activity ?? rounds).filter((r) => r.a_cents + r.b_cents > 0).sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
+  if (!f.pulls && !champs.length) return null;
+  const cards = champs.filter((r) => recap.resultIds?.[r.slug]).slice(0, 6);
   return (
     <>
     {cards.length > 0 && (
@@ -71,29 +74,49 @@ function Facts({ recap }: { recap: Recap }) {
       </section>
     )}
     <div className="mt-8 grid gap-6 md:grid-cols-2">
-      <section className="rounded-xl border border-border p-4">
-        <h2 className="mb-2 font-bold">Results</h2>
-        <ul className="space-y-2 text-sm">
-          {active.slice(0, 10).map((r) => (
-            <li key={r.slug}>
-              <Link to="/m/$slug" params={{ slug: r.slug }} className="font-bold underline">{r.title}</Link>
-              <span className="block text-muted-foreground">
-                {r.a} {usd(r.a_cents)} · {r.b} {usd(r.b_cents)}{r.winner ? ` — ${r.winner} won` : ""}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section className="rounded-xl border border-border p-4">
-        <h2 className="mb-2 font-bold">Countries</h2>
-        {f.countries.length ? (
-          <ul className="space-y-1 text-sm">
-            {f.countries.map((c) => (
-              <li key={c.country} className="flex justify-between"><span>{c.country}</span><span className="font-mono">{c.pulls} pull{c.pulls === 1 ? "" : "s"}</span></li>
+      {champs.length > 0 && (
+        <section className="rounded-xl border border-border p-4">
+          <h2 className="mb-2 font-bold">Rounds closed at 00:00 UTC</h2>
+          <ul className="space-y-2 text-sm">
+            {champs.slice(0, 10).map((r) => (
+              <li key={r.slug}>
+                <Link to="/m/$slug" params={{ slug: r.slug }} className="font-bold underline">{r.title}</Link>
+                <span className="block text-muted-foreground">
+                  {r.winner} won {r.a} {usd(r.a_cents)} · {r.b} {usd(r.b_cents)}{r.length === "weekly" ? " · weekly round" : ""}
+                </span>
+              </li>
             ))}
           </ul>
-        ) : <p className="text-sm text-muted-foreground">No country data.</p>}
-      </section>
+        </section>
+      )}
+      {activity.length > 0 && (
+        <section className="rounded-xl border border-border p-4">
+          <h2 className="mb-2 font-bold">{f.activity ? "Most pulled that day" : "Results"}</h2>
+          <ul className="space-y-2 text-sm">
+            {activity.slice(0, 10).map((r) => (
+              <li key={r.slug}>
+                <Link to="/m/$slug" params={{ slug: r.slug }} className="font-bold underline">{r.title}</Link>
+                <span className="block text-muted-foreground">
+                  {r.a} {usd(r.a_cents)} · {r.b} {usd(r.b_cents)}
+                  {"winner" in r && r.winner ? ` — ${r.winner} won` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {f.pulls > 0 && (
+        <section className="rounded-xl border border-border p-4">
+          <h2 className="mb-2 font-bold">Countries</h2>
+          {f.countries.length ? (
+            <ul className="space-y-1 text-sm">
+              {f.countries.map((c) => (
+                <li key={c.country} className="flex justify-between"><span>{c.country}</span><span className="font-mono">{c.pulls} pull{c.pulls === 1 ? "" : "s"}</span></li>
+              ))}
+            </ul>
+          ) : <p className="text-sm text-muted-foreground">No country data.</p>}
+        </section>
+      )}
     </div>
     </>
   );
