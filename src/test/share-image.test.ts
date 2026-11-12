@@ -67,7 +67,7 @@ describe("share images", () => {
     const [r, g, b] = readable("#000000");
     expect(r + g + b).toBeGreaterThan(300);
   });
-  it("emoji file names follow Twemoji", () => {
+  it("emoji file codes follow Noto", () => {
     expect(emojiCode("🍕")).toBe("1f355");
     expect(emojiCode("❤️")).toBe("2764");
   });

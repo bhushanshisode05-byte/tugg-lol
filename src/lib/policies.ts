@@ -145,7 +145,7 @@ export const policySections = {
       },
       {
         title: "Emoji artwork",
-        text: "Side emoji on Tugg pages and share images are Twemoji graphics by Twitter, Inc. and other contributors (jdecked/twemoji), licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/. Tugg shows them resized but otherwise unchanged.",
+        text: "Side emoji on Tugg pages and share images are Noto Color Emoji artwork by Google LLC (googlefonts/noto-emoji), licensed under the Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0. Flag artwork comes from Noto’s region-flags set, which is in the public domain. Tugg shows them resized but otherwise unchanged.",
       },
     ],
   },

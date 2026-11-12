@@ -70,7 +70,7 @@ export type CardInput = {
 export const PUBLIC_SITE = "https://tugg.lol";
 
 /** Bump when the drawing code changes so every versioned (immutable) image URL changes too. */
-export const CARD_RENDER_VERSION = 2;
+export const CARD_RENDER_VERSION = 3; // 3: side emoji drawn as Noto Color Emoji (was Twemoji)
 /** Versioned URLs identify their content, so they may be cached for a year. */
 export const IMMUTABLE_CACHE = "public, max-age=31536000, s-maxage=31536000, immutable";
 /** Unversioned or out-of-date URLs still render current data but are only briefly cached. */
@@ -226,7 +226,7 @@ export const resultImagePath = (id: string, size: CardSize = "link", v?: string 
  * Bump when the pull card's design changes. Pull cards are permanent snapshots cached for a year, so the
  * design number is part of the URL; the route ignores it and always draws the current design.
  */
-export const PULL_CARD_DESIGN = 2;
+export const PULL_CARD_DESIGN = 3; // 3: Noto Color Emoji artwork
 /** Personal pull cards are permanent snapshots keyed by the public pull id; no score token needed. */
 export const pullImagePath = (pullId: string, size: CardSize = "link") =>
   `/api/public/og/p/${encodeURIComponent(pullId)}?size=${size}&d=${PULL_CARD_DESIGN}`;

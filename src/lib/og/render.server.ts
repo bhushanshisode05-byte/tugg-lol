@@ -7,7 +7,7 @@ import { Raster, hex, flattenCommands, encodePng, decodePng, type RGBA } from ".
 import { CARD_SIZES, type CardInput, type CardSize } from "./card";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
-import { emojiCode, twemojiUrl } from "@/lib/twemoji";
+import { emojiArtUrl, emojiCode } from "@/lib/emoji-art";
 
 // Live and result card palette. These cards keep their established colours so their cached images stay valid;
 // the personal pull card uses the site's real tokens from ./theme instead.
@@ -43,7 +43,7 @@ const emojiCache = new Map<string, Awaited<ReturnType<typeof decodePng>>>();
 export { emojiCode };
 async function loadEmoji(emoji: string) {
   const code = emojiCode(emoji);
-  const url = twemojiUrl(emoji, "png");
+  const url = emojiArtUrl(emoji, "png");
   if (!url) return null;
   if (emojiCache.has(code)) return emojiCache.get(code) ?? null;
   let img: Awaited<ReturnType<typeof decodePng>> = null;

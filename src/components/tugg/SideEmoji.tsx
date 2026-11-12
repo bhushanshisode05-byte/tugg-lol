@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { looksLikeEmoji, twemojiUrl } from "@/lib/twemoji";
+import { emojiArtUrl, looksLikeEmoji } from "@/lib/emoji-art";
 
 /**
- * A side's emoji drawn as the same Twemoji artwork the share cards use, sized in em so it sits like a character.
- * Falls back to the plain character when the emoji has no Twemoji file or the image fails to load.
+ * A side's emoji drawn as the same Noto Color Emoji artwork the share cards use, sized in em so it sits like a character.
+ * Falls back to the plain character when the emoji has no Noto file or the image fails to load.
  */
 export function SideEmoji({ emoji }: { emoji: string }) {
-  const url = emoji && looksLikeEmoji(emoji) ? twemojiUrl(emoji, "svg") : null;
+  const url = emoji && looksLikeEmoji(emoji) ? emojiArtUrl(emoji, "svg") : null;
   const [failed, setFailed] = useState<string | null>(null);
   const ref = useRef<HTMLImageElement>(null);
   useEffect(() => {
@@ -26,7 +26,7 @@ export function SideEmoji({ emoji }: { emoji: string }) {
       decoding="async"
       draggable={false}
       onError={() => setFailed(url)}
-      data-twemoji
+      data-emoji-art
       className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]"
     />
   );

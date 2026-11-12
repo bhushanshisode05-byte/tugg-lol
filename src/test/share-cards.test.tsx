@@ -123,8 +123,8 @@ describe("personal pull card", () => {
     expect(pullHeadline("Harry", 25, "Ronaldo")).toBe("Harry pulled 25 for Ronaldo");
   });
   it("pull card links carry the design number so a redesign never serves the old cached image", () => {
-    expect(PULL_CARD_DESIGN).toBe(2);
-    expect(pullImagePath(PULL_ID, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=2`);
+    expect(PULL_CARD_DESIGN).toBe(3);
+    expect(pullImagePath(PULL_ID, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=3`);
   });
   it("names that look private or are blank fall back to the first-person form", () => {
     expect(cardDisplayName("Harry")).toBe("Harry");
@@ -179,7 +179,7 @@ describe("receipt wiring", () => {
     const m = JSON.parse(container.querySelector("[data-share]")!.getAttribute("data-share")!);
     expect(m.pull).toEqual({ id: PULL_ID, count: 25, sideName: "Ronaldo" });
     expect([m.a, m.b]).toEqual([0, 2500]);
-    expect(shareImagePath(m, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=2`);
+    expect(shareImagePath(m, "story")).toBe(`/api/public/og/p/${PULL_ID}?size=story&d=3`);
   });
   it("without a recorded pull it falls back to the live matchup card", () => {
     const { container } = render(<PaymentReceipt receipt={receipt(null)} />);
