@@ -33,7 +33,7 @@ function Hall() {
     <Shell>
       <div className="mx-auto max-w-6xl px-4 py-10">
         <h1 className="font-display text-5xl font-extrabold">Hall of Fame</h1>
-        <p className="mt-2 text-muted-foreground">Every round winner, crowned at 00:00 UTC.</p>
+        <p className="mt-2 text-muted-foreground">Every round winner, crowned when each round closes at 00:00 UTC.</p>
         {data.cards.length ? (
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {data.cards.map((c) => <ResultCardView key={c.id} c={c} />)}
@@ -41,7 +41,7 @@ function Hall() {
         ) : (
           <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center">
             <p className="font-display text-2xl font-extrabold">No champions yet.</p>
-            <p className="mt-1 text-muted-foreground">The first winners are crowned when today's rounds close at 00:00 UTC.</p>
+            <p className="mt-1 text-muted-foreground">The first winners are crowned when the current rounds close at 00:00 UTC.</p>
             <Link to="/" className="mt-4 inline-block rounded-full bg-primary px-5 py-2 font-bold text-primary-foreground">Go pull a rope</Link>
           </div>
         )}

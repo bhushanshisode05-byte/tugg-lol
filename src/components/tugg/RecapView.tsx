@@ -29,7 +29,7 @@ export function RecapView({ recap, archive }: { recap: Recap | null; archive: { 
       ) : (
         <>
           <h1 className="mt-2 font-display text-4xl font-extrabold">No recap yet</h1>
-          <p className="mt-3 text-muted-foreground">The first recap appears shortly after the next 00:00 UTC round close.</p>
+          <p className="mt-3 text-muted-foreground">A recap of the previous day is published shortly after 00:00 UTC every day.</p>
         </>
       )}
       <DigestForm />

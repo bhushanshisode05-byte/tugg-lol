@@ -1,10 +1,12 @@
 // Post-payment confirmation: browser-side checking of a stored order until it reaches a real end state.
 // Browser callbacks (Dodo overlay, PayGlocal drawer) only prompt an earlier check; they never decide the outcome.
 import type { Side } from "@/lib/tugg.functions";
+import type { RoundLength } from "@/lib/rounds";
 
 /** `pull` is the public pull id plus the round totals right after it, for the personal share card. */
 export type ReceiptPull = { id: string; totalA: number; totalB: number };
-export type ReceiptLine = { matchupId: string; slug: string; title: string; sides: Side[]; sideId: string; pulls: number; totalA: number; totalB: number; pull?: ReceiptPull | null | undefined };
+/** `roundLength` is display-only: it words the round ("today's" or "this week's"). */
+export type ReceiptLine = { matchupId: string; slug: string; title: string; sides: Side[]; sideId: string; pulls: number; totalA: number; totalB: number; pull?: ReceiptPull | null | undefined; roundLength?: RoundLength | undefined };
 export type PaymentReceipt = { amountCents: number; pulls: number; refundedPulls: number; lines: ReceiptLine[]; siteUrl: string };
 export type PaymentResult = { status: string; quantity: number; refundedPulls: number; receipt?: PaymentReceipt | null | undefined };
 

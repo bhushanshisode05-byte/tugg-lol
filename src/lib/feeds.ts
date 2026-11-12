@@ -1,8 +1,9 @@
 import { usd } from "@/components/tugg/Rope";
 import { PUBLIC_SITE, cardVersion, matchupCardInput, matchupImagePath, resultCardInput, resultImagePath } from "@/lib/og/card";
+import { ROUND_LENGTH_SHORT, roundLengthOf, roundName } from "@/lib/rounds";
 
 export const FEED_HEADERS = { "Cache-Control": "public, max-age=300, s-maxage=300", "Access-Control-Allow-Origin": "*" };
-export const FEED_NOTE = "Real Tugg data only. Amounts are US dollars actually paid. Rounds close daily at 00:00 UTC. No prizes or payouts.";
+export const FEED_NOTE = `Real Tugg data only. Amounts are US dollars actually paid. ${ROUND_LENGTH_SHORT} All-time totals never reset. No prizes or payouts.`;
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!);
 
@@ -21,7 +22,7 @@ export function rss(title: string, path: string, description: string, items: Rss
 }
 export const json = (data: unknown) => Response.json(data, { headers: FEED_HEADERS });
 
-type HomeM = { slug: string; title: string; category: string; source: string; created_at: string; sides: { name: string; emoji: string; color: string; position: number; image_id?: string | null; image_status?: string | null }[]; round: { starts_at: string; ends_at: string; total_a_cents: number; total_b_cents: number; pullers: number } | null };
+type HomeM = { slug: string; title: string; category: string; source: string; created_at: string; sides: { id?: string; name: string; emoji: string; color: string; position: number; image_id?: string | null; image_status?: string | null; all_time_cents?: number; wins?: number }[]; round: { starts_at: string; ends_at: string; total_a_cents: number; total_b_cents: number; pullers: number; round_length?: string } | null; history?: { rounds: number; last: { winner_side_id: string | null; note: string | null; total_a_cents: number; total_b_cents: number } | null } | null };
 export function matchupItems(ms: HomeM[]) {
   return ms.map((m) => {
     const [a, b] = m.sides;
@@ -36,15 +37,16 @@ export function matchupItems(ms: HomeM[]) {
       added_by: m.source === "ai" ? "Tugg" : m.source === "seed" ? "Tugg" : "player",
       created_at: m.created_at,
       round: m.round
-        ? { starts_at: m.round.starts_at, ends_at: m.round.ends_at, pullers: m.round.pullers, a: { name: a?.name, dollars: ra / 100 }, b: { name: b?.name, dollars: rb / 100 } }
+        ? { length: roundLengthOf(m.round.round_length), name: roundName(roundLengthOf(m.round.round_length), m.round.starts_at), starts_at: m.round.starts_at, ends_at: m.round.ends_at, pullers: m.round.pullers, a: { name: a?.name, dollars: ra / 100 }, b: { name: b?.name, dollars: rb / 100 } }
         : null,
+      all_time: { a: { name: a?.name, dollars: (a?.all_time_cents ?? 0) / 100, round_wins: a?.wins ?? 0 }, b: { name: b?.name, dollars: (b?.all_time_cents ?? 0) / 100, round_wins: b?.wins ?? 0 }, rounds_completed: m.history?.rounds ?? 0 },
       summary: `${a?.name} ${usd(ra)} vs ${b?.name} ${usd(rb)} in the current round.`,
     };
   });
 }
 
 type CardSideLite = { name: string; emoji: string; color: string; image_id?: string | null; image_status?: string | null };
-type Card = { id: string; slug: string; title: string; ends_at: string; winner: CardSideLite & { position: number }; loser: CardSideLite; winner_cents: number; loser_cents: number; pullers: number; note: string | null };
+type Card = { id: string; slug: string; title: string; ends_at: string; starts_at?: string | undefined; round_length?: string | undefined; winner: CardSideLite & { position: number }; loser: CardSideLite; winner_cents: number; loser_cents: number; pullers: number; note: string | null };
 export function resultItems(cards: Card[]) {
   return cards.map((c) => ({
     id: c.id,
@@ -53,6 +55,8 @@ export function resultItems(cards: Card[]) {
     url: `${PUBLIC_SITE}/results/${c.id}`,
     image: `${PUBLIC_SITE}${resultImagePath(c.id, "link", cardVersion(resultCardInput(c)))}`,
     round_day_utc: new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
+    round_length: roundLengthOf(c.round_length),
+    round_name: c.round_length === "weekly" && c.starts_at ? roundName("weekly", c.starts_at) : new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
     ended_at: c.ends_at,
     winner: c.winner.name,
     loser: c.loser.name,

@@ -3,10 +3,14 @@ import { Link } from "@tanstack/react-router";
 import type { ResultCard } from "@/lib/tugg.functions";
 import { cardVersion, resultCardInput, resultImagePath } from "@/lib/og/card";
 import { usd } from "./Rope";
+import { roundName } from "@/lib/rounds";
 
 /** Round result card: the same generated image used for sharing, plus readable text for everyone. */
 export function ResultCardView({ c, big }: { c: ResultCard; big?: boolean }) {
-  const date = new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10);
+  const date =
+    c.round_length === "weekly" && c.starts_at
+      ? roundName("weekly", c.starts_at)
+      : new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10);
   return (
     <figure
       className={`overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-pop ${big ? "" : ""}`}

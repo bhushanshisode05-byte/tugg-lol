@@ -8,6 +8,7 @@ import { getHome, type Matchup } from "@/lib/tugg.functions";
 import { Shell } from "@/components/tugg/Shell";
 import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
+import { cadenceSummary, roundLengthOf } from "@/lib/rounds";
 import { useLive } from "@/hooks/use-live";
 
 const homeQuery = queryOptions({ queryKey: ["home"], queryFn: () => getHome() });
@@ -25,24 +26,27 @@ const CATEGORIES = [
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
-  head: () => ({
+  head: ({ loaderData }) => {
+    const cadence = cadenceSummary((loaderData?.matchups ?? []).flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
+    return {
     meta: [
       { title: "Tugg — Pay to pull. The world's rivalry rope." },
       {
         name: "description",
         content:
-          "Pick a side in rivalries like Cursor vs Claude Code or Pizza vs Burgers and pull the rope with real dollars. 24-hour rounds, bragging rights only.",
+          `Pick a side in rivalries like Cursor vs Claude Code or Pizza vs Burgers and pull the rope with real dollars. ${cadence} Bragging rights only.`,
       },
       { property: "og:title", content: "Tugg — Pay to pull the rope for your side" },
       {
         property: "og:description",
         content:
-          "A global pay-to-pull rivalry game. Every dollar moves the rope. Rounds end at 00:00 UTC.",
+          `A global pay-to-pull rivalry game. Every dollar moves the rope. ${cadence}`,
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-  }),
+    };
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery),
   component: Home,
 });
@@ -80,6 +84,7 @@ function Home() {
     .filter((m) => !q || m.title.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => total(b) - total(a));
 
+  const cadence = cadenceSummary(data.matchups.flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
   const sideName = new Map(data.matchups.flatMap((m) => m.sides.map((s) => [s.id, s] as const)));
 
   return (
@@ -94,8 +99,8 @@ function Home() {
           <span className="text-primary">Pick a side.</span>
         </h1>
         <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-          Every dollar drags the rope toward your team. Rounds end at 00:00 UTC. Winners get a
-          badge. Nobody gets paid. That's the fun.
+          Every dollar drags the rope toward your team. {cadence} Winners get a badge, and every
+          dollar stays on the all-time score. Nobody gets paid. That's the fun.
         </p>
 
         {featured && (

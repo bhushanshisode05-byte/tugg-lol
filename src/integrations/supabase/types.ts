@@ -470,6 +470,7 @@ export type Database = {
           description: string
           featured_until: string | null
           id: string
+          round_length: string | null
           slug: string
           source: string
           status: string
@@ -481,6 +482,7 @@ export type Database = {
           description?: string
           featured_until?: string | null
           id?: string
+          round_length?: string | null
           slug: string
           source?: string
           status?: string
@@ -492,6 +494,7 @@ export type Database = {
           description?: string
           featured_until?: string | null
           id?: string
+          round_length?: string | null
           slug?: string
           source?: string
           status?: string
@@ -912,6 +915,24 @@ export type Database = {
         }
         Relationships: []
       }
+      round_settings: {
+        Row: {
+          default_length: string
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          default_length?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          default_length?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rounds: {
         Row: {
           closed_at: string | null
@@ -921,6 +942,7 @@ export type Database = {
           matchup_id: string
           pullers: number
           result_note: string | null
+          round_length: string
           starts_at: string
           status: string
           total_a_cents: number
@@ -935,6 +957,7 @@ export type Database = {
           matchup_id: string
           pullers?: number
           result_note?: string | null
+          round_length?: string
           starts_at?: string
           status?: string
           total_a_cents?: number
@@ -949,6 +972,7 @@ export type Database = {
           matchup_id?: string
           pullers?: number
           result_note?: string | null
+          round_length?: string
           starts_at?: string
           status?: string
           total_a_cents?: number
@@ -1273,6 +1297,7 @@ export type Database = {
       }
       dodo_reconcile_due: { Args: { p_env: string }; Returns: Json }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
+      matchup_round_length: { Args: { p_matchup: string }; Returns: string }
       next_utc_midnight: { Args: never; Returns: string }
       payglocal_reconcile_due: { Args: { p_env: string }; Returns: Json }
       record_pull: {
@@ -1296,6 +1321,10 @@ export type Database = {
         Returns: Json
       }
       retire_idle_ai_matchups: { Args: { p_live: boolean }; Returns: number }
+      round_end_after: {
+        Args: { p_from: string; p_length: string }
+        Returns: string
+      }
       spend_wallet_pull: {
         Args: {
           p_env: string
@@ -1326,8 +1355,32 @@ export type Database = {
         Args: { p_from: string; p_live: boolean; p_to: string }
         Returns: Json
       }
+      tugg_day_matchups: {
+        Args: { p_from: string; p_live: boolean; p_to: string }
+        Returns: {
+          a_cents: number
+          b_cents: number
+          matchup_id: string
+          pulls: number
+        }[]
+      }
       tugg_dodo_funnel: { Args: never; Returns: Json }
       tugg_dodo_summary: { Args: never; Returns: Json }
+      tugg_matchup_history: {
+        Args: { p_live: boolean; p_matchups: string[] }
+        Returns: {
+          closed_rounds: number
+          last_a_cents: number
+          last_b_cents: number
+          last_ends_at: string
+          last_note: string
+          last_round_id: string
+          last_round_length: string
+          last_starts_at: string
+          last_winner_side_id: string
+          matchup_id: string
+        }[]
+      }
       tugg_payglocal_funnel: { Args: never; Returns: Json }
       tugg_payglocal_summary: { Args: never; Returns: Json }
       tugg_pull_card: {
@@ -1342,6 +1395,10 @@ export type Database = {
           total_a_cents: number
           total_b_cents: number
         }[]
+      }
+      tugg_pull_round_length: {
+        Args: { p_live: boolean; p_pull: string }
+        Returns: string
       }
       tugg_pull_side_prior_cents: {
         Args: { p_live: boolean; p_pull: string }

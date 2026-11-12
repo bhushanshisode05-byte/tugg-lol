@@ -7,6 +7,7 @@ import { PRODUCTS } from "./payments/catalog";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { SIDE_IMAGES_ENABLED } from "./feature-flags";
 import { cardDisplayName } from "./og/card";
+import { roundLengthOf, type RoundLength } from "./rounds";
 
 /** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
 async function turnstileGate(
@@ -48,6 +49,22 @@ export type Round = {
   total_b_cents: number;
   pullers: number;
   extensions: number;
+  /** Length this round was opened with. */
+  round_length: RoundLength;
+};
+/** Public history behind the all-time score: every closed round, plus the previous round's result. */
+export type MatchupHistory = {
+  rounds: number;
+  last: {
+    id: string;
+    winner_side_id: string | null;
+    note: string | null;
+    starts_at: string;
+    ends_at: string;
+    round_length: RoundLength;
+    total_a_cents: number;
+    total_b_cents: number;
+  } | null;
 };
 export type Matchup = {
   id: string;
@@ -61,6 +78,7 @@ export type Matchup = {
   created_at: string;
   sides: Side[];
   round: Round | null;
+  history: MatchupHistory | null;
 };
 export type PullRow = {
   id: string;
@@ -89,19 +107,42 @@ export async function loadMatchups(filter?: { slug?: string; ids?: string[] }) {
   const { data: rounds } = ids.length
     ? await db
         .from("rounds")
-        .select("id,matchup_id,ends_at,starts_at,total_a_cents,total_b_cents,pullers,extensions")
+        .select("id,matchup_id,ends_at,starts_at,total_a_cents,total_b_cents,pullers,extensions,round_length")
         .eq("status", "open")
         .in("matchup_id", ids)
     : { data: [] as any[] };
   const live = liveOnly();
-  const [rt, st] = await Promise.all([
+  const [rt, st, ht] = await Promise.all([
     rounds?.length
       ? db.rpc("tugg_round_totals", { p_live: live, p_rounds: rounds.map((r: any) => r.id) })
       : Promise.resolve({ data: [] as any[] }),
     ids.length
       ? db.rpc("tugg_side_totals", { p_live: live, p_matchups: ids })
       : Promise.resolve({ data: [] as any[] }),
+    ids.length
+      ? db.rpc("tugg_matchup_history", { p_live: live, p_matchups: ids })
+      : Promise.resolve({ data: [] as any[] }),
   ]);
+  const hist = new Map(
+    (ht.data ?? []).map((h: any): [string, MatchupHistory] => [
+      h.matchup_id,
+      {
+        rounds: Number(h.closed_rounds ?? 0),
+        last: h.last_round_id
+          ? {
+              id: h.last_round_id,
+              winner_side_id: h.last_winner_side_id ?? null,
+              note: h.last_note ?? null,
+              starts_at: h.last_starts_at,
+              ends_at: h.last_ends_at,
+              round_length: roundLengthOf(h.last_round_length),
+              total_a_cents: Number(h.last_a_cents ?? 0),
+              total_b_cents: Number(h.last_b_cents ?? 0),
+            }
+          : null,
+      },
+    ]),
+  );
   const rtot = new Map((rt.data ?? []).map((t: any) => [t.round_id, t]));
   const stot = new Map((st.data ?? []).map((t: any) => [t.side_id, Number(t.cents)]));
   const byM = new Map(
@@ -111,6 +152,7 @@ export async function loadMatchups(filter?: { slug?: string; ids?: string[] }) {
         r.matchup_id,
         {
           ...r,
+          round_length: roundLengthOf(r.round_length),
           total_a_cents: Number(t?.total_a_cents ?? 0),
           total_b_cents: Number(t?.total_b_cents ?? 0),
           pullers: t?.pullers ?? 0,
@@ -124,6 +166,7 @@ export async function loadMatchups(filter?: { slug?: string; ids?: string[] }) {
       .map((s: Side) => ({ ...s, all_time_cents: stot.get(s.id) ?? 0 }))
       .sort((a: Side, b: Side) => a.position - b.position),
     round: byM.get(m.id) ?? null,
+    history: hist.get(m.id) ?? null,
   })) as Matchup[];
 }
 
@@ -165,7 +208,7 @@ export const getMatchup = createServerFn({ method: "GET" })
       db.rpc("tugg_countries", { p_live: live, p_matchup: m.id, p_limit: 10 }),
       db
         .from("rounds")
-        .select("id,starts_at,ends_at,total_a_cents,total_b_cents,winner_side_id,result_note")
+        .select("id,starts_at,ends_at,total_a_cents,total_b_cents,winner_side_id,result_note,round_length")
         .eq("matchup_id", m.id)
         .eq("status", "closed")
         .order("ends_at", { ascending: false })
@@ -185,6 +228,7 @@ export const getMatchup = createServerFn({ method: "GET" })
       const t: any = hmap.get(h.id);
       return {
         ...h,
+        round_length: roundLengthOf(h.round_length),
         total_a_cents: Number(t?.total_a_cents ?? 0),
         total_b_cents: Number(t?.total_b_cents ?? 0),
       };
@@ -485,6 +529,8 @@ export type ResultCard = {
   slug: string;
   title: string;
   ends_at: string;
+  starts_at?: string | undefined;
+  round_length?: RoundLength | undefined;
   note: string | null;
   winner: Side;
   loser: Side;
@@ -504,6 +550,8 @@ function toCard(r: any, mm: Map<string, Lite>): ResultCard | null {
     slug: m.slug,
     title: m.title,
     ends_at: r.ends_at,
+    starts_at: r.starts_at,
+    round_length: roundLengthOf(r.round_length),
     note: r.result_note,
     winner: aWon ? a : b,
     loser: aWon ? b : a,
@@ -537,7 +585,7 @@ export const getHallOfFame = createServerFn({ method: "GET" }).handler(async () 
   if (!ids.length) return { cards: [] as ResultCard[] };
   const { data } = await publicDb()
     .from("rounds")
-    .select("id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note")
+    .select("id,matchup_id,starts_at,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note,round_length")
     .eq("status", "closed")
     .not("winner_side_id", "is", null)
     .in("matchup_id", ids)
@@ -556,7 +604,7 @@ export const getResult = createServerFn({ method: "GET" })
     const { data: r } = await publicDb()
       .from("rounds")
       .select(
-        "id,matchup_id,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note",
+        "id,matchup_id,starts_at,ends_at,total_a_cents,total_b_cents,pullers,winner_side_id,result_note,round_length",
       )
       .eq("id", data.id)
       .eq("status", "closed")
@@ -582,15 +630,22 @@ export type PullCard = {
   totalB: number;
   /** The pulled side's all-time total right after this pull (earlier rounds + this round's snapshot). */
   sideAllTime: number;
+  /** Length of the round this pull landed in (fixed when the round opened, so the card never changes). */
+  roundLength: RoundLength;
 };
 
 /** Public snapshot of one pull for its share card. Reads only public facts: never email, payment or session ids. */
 export async function loadPullCard(id: string): Promise<PullCard | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const db = publicDb(), args = { p_live: liveOnly(), p_pull: id };
-  const [{ data, error }, prior] = await Promise.all([db.rpc("tugg_pull_card", args), db.rpc("tugg_pull_side_prior_cents", args)]);
+  const [{ data, error }, prior, length] = await Promise.all([
+    db.rpc("tugg_pull_card", args),
+    db.rpc("tugg_pull_side_prior_cents", args),
+    db.rpc("tugg_pull_round_length", args),
+  ]);
   if (error) throw new Error(error.message);
   if (prior.error) throw new Error(prior.error.message);
+  if (length.error) throw new Error(length.error.message);
   const p = (data ?? [])[0];
   if (!p) return null;
   const [m] = await loadMatchups({ ids: [p.matchup_id] });
@@ -609,5 +664,6 @@ export async function loadPullCard(id: string): Promise<PullCard | null> {
     sideAllTime:
       Number(prior.data ?? 0) +
       Number((m.sides.find((s) => s.id === p.side_id)?.position === 0 ? p.total_a_cents : p.total_b_cents) ?? 0),
+    roundLength: roundLengthOf(length.data),
   };
 }

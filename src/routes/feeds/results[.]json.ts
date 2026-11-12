@@ -5,6 +5,6 @@ export const Route = createFileRoute("/feeds/results.json")({
   staticData: { sitemap: false },
   server: { handlers: { GET: async () => {
     const d = await getHallOfFame();
-    return json({ name: "Tugg daily round results", note: FEED_NOTE, generated_at: new Date().toISOString(), results: resultItems(d.cards) });
+    return json({ name: "Tugg round results", note: FEED_NOTE, generated_at: new Date().toISOString(), results: resultItems(d.cards) });
   } } },
 });

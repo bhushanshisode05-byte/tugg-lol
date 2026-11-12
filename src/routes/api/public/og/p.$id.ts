@@ -34,6 +34,8 @@ export const Route = createFileRoute("/api/public/og/p/$id")({
           const input: CardInput = {
             kind: "pull",
             day: c.day,
+            // Weekly rounds only, so daily pull cards stay byte-for-byte what they were.
+            ...(c.roundLength === "weekly" ? { period: "week" as const } : {}),
             a: side(a, c.totalA),
             b: side(b, c.totalB),
             pull: { side: pulledA ? 0 : 1, count: c.pulls, by: c.by, title: c.title, allTimeCents: c.sideAllTime },

@@ -23,7 +23,7 @@ export async function dodoReceipt(db: SupabaseClient<any>, order: Order): Promis
   const lines: ReceiptLine[] = parts.flatMap((p) => {
     const m = byId.get(p.matchupId);
     if (!m || !m.sides.some((s) => s.id === p.sideId)) return [];
-    return [{ matchupId: m.id, slug: m.slug, title: m.title, sides: m.sides, sideId: p.sideId, pulls: p.pulls, totalA: m.round?.total_a_cents ?? 0, totalB: m.round?.total_b_cents ?? 0, pull: pulls.get(p.session) ?? null }];
+    return [{ matchupId: m.id, slug: m.slug, title: m.title, sides: m.sides, sideId: p.sideId, pulls: p.pulls, totalA: m.round?.total_a_cents ?? 0, totalB: m.round?.total_b_cents ?? 0, pull: pulls.get(p.session) ?? null, roundLength: m.round?.round_length ?? "daily" }];
   });
   return { amountCents: order.expected_cents, pulls: order.quantity, refundedPulls: Math.floor(order.basket_refund_cents / 100), lines, siteUrl: config().siteUrl || "https://tugg.lol" };
 }

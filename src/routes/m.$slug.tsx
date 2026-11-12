@@ -14,6 +14,9 @@ import { PullPanel } from "@/components/tugg/PullPanel";
 import { useLive } from "@/hooks/use-live";
 
 import { cardVersion, matchupCardInput, matchupImagePath } from "@/lib/og/card";
+import { AllTimeScore } from "@/components/tugg/AllTimeScore";
+import { allTimeSentence, isEmptyRound, roundLength, roundSentence } from "@/lib/matchup-facts";
+import { CurrentRound, closedRoundName, roundEnds, roundPeriod } from "@/lib/rounds";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -34,6 +37,10 @@ export const Route = createFileRoute("/m/$slug")({
       b: m.sides[1]?.name,
       aCents: m.round?.total_a_cents ?? 0,
       bCents: m.round?.total_b_cents ?? 0,
+      length: roundLength(m),
+      empty: isEmptyRound(m),
+      // Quotable lead for empty rounds: history first, never "$0 vs $0".
+      history: `${roundSentence(m, new Date().toISOString().slice(0, 10))} ${allTimeSentence(m)}`,
       siteUrl: d.siteUrl || "https://tugg.lol",
       // Score-derived cache key: the image URL changes whenever the score changes.
       version: (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })(),
@@ -48,10 +55,13 @@ export const Route = createFileRoute("/m/$slug")({
     const url = `${l.siteUrl}/m/${l.slug}`;
     // Own live image; the score token gives every score its own URL, so previews never show an old score.
     const img = `${l.siteUrl}${matchupImagePath(l.slug, "link", l.version)}`;
-    const desc = `Live now: ${score} in today's round. Pull the rope for your side on Tugg. Rounds end at 00:00 UTC.`;
+    const noun = l.length === "weekly" ? "this week's round" : "today's round";
+    const desc = l.empty
+      ? `${l.history} Pull the rope for your side on Tugg. ${roundEnds(l.length)}.`
+      : `Live now: ${score} in ${noun}. Pull the rope for your side on Tugg. ${roundEnds(l.length)}.`;
     return {
       meta: [
-        { title: `${l.title} — who's winning today? | Tugg` },
+        { title: `${l.title} — who's winning ${roundPeriod(l.length)}? | Tugg` },
         { name: "description", content: desc },
         { property: "og:title", content: `${l.title} on Tugg` },
         { property: "og:description", content: desc },
@@ -61,7 +71,7 @@ export const Route = createFileRoute("/m/$slug")({
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },
         { property: "og:image:type", content: "image/png" },
-        { property: "og:image:alt", content: `${l.a} vs ${l.b}: ${score}` },
+        { property: "og:image:alt", content: l.empty ? `${l.a} vs ${l.b}: new round, all-time score` : `${l.a} vs ${l.b}: ${score}` },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: `${l.title} on Tugg` },
         { name: "twitter:description", content: desc },
@@ -97,15 +107,14 @@ function MatchupPage() {
     B = m.sides[1]!;
   const a = m.round?.total_a_cents ?? 0,
     b = m.round?.total_b_cents ?? 0;
-  const winsA = history.filter((h) => h.winner_side_id === A.id).length;
-  const winsB = history.filter((h) => h.winner_side_id === B.id).length;
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
     timeZone: "UTC",
   });
-  const lead = a === b ? null : a > b ? ([A, B, a, b] as const) : ([B, A, b, a] as const);
+  const len = roundLength(m);
+  const empty = isEmptyRound(m);
   const sideById = new Map(m.sides.map((s) => [s.id, s]));
   const card = matchupCardInput(m);
   const shareData = { slug: m.slug, title: m.title, sides: m.sides, a, b, v: card ? cardVersion(card) : null };
@@ -117,30 +126,7 @@ function MatchupPage() {
           className="mb-4 rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground"
           data-summary
         >
-          As of {today} (UTC),{" "}
-          {lead ? (
-            <>
-              <strong className="text-foreground">{lead[0].name}</strong> leads {lead[1].name}{" "}
-              {usd(lead[2])} to {usd(lead[3])} in today's round.
-            </>
-          ) : a === 0 ? (
-            <>
-              {A.name} and {B.name} are tied at $0 in today's round.
-            </>
-          ) : (
-            <>
-              {A.name} and {B.name} are tied at {usd(a)} in today's round.
-            </>
-          )}{" "}
-          {history.length > 0 ? (
-            <>
-              {A.name} has won {winsA} and {B.name} has won {winsB} of the last {history.length}{" "}
-              rounds.
-            </>
-          ) : (
-            <>No rounds have been completed yet.</>
-          )}{" "}
-          All-time: {A.name} {usd(A.all_time_cents)}, {B.name} {usd(B.all_time_cents)}.
+          {roundSentence(m, today)} {allTimeSentence(m)}
         </p>
 
         {celebrate && (
@@ -162,7 +148,7 @@ function MatchupPage() {
           </span>
           {m.round && (
             <span>
-              Round ends <Countdown to={m.round.ends_at} />
+              {CurrentRound(len)} ends in <Countdown to={m.round.ends_at} />
               {m.round.extensions > 0 && (
                 <span className="ml-2 text-accent">+{m.round.extensions * 10}m final hour</span>
               )}
@@ -184,16 +170,33 @@ function MatchupPage() {
           Who is winning? Full results
         </Link>
 
-        <div className="mt-8">
+        {empty && (
+          <div className="mt-8">
+            <AllTimeScore m={m} lead />
+          </div>
+        )}
+
+        <div className="mt-8" data-live-round>
+          {empty && (
+            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {CurrentRound(len)} · live
+            </p>
+          )}
           <Rope sides={m.sides} a={a} b={b} />
           <div className="mt-2 grid grid-cols-3 items-end">
-            <SideTotal side={A} cents={a} />
+            <SideTotal side={A} cents={a} quiet={empty} />
             <p className="text-center text-sm text-muted-foreground">
-              {m.round?.pullers ?? 0} pullers
+              {empty ? `No pulls yet ${roundPeriod(len)}. Be the first.` : `${m.round?.pullers ?? 0} pullers`}
             </p>
-            <SideTotal side={B} cents={b} right />
+            <SideTotal side={B} cents={b} right quiet={empty} />
           </div>
         </div>
+
+        {!empty && (
+          <div className="mt-6">
+            <AllTimeScore m={m} />
+          </div>
+        )}
 
         {m.status === "active" ? (
           <PullPanel
@@ -281,7 +284,7 @@ function MatchupPage() {
               <ul className="space-y-1 text-sm">
                 {history.slice(0, 10).map((h) => (
                   <li key={h.id} className="flex justify-between">
-                    <span>{new Date(h.ends_at).toISOString().slice(0, 10)}</span>
+                    <span>{closedRoundName(h.round_length, h.starts_at, h.ends_at)}</span>
                     <span>
                       {h.winner_side_id
                         ? `${sideById.get(h.winner_side_id)?.name} won${h.result_note === "tie" ? " (tie)" : ""}`
@@ -297,30 +300,22 @@ function MatchupPage() {
               <Empty text="First round in progress." />
             )}
           </Panel>
-          <Panel title="All-time">
-            {m.sides.map((s) => (
-              <p key={s.id} className="flex justify-between">
-                <span>
-                  <SideAvatar side={s} /> {s.name}
-                </span>
-                <span className="font-mono">{usd(s.all_time_cents)}</span>
-              </p>
-            ))}
-          </Panel>
         </div>
       </article>
     </Shell>
   );
 }
 
-function SideTotal({ side, cents, right }: { side: Side; cents: number; right?: boolean }) {
+function SideTotal({ side, cents, right, quiet }: { side: Side; cents: number; right?: boolean; quiet?: boolean }) {
   return (
     <div className={right ? "text-right" : ""}>
       <p className="text-sm font-bold" style={{ color: side.color }}>
         {side.name}
       </p>
       <ReportImage side={side} />
-      <p className="font-mono text-3xl font-extrabold sm:text-4xl">{usd(cents)}</p>
+      <p className={quiet ? "font-mono text-lg font-bold text-muted-foreground" : "font-mono text-3xl font-extrabold sm:text-4xl"}>
+        {usd(cents)}
+      </p>
     </div>
   );
 }

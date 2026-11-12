@@ -148,6 +148,27 @@
       "when": 1794368148743,
       "tag": "0020_pull_card_side_prior_total",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794445086185,
+      "tag": "0021_round_length_setting",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794445109814,
+      "tag": "0022_round_settings_service_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794445266838,
+      "tag": "0023_matchup_history_read",
+      "breakpoints": true
     }
   ]
 }

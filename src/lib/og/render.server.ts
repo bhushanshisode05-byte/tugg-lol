@@ -220,10 +220,14 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   r.rect(W / 2, 0, W / 2, Math.max(8, m.rope / 3), [...cb.slice(0, 3), 1] as RGBA);
 
   const inner = W - m.pad * 2;
+  const week = input.period === "week";
   const header =
     input.kind === "live"
-      ? `LIVE ROUND · ${fmtDay(input.day)} · UTC`
-      : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
+      ? `LIVE ROUND · ${week ? "WEEK OF " : ""}${fmtDay(input.day)} · UTC`
+      : week
+        ? `FINAL RESULT · WEEK OF ${fmtDay(input.day)} · UTC`
+        : `FINAL RESULT · ROUND OF ${fmtDay(input.day)} · UTC`;
+  const history = input.kind === "live" ? input.history : undefined;
   const hd = fit(mono, header, inner, m.header, m.header * 0.6);
   text(r, mono, hd.text, m.centered ? (W - hd.w) / 2 : m.pad, m.headerY, hd.size, hex(MUTED));
 
@@ -296,8 +300,35 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
     }
     const nm = fit(display, side.s.name, colW, m.name, m.name * 0.55);
     text(r, display, nm.text, ax(nm.w), m.nameY, nm.size, side.c);
-    const tt = fit(mono, usd(side.s.cents), colW, m.total, m.total * 0.2);
-    text(r, mono, tt.text, ax(tt.w), m.totalY, tt.size, hex(FG));
+    if (history) {
+      // Empty round: each side's all-time total (never resets) instead of a round total of $0.
+      if (history.allTimeA + history.allTimeB > 0) {
+        const val = usd(i === 0 ? history.allTimeA : history.allTimeB), suf = " all-time";
+        let vs = m.total * 0.8, ss = m.total * 0.36;
+        let w = width(mono, val, vs) + width(display, suf, ss);
+        if (w > colW) {
+          const k = (colW / w) * 0.98;
+          vs *= k;
+          ss *= k;
+          w = width(mono, val, vs) + width(display, suf, ss);
+        }
+        const x = ax(w);
+        text(r, mono, val, x, m.totalY, vs, hex(FG));
+        text(r, display, suf, x + width(mono, val, vs), m.totalY, ss, hex(MUTED));
+      }
+    } else {
+      const tt = fit(mono, usd(side.s.cents), colW, m.total, m.total * 0.2);
+      text(r, mono, tt.text, ax(tt.w), m.totalY, tt.size, hex(FG));
+    }
+  }
+
+  if (history) {
+    drawHistory(r, history, A, B, m, W, inner);
+    const cta = fit(display, `Be the first to pull ${week ? "this week" : "today"} →`, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
+    text(r, display, cta.text, m.centered ? (W - cta.w) / 2 : m.pad, m.pullY, cta.size, hex(LIME));
+    const bw = width(mono, "tugg.lol", m.brand);
+    text(r, mono, "tugg.lol", m.centered ? (W - bw) / 2 : W - m.pad - bw, m.brandY, m.brand, hex(FG));
+    return encodePng(r);
   }
 
   // Rope with the flag at the real current position (same formula as the site).
@@ -347,11 +378,35 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   const cta =
     input.kind !== "result"
       ? "Pull your side →"
-      : `Final totals · ${input.pullers ?? 0} puller${input.pullers === 1 ? "" : "s"} · Pull your side today`;
+      : `Final totals · ${input.pullers ?? 0} puller${input.pullers === 1 ? "" : "s"} · Pull your side ${week ? "this week" : "today"}`;
   const ct = fit(display, cta, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
   text(r, display, ct.text, m.centered ? (W - ct.w) / 2 : m.pad, m.pullY, ct.size, hex(LIME));
   const bw = width(mono, "tugg.lol", m.brand);
   text(r, mono, "tugg.lol", m.centered ? (W - bw) / 2 : W - m.pad - bw, m.brandY, m.brand, hex(FG));
 
   return encodePng(r);
+}
+
+/** Two lines where the rope would be: the previous round's result and the never-resetting round record. */
+function drawHistory(r: Raster, h: NonNullable<CardInput["history"]>, A: string, B: string, m: Metrics, W: number, inner: number) {
+  const { display } = getFonts();
+  const dash = drawable(display, "—") ? "—" : "-";
+  const names = [A, B];
+  const last = h.last;
+  const line1 = !last
+    ? "First round · no pulls yet"
+    : last.winner === null
+      ? "Last round: no pulls"
+      : `Last round: ${names[last.winner]} won ${usd(Math.max(last.a, last.b))} to ${usd(Math.min(last.a, last.b))}${last.tie ? " (tie-break)" : ""}`;
+  const line2 = h.rounds
+    ? `Rounds won: ${A} ${h.winsA} ${dash} ${B} ${h.winsB} over ${h.rounds} round${h.rounds === 1 ? "" : "s"}`
+    : "";
+  const maxW = m.centered ? inner : inner * 0.92;
+  const y1 = m.ropeY - m.rope * 0.6;
+  const l1 = fit(display, line1, maxW, m.pull * 0.95, m.pull * 0.45);
+  text(r, display, l1.text, m.centered ? (W - l1.w) / 2 : m.pad, y1, l1.size, hex(FG));
+  if (line2) {
+    const l2 = fit(display, line2, maxW, m.header * 1.05, m.header * 0.6);
+    text(r, display, l2.text, m.centered ? (W - l2.w) / 2 : m.pad, y1 + l1.size * 1.3, l2.size, hex(MUTED));
+  }
 }

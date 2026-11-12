@@ -1,5 +1,6 @@
 /** Shared (browser-safe) share-image definitions. */
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
+import { weekStart } from "@/lib/rounds";
 
 export const CARD_SIZES = {
   story: [1080, 1920],
@@ -34,10 +35,26 @@ export type CardPull = {
   /** The pulled side's all-time total right after this pull (cents). */
   allTimeCents: number;
 };
+/**
+ * What an empty live round's card draws instead of "$0 vs $0": the never-resetting all-time score and the previous round.
+ * Present only when the current round has no pulls.
+ */
+export type CardHistory = {
+  /** Closed rounds so far (empty ones included). */
+  rounds: number;
+  winsA: number;
+  winsB: number;
+  allTimeA: number;
+  allTimeB: number;
+  /** Previous round: winning side index (null when it had no pulls) and its final totals. */
+  last: { winner: 0 | 1 | null; a: number; b: number; tie: boolean } | null;
+};
 export type CardInput = {
   kind: "live" | "result" | "pull";
-  /** UTC day (YYYY-MM-DD) the numbers belong to. */
+  /** UTC day (YYYY-MM-DD) the numbers belong to; for weekly rounds, the Monday that names the week. */
   day: string;
+  /** Set for weekly rounds only, so daily cards (and their cached URLs) stay exactly as they were. */
+  period?: "week" | undefined;
   a: CardSide;
   b: CardSide;
   /** For results: index of the winning side. */
@@ -45,6 +62,8 @@ export type CardInput = {
   pullers?: number;
   /** For personal pull cards only. */
   pull?: CardPull;
+  /** Live cards for an empty round only. */
+  history?: CardHistory | undefined;
 };
 
 /** Canonical public origin for absolute share-image URLs. */
@@ -60,11 +79,17 @@ export const SHORT_CACHE = "public, max-age=60, s-maxage=60";
 export const PICTURE_CACHE = "public, max-age=300, s-maxage=300";
 
 type MatchupLike = {
-  sides: { name: string; emoji: string; color: string; image_id?: string | null; image_status?: string | null }[];
-  round: { starts_at?: string | null; total_a_cents: number; total_b_cents: number } | null;
+  sides: { id?: string; name: string; emoji: string; color: string; image_id?: string | null; image_status?: string | null; all_time_cents?: number; wins?: number }[];
+  round: { starts_at?: string | null; total_a_cents: number; total_b_cents: number; round_length?: string | null } | null;
+  history?: {
+    rounds: number;
+    last: { winner_side_id: string | null; note: string | null; total_a_cents: number; total_b_cents: number } | null;
+  } | null;
 };
 type ResultLike = {
   ends_at: string;
+  starts_at?: string | null | undefined;
+  round_length?: string | null | undefined;
   pullers: number;
   winner_cents: number;
   loser_cents: number;
@@ -85,11 +110,32 @@ const side = (s: MatchupLike["sides"][number], cents: number): CardSide => ({
 export function matchupCardInput(m: MatchupLike, today = new Date().toISOString()): CardInput | null {
   const [a, b] = m.sides;
   if (!a || !b) return null;
+  const start = m.round?.starts_at ?? today;
+  const weekly = m.round?.round_length === "weekly";
+  const ca = Number(m.round?.total_a_cents ?? 0), cb = Number(m.round?.total_b_cents ?? 0);
   return {
     kind: "live",
-    day: (m.round?.starts_at ?? today).slice(0, 10),
-    a: side(a, Number(m.round?.total_a_cents ?? 0)),
-    b: side(b, Number(m.round?.total_b_cents ?? 0)),
+    day: weekly ? weekStart(start) : start.slice(0, 10),
+    ...(weekly ? { period: "week" as const } : {}),
+    a: side(a, ca),
+    b: side(b, cb),
+    ...(ca === 0 && cb === 0 ? { history: cardHistory(m) } : {}),
+  };
+}
+
+/** The all-time score and previous round, drawn when the live round is empty. */
+export function cardHistory(m: MatchupLike): CardHistory {
+  const [a, b] = m.sides;
+  const last = m.history?.last ?? null;
+  const la = Number(last?.total_a_cents ?? 0), lb = Number(last?.total_b_cents ?? 0);
+  const winner = !last || !last.winner_side_id || la + lb === 0 ? null : last.winner_side_id === a?.id ? 0 : last.winner_side_id === b?.id ? 1 : null;
+  return {
+    rounds: Number(m.history?.rounds ?? 0),
+    winsA: Number(a?.wins ?? 0),
+    winsB: Number(b?.wins ?? 0),
+    allTimeA: Number(a?.all_time_cents ?? 0),
+    allTimeB: Number(b?.all_time_cents ?? 0),
+    last: last ? { winner, a: la, b: lb, tie: last.note === "tie" } : null,
   };
 }
 
@@ -97,9 +143,11 @@ export function matchupCardInput(m: MatchupLike, today = new Date().toISOString(
 export function resultCardInput(c: ResultLike): CardInput {
   const winnerIsA = c.winner.position === 0;
   const [a, b] = winnerIsA ? [c.winner, c.loser] : [c.loser, c.winner];
+  const weekly = c.round_length === "weekly" && !!c.starts_at;
   return {
     kind: "result",
-    day: new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
+    day: weekly ? weekStart(c.starts_at!) : new Date(new Date(c.ends_at).getTime() - 1000).toISOString().slice(0, 10),
+    ...(weekly ? { period: "week" as const } : {}),
     a: side(a, winnerIsA ? c.winner_cents : c.loser_cents),
     b: side(b, winnerIsA ? c.loser_cents : c.winner_cents),
     winner: winnerIsA ? 0 : 1,
@@ -124,9 +172,10 @@ function fnv(s: string) {
  */
 export function cardVersion(input: CardInput) {
   const sideKey = (s: CardSide) => [s.name, s.emoji, s.color, s.image_id ?? "", s.image_status ?? ""].join("\u0001");
-  const fingerprint = fnv(
-    [CARD_RENDER_VERSION, input.kind, input.day, sideKey(input.a), sideKey(input.b), input.winner ?? "", input.pullers ?? ""].join("\u0002"),
-  );
+  const base = [CARD_RENDER_VERSION, input.kind, input.day, sideKey(input.a), sideKey(input.b), input.winner ?? "", input.pullers ?? ""];
+  // Weekly rounds and empty-round history are appended only when present, so existing daily URLs keep their tokens.
+  const extra = [input.period ?? "", input.history ? JSON.stringify(input.history) : ""];
+  const fingerprint = fnv((extra.some(Boolean) ? [...base, ...extra] : base).join("\u0002"));
   return `${Math.round(input.a.cents)}-${Math.round(input.b.cents)}-${fingerprint}`;
 }
 

@@ -4,7 +4,8 @@ import { matchupImagePath, pullImagePath, type CardSize } from "@/lib/og/card";
 export type ShareInput = {
   slug: string;
   title: string;
-  sides: { name: string }[];
+  /** All-time totals (cents) let an empty round's text lead with history instead of "$0 vs $0". */
+  sides: { name: string; all_time_cents?: number }[];
   a: number;
   b: number;
   /** Score-derived cache key for the live matchup card (see cardVersion). */
@@ -25,7 +26,17 @@ export const shareUrl = (siteUrl: string, slug: string) => `${siteUrl.replace(/\
 export const shareText = (m: ShareInput) =>
   m.pull
     ? `I pulled ${m.pull.count} for ${m.pull.sideName} on Tugg: ${m.sides[0]?.name} ${usd(m.a)} vs ${m.sides[1]?.name} ${usd(m.b)}. Pull your side.`
-    : `${m.title} is live on Tugg: ${m.sides[0]?.name} ${usd(m.a)} vs ${m.sides[1]?.name} ${usd(m.b)}. Pull your side.`;
+    : m.a === 0 && m.b === 0
+      ? emptyRoundText(m)
+      : `${m.title} is live on Tugg: ${m.sides[0]?.name} ${usd(m.a)} vs ${m.sides[1]?.name} ${usd(m.b)}. Pull your side.`;
+
+function emptyRoundText(m: ShareInput) {
+  const [a, b] = m.sides;
+  const ta = a?.all_time_cents ?? 0, tb = b?.all_time_cents ?? 0;
+  return ta + tb > 0
+    ? `${m.title} on Tugg: a new round is open. All-time: ${a?.name} ${usd(ta)} vs ${b?.name} ${usd(tb)}. Be the first to pull.`
+    : `${m.title} on Tugg: a new round is open with no pulls yet. Be the first to pull.`;
+}
 
 export function shareLinks(text: string, url: string) {
   const e = encodeURIComponent;

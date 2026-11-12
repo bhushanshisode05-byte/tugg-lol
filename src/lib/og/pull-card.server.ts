@@ -278,7 +278,7 @@ export async function renderPullCard(input: CardInput, size: CardSize): Promise<
     summary: {
       // Non-breaking spaces keep "Ronaldo $25" and "Messi all-time $25" together when the line wraps.
       strong: `${name} now ${usd(pulled.cents)} `,
-      rest: `in today's round vs ${otherName}\u00a0${usd(other.cents)} · ${nb(name)}\u00a0all-time\u00a0${usd(pull.allTimeCents)}`,
+      rest: `in ${input.period === "week" ? "this week's" : "today's"} round vs ${otherName}\u00a0${usd(other.cents)} · ${nb(name)}\u00a0all-time\u00a0${usd(pull.allTimeCents)}`,
     },
   };
 

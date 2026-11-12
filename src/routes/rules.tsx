@@ -3,6 +3,7 @@ import { getPublicContact } from "@/lib/support.functions";
 import { IMAGE_POLICY } from "@/lib/side-image";
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/tugg/Shell";
+import { ALL_TIME_RULE, ROUND_LENGTH_RULE } from "@/lib/rounds";
 
 export const Route = createFileRoute("/rules")({
   staticData: { sitemap: true },
@@ -13,12 +14,12 @@ export const Route = createFileRoute("/rules")({
       {
         name: "description",
         content:
-          "How Tugg rounds work, ties, empty rounds, the Final-Hour extension, allowed matchups and the refund policy. No prizes, no payouts.",
+          "How Tugg rounds work (weekly or daily), the all-time score, ties, empty rounds, the Final-Hour extension, allowed matchups and the refund policy. No prizes, no payouts.",
       },
       { property: "og:title", content: "Tugg rules" },
       {
         property: "og:description",
-        content: "24-hour rounds, Final-Hour extensions, and bragging rights only.",
+        content: "Weekly or daily rounds, a permanent all-time score, Final-Hour extensions, and bragging rights only.",
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -31,9 +32,10 @@ const sections: [string, string[]][] = [
   [
     "Rounds",
     [
-      "Every matchup runs in 24-hour rounds that end at 00:00 UTC.",
+      ROUND_LENGTH_RULE,
       "The rope shows net dollars pulled by each side in the current round.",
       "The side with more money when the round closes wins, earns a badge and extends its win streak. Then the rope resets to the center.",
+      ALL_TIME_RULE,
     ],
   ],
   [

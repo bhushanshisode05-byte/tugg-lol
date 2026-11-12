@@ -1,5 +1,6 @@
 import { activePaymentCopy } from "./payments/copy";
 import { IMAGE_POLICY } from "./side-image";
+import { ALL_TIME_RULE, ROUND_LENGTH_RULE } from "./rounds";
 export const supportAnswers = [
   {
     id: "pulls",
@@ -9,7 +10,7 @@ export const supportAnswers = [
   {
     id: "rounds",
     title: "How do rounds work?",
-    text: "Rounds end at 00:00 UTC. The side with more money wins bragging rights, and a new round starts. A tie goes to the side that reached the final total first. An empty round has no winner and leaves streaks unchanged. A lead-changing pull in the last 10 minutes adds 10 minutes, at most three times.",
+    text: `${ROUND_LENGTH_RULE} When a round ends, the side with more money in that round wins bragging rights, and a new round starts. ${ALL_TIME_RULE} A tie goes to the side that reached the final total first. An empty round has no winner and leaves streaks unchanged. A lead-changing pull in the last 10 minutes adds 10 minutes, at most three times.`,
   },
   {
     id: "create",
@@ -57,7 +58,7 @@ export const policySections = {
     description: "Pick a rivalry, choose a side, and pull for bragging rights.",
     sections: [
       { title: "Pick your side", text: supportAnswers[0].text },
-      { title: "A fresh contest every day", text: supportAnswers[1].text },
+      { title: "Rounds and the all-time score", text: supportAnswers[1].text },
       { title: "Start a rivalry", text: supportAnswers[2].text },
     ],
   },

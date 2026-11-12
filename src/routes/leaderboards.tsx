@@ -18,12 +18,12 @@ export const Route = createFileRoute("/leaderboards")({
       {
         name: "description",
         content:
-          "The biggest Tugg ropes ever, longest win streaks, most-pulled matchups today and top countries. Real pulls only.",
+          "The biggest Tugg ropes ever, longest win streaks, the most-pulled live rounds and top countries. Real pulls only.",
       },
       { property: "og:title", content: "Tugg leaderboards" },
       {
         property: "og:description",
-        content: "Biggest ropes, longest streaks, today's hottest rivalries and top countries.",
+        content: "Biggest ropes, longest streaks, the hottest live rounds and top countries.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/leaderboards" },
@@ -110,12 +110,12 @@ function Leaderboards() {
                 </Link>
                 <span className="text-muted-foreground">
                   {" "}
-                  · {r.open ? "today" : new Date(r.ends_at).toISOString().slice(0, 10)}
+                  · {r.open ? "live now" : new Date(r.ends_at).toISOString().slice(0, 10)}
                 </span>
               </Row>
             ))}
           </Board>
-          <Board title="Most pulled today" empty={!data.today.length}>
+          <Board title="Most pulled this round" empty={!data.today.length}>
             {data.today.map((r, i) => (
               <Row key={r.id} i={i} right={usd(r.total_a + r.total_b)}>
                 <Link
@@ -132,7 +132,7 @@ function Leaderboards() {
           <Board
             title="Longest win streaks"
             empty={!data.streaks.length}
-            emptyText="No round winners yet. Streaks start when rounds close at 00:00 UTC."
+            emptyText="No round winners yet. Streaks start when the first rounds close."
           >
             {data.streaks.map((s, i) => (
               <Row key={s.id} i={i} right={`${s.best}🔥`}>

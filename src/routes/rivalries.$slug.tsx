@@ -8,6 +8,9 @@ import { Countdown } from "@/components/tugg/Countdown";
 import { useLive } from "@/hooks/use-live";
 import { getMatchup } from "@/lib/tugg.functions";
 import { cardVersion, matchupCardInput, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
+import { AllTimeScore } from "@/components/tugg/AllTimeScore";
+import { allTimeSentence, isEmptyRound, recordText, roundLength, roundSentence } from "@/lib/matchup-facts";
+import { CurrentRound, closedRoundName, currentRound } from "@/lib/rounds";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -20,27 +23,25 @@ function facts(d: Data) {
     B = m.sides[1]!;
   const a = m.round?.total_a_cents ?? 0,
     b = m.round?.total_b_cents ?? 0;
-  const wonA = d.history.filter((h) => h.winner_side_id === A.id).length;
-  const wonB = d.history.filter((h) => h.winner_side_id === B.id).length;
   const today = new Date().toISOString().slice(0, 10);
+  const len = roundLength(m);
+  const empty = isEmptyRound(m);
   const leader = a > b ? A : b > a ? B : null;
   const answer = leader
-    ? `As of ${today} (UTC), ${leader.name} is winning today's round, ${usd(Math.max(a, b))} to ${usd(Math.min(a, b))}.`
-    : a === 0
-      ? `As of ${today} (UTC), nobody has pulled yet today, so ${A.name} and ${B.name} are tied at $0.`
-      : `As of ${today} (UTC), ${A.name} and ${B.name} are tied at ${usd(a)} in today's round.`;
-  const record = d.history.length
-    ? `Over the last ${d.history.length} completed rounds, ${A.name} has won ${wonA} and ${B.name} has won ${wonB}.`
-    : "No rounds have been completed yet.";
-  const allTime = `All-time, ${A.name} has been pulled ${usd(A.all_time_cents)} and ${B.name} ${usd(B.all_time_cents)}.`;
+    ? `As of ${today} (UTC), ${leader.name} is winning ${currentRound(len)}, ${usd(Math.max(a, b))} to ${usd(Math.min(a, b))}.`
+    : roundSentence(m, today);
+  const rec = recordText(m);
+  const record = rec ? `Rounds won all-time: ${rec}.` : "No rounds have been completed yet.";
+  const allTime = allTimeSentence(m);
   const faq = [
     { q: `Who is winning, ${A.name} or ${B.name}?`, a: `${answer} ${record}` },
     {
       q: `Who has won more rounds?`,
       a:
-        A.wins === B.wins
+        (A.wins === B.wins
           ? `They are level at ${A.wins} round wins each.`
-          : `${A.wins > B.wins ? A.name : B.name} leads with ${Math.max(A.wins, B.wins)} round wins to ${Math.min(A.wins, B.wins)}.`,
+          : `${A.wins > B.wins ? A.name : B.name} leads with ${Math.max(A.wins, B.wins)} round wins to ${Math.min(A.wins, B.wins)}.`) +
+        (m.history?.rounds ? ` ${m.history.rounds} round${m.history.rounds === 1 ? " has" : "s have"} been completed; this record never resets.` : ""),
     },
     {
       q: `What is the longest win streak?`,
@@ -51,10 +52,10 @@ function facts(d: Data) {
     },
     {
       q: "How does the vote work?",
-      a: "Anyone can pay to pull the rope toward their side. The side with more money when the round ends at 00:00 UTC wins. Nothing is paid out: it is entertainment and bragging rights only.",
+      a: `Anyone can pay to pull the rope toward their side. The side with more money when the ${len === "weekly" ? "weekly round ends on Monday at 00:00 UTC" : "daily round ends at 00:00 UTC"} wins. All-time totals and round wins never reset. Nothing is paid out: it is entertainment and bragging rights only.`,
     },
   ];
-  return { A, B, a, b, answer, record, allTime, faq, leader };
+  return { A, B, a, b, answer, record, allTime, faq, leader, len, empty };
 }
 
 export const Route = createFileRoute("/rivalries/$slug")({
@@ -141,12 +142,18 @@ function Rivalry() {
           {f.leader ? "is ahead right now." : "is ahead yet."}
         </p>
         <p className="mt-2 text-muted-foreground">
-          {f.answer} {f.record} {f.allTime}
+          {f.answer} {f.allTime}
         </p>
 
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        {f.empty && (
+          <div className="mt-8">
+            <AllTimeScore m={m} lead />
+          </div>
+        )}
+
+        <div className="mt-8 rounded-2xl border border-border bg-card p-5" data-live-round>
           <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            <span>Today's round</span>
+            <span>{CurrentRound(f.len)}</span>
             {m.round && (
               <span>
                 Ends in <Countdown to={m.round.ends_at} />
@@ -154,10 +161,10 @@ function Rivalry() {
             )}
           </div>
           <Rope sides={m.sides} a={f.a} b={f.b} />
-          <div className="flex justify-between font-mono text-2xl font-extrabold">
+          <div className={`flex justify-between font-mono ${f.empty ? "text-lg font-bold text-muted-foreground" : "text-2xl font-extrabold"}`}>
             <span>{usd(f.a)}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {m.round?.pullers ?? 0} pullers
+              {f.empty ? "No pulls yet" : `${m.round?.pullers ?? 0} pullers`}
             </span>
             <span>{usd(f.b)}</span>
           </div>
@@ -170,13 +177,19 @@ function Rivalry() {
           </Link>
         </div>
 
+        {!f.empty && (
+          <div className="mt-6">
+            <AllTimeScore m={m} />
+          </div>
+        )}
+
         <section className="mt-8">
           <h2 className="text-2xl font-extrabold">Round history</h2>
           {data.history.length ? (
             <table className="mt-3 w-full text-sm">
               <thead className="text-left text-muted-foreground">
                 <tr>
-                  <th className="py-1">Date (UTC)</th>
+                  <th className="py-1">Round (UTC)</th>
                   <th>Winner</th>
                   <th className="text-right">{f.A.name}</th>
                   <th className="text-right">{f.B.name}</th>
@@ -185,7 +198,7 @@ function Rivalry() {
               <tbody>
                 {data.history.map((h) => (
                   <tr key={h.id} className="border-t border-border">
-                    <td className="py-2">{new Date(h.ends_at).toISOString().slice(0, 10)}</td>
+                    <td className="py-2">{closedRoundName(h.round_length, h.starts_at, h.ends_at)}</td>
                     <td>
                       {h.winner_side_id
                         ? `${byId.get(h.winner_side_id)?.name}${h.result_note === "tie" ? " (tie-break)" : ""}`
