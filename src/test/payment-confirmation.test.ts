@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CONFIRM_SCHEDULE, confirmDelay, createConfirmationPoller, phaseForStatus, type ConfirmState, type PaymentResult } from "@/lib/payments/confirmation";
+import { CONFIRM_MESSAGES, CONFIRM_SCHEDULE, confirmDelay, createConfirmationPoller, isEndPhase, phaseForStatus, type ConfirmState, type PaymentResult } from "@/lib/payments/confirmation";
 
 const paid: PaymentResult = { status: "paid", quantity: 5, refundedPulls: 0 };
 const pending: PaymentResult = { status: "pending", quantity: 5, refundedPulls: 0 };
@@ -28,6 +28,7 @@ describe("post-payment confirmation", () => {
     expect(CONFIRM_SCHEDULE.earlyWindowMs).toBe(180000);
     expect(CONFIRM_SCHEDULE.maxMs).toBe(15000);
     expect(CONFIRM_SCHEDULE.giveUpMs).toBe(600000);
+    expect(CONFIRM_SCHEDULE.cancelledGiveUpMs).toBe(90000);
   });
 
   it("only paid, refunded, failed, expired and needs_review end checking", () => {
@@ -111,13 +112,103 @@ describe("post-payment confirmation", () => {
     }
   });
 
-  it("a buyer closing the window before paying keeps checking with the neutral closed note", async () => {
-    const { poller } = setup(async () => pending);
+  it("closing the window with no sign of payment shows the honest cancelled note and keeps checking", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller } = setup(read);
     poller.track("o1");
     await vi.advanceTimersByTimeAsync(0);
     poller.signal("closed");
     await vi.advanceTimersByTimeAsync(0);
+    expect(poller.state.phase).toBe("cancelled");
+    expect(isEndPhase("cancelled")).toBe(false);
+    expect(CONFIRM_MESSAGES[poller.state.phase as "cancelled"]).toBe("Checkout closed. Nothing was charged. If you did pay, your pulls will appear here in a moment.");
+    const calls = read.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(read.mock.calls.length).toBeGreaterThan(calls); // still checking
+  });
+
+  it("from cancelled, a payment that lands 30 seconds later still produces the receipt", async () => {
+    let closedAt = 0;
+    const { poller, phases } = setup(async () => (closedAt && Date.now() - closedAt >= 30000 ? paid : pending));
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(0);
+    poller.signal("closed"); closedAt = Date.now();
+    await vi.advanceTimersByTimeAsync(29000);
+    expect(poller.state.phase).toBe("cancelled");
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(poller.state.phase).toBe("paid");
+    expect(phases()).not.toContain("slow");
+  });
+
+  it("from cancelled with nothing landing, the note disappears shortly after 90 seconds, never 'slow', and reading stops", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller, phases } = setup(read);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(0);
+    poller.signal("closed");
+    await vi.advanceTimersByTimeAsync(89000);
+    expect(poller.state.phase).toBe("cancelled");
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(poller.state.phase).toBe("idle");
+    const calls = read.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(20 * 60000);
+    expect(read.mock.calls.length).toBe(calls);
+    poller.checkAgain(); // tab becomes visible again
+    poller.track("o1"); // a late repeat of the same order
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(read.mock.calls.length).toBe(calls);
+    expect(poller.state.phase).toBe("idle");
+    expect(phases()).not.toContain("slow");
+  });
+
+  it("a close long after opening (past the 10-minute mark) still ends quietly, not with 'slow'", async () => {
+    const { poller, phases } = setup(async () => pending);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(9.5 * 60000);
+    poller.signal("closed");
+    await vi.advanceTimersByTimeAsync(2 * 60000);
+    expect(poller.state.phase).toBe("idle");
+    expect(phases().slice(phases().lastIndexOf("cancelled"))).toEqual(["cancelled", "idle"]);
+  });
+
+  it("status then closed shows the paid-wording closed note and the full 10-minute path still ends at 'slow'", async () => {
+    const { poller, phases } = setup(async () => pending);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(0);
+    poller.signal("status");
+    poller.signal("closed");
+    await vi.advanceTimersByTimeAsync(0);
     expect(poller.state.phase).toBe("closed");
+    await vi.advanceTimersByTimeAsync(5 * 60000);
+    expect(poller.state.phase).toBe("closed");
+    await vi.advanceTimersByTimeAsync(5 * 60000 + 20000);
+    expect(poller.state.phase).toBe("slow");
+    expect(phases()).not.toContain("cancelled");
+    expect(phases()).not.toContain("idle");
+  });
+
+  it("a status signal arriving while cancelled moves to closed and the long path", async () => {
+    const { poller } = setup(async () => pending);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(0);
+    poller.signal("closed");
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(poller.state.phase).toBe("cancelled");
+    poller.signal("status");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(poller.state.phase).toBe("closed");
+    await vi.advanceTimersByTimeAsync(5 * 60000);
+    expect(poller.state.phase).toBe("closed"); // well past 90 seconds, still checking
+  });
+
+  it("a returning redirect (track with no signal) keeps 'checking' and the full 10-minute window", async () => {
+    const { poller, phases } = setup(async () => pending);
+    poller.track("o-redirect");
+    await vi.advanceTimersByTimeAsync(5 * 60000);
+    expect(poller.state.phase).toBe("checking");
+    await vi.advanceTimersByTimeAsync(5 * 60000 + 20000);
+    expect(poller.state.phase).toBe("slow");
+    expect(phases()).not.toContain("cancelled");
   });
   it("with no checkout-window signal at all, a payment confirmed 90 seconds in shows within 4 seconds", async () => {
     const start = Date.now();

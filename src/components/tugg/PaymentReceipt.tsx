@@ -6,7 +6,8 @@ import { ShareButton } from "./ShareButton";
 import { receiptHeadline } from "@/lib/og/card";
 import { currentRound } from "@/lib/rounds";
 import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
-import { CONFIRM_MESSAGES, totalsBefore, type ConfirmState, type PaymentReceipt as Receipt, type ReceiptLine } from "@/lib/payments/confirmation";
+import { X } from "lucide-react";
+import { CONFIRM_MESSAGES, isWaitingPhase, totalsBefore, type ConfirmState, type PaymentReceipt as Receipt, type ReceiptLine } from "@/lib/payments/confirmation";
 
 /** Rope that starts where it was before this payment and slides to its new position. */
 function RopeMove({ line }: { line: ReceiptLine }) {
@@ -67,14 +68,28 @@ export function PaymentReceipt({ receipt, extras }: { receipt: Receipt; extras?:
   </section>;
 }
 
-/** What the buyer sees after checkout: calm waiting notes, a real failure only for failed/expired orders, then the receipt. */
-export function PaymentConfirmation({ state, paidText, onCheckAgain, extras }: { state: ConfirmState; paidText: string; onCheckAgain: () => void; extras?: ReactNode }) {
+function DismissButton({ onDismiss }: { onDismiss: () => void }) {
+  return <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" aria-label="Dismiss" title="Dismiss" onClick={onDismiss}><X aria-hidden /></Button>;
+}
+
+/** What the buyer sees after checkout: calm waiting notes, a real failure only for failed/expired orders, then the receipt.
+ *  Dismissing only hides waiting notes; checking carries on and a confirmed payment always shows its receipt. */
+export function PaymentConfirmation({ state, paidText, onCheckAgain, extras, onDismiss, dismissed = false }: { state: ConfirmState; paidText: string; onCheckAgain: () => void; extras?: ReactNode; onDismiss?: () => void; dismissed?: boolean }) {
   const { phase, result } = state;
   if (phase === "idle") return null;
   if (phase === "paid") return result?.receipt && result.receipt.lines.length ? <PaymentReceipt receipt={result.receipt} extras={extras} /> : <p role="status" className="mt-3 font-semibold">{paidText}</p>;
-  if (phase === "slow") return <div role="status" className="mt-3 rounded-xl border border-border bg-card p-3">
-    <p className="font-semibold">{CONFIRM_MESSAGES.slow}</p>
-    <Button variant="outline" size="sm" className="mt-2" onClick={onCheckAgain}>Check again</Button>
+  if (isWaitingPhase(phase) && dismissed) return null;
+  const dismiss = onDismiss && isWaitingPhase(phase) ? <DismissButton onDismiss={onDismiss} /> : null;
+  if (phase === "slow") return <div className="mt-3 flex items-start gap-2 rounded-xl border border-border bg-card p-3">
+    <div role="status" className="min-w-0 flex-1">
+      <p className="font-semibold">{CONFIRM_MESSAGES.slow}</p>
+      <Button variant="outline" size="sm" className="mt-2" onClick={onCheckAgain}>Check again</Button>
+    </div>
+    {dismiss}
   </div>;
-  return <p role="status" className="mt-3 font-semibold">{CONFIRM_MESSAGES[phase]}</p>;
+  if (!dismiss) return <p role="status" className="mt-3 font-semibold">{CONFIRM_MESSAGES[phase]}</p>;
+  return <div className="mt-3 flex items-start gap-2">
+    <p role="status" className="min-w-0 flex-1 font-semibold">{CONFIRM_MESSAGES[phase]}</p>
+    {dismiss}
+  </div>;
 }

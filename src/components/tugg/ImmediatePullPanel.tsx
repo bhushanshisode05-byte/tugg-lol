@@ -19,6 +19,7 @@ import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
 export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, message, provider = "dodo" }: { sides: Side[]; slug: string; paused: boolean; onPulled: () => void; ready: boolean; message: string; provider?: string }) {
   const buy=useServerFn(buyImmediateBundle), read=useServerFn(getImmediatePayment);
   const [side,setSide]=useState(sides[0]?.id || ""),[pack,setPack]=useState<5|10|25>(5),[name,setName]=useState(""),[shout,setShout]=useState("");
+  const [dismissed,setDismissed]=useState(false);
   const [billing,setBilling]=useState(emptyBilling),[token,setToken]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const ts=useRef<TurnstileHandle>(null);
   const funnel=useServerFn(recordPaymentFunnel), settings=useServerFn(getCodeDropConfig);
@@ -46,7 +47,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
   if(paused)return <p className="mt-8 border-y border-border py-5 text-muted-foreground">Pulls are paused for a moment. Check back soon.</p>;
   return <section ref={section} className="mt-8 border-y-2 border-foreground py-6"><h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
     <p className="mt-2 text-muted-foreground">From $5 · $1 per pull. One-time bundles, applied to your side after confirmed payment. No stored balance.</p>
-    <PaymentConfirmation state={confirm.state} paidText={`${confirm.state.result?.quantity ?? pack} pulls applied to your chosen side.`} onCheckAgain={confirm.checkAgain}/>
+    <PaymentConfirmation state={confirm.state} paidText={`${confirm.state.result?.quantity ?? pack} pulls applied to your chosen side.`} onCheckAgain={confirm.checkAgain} dismissed={dismissed} onDismiss={()=>setDismissed(true)}/>
     <div className="mt-4 grid grid-cols-2 gap-3">{sides.map(s=><Button key={s.id} variant={side===s.id?"default":"outline"} aria-pressed={side===s.id} onClick={()=>setSide(s.id)} className="h-auto min-h-16 whitespace-normal py-4"><SideAvatar side={s}/>{s.name}</Button>)}</div>
     <div className="mt-4 grid grid-cols-3 gap-2">{([5,10,25] as const).map(p=><Button key={p} variant={p===pack?"default":"outline"} aria-pressed={p===pack} onClick={()=>{setPack(p);emit("bundle_selected",p);}} className="h-auto flex-col py-3"><span className="font-mono text-xl">${p}</span><span>{p} pulls</span></Button>)}</div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2"><Input aria-label="Display name" placeholder="Display name (optional)" value={name} maxLength={40} onChange={e=>setName(e.target.value)}/><Input aria-label="Shout-out" placeholder="Shout-out (optional)" value={shout} maxLength={80} onChange={e=>setShout(e.target.value)}/></div>
@@ -55,7 +56,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     {!ready && <p className="mt-4 text-sm text-muted-foreground">{message || "Checkout is unavailable. No payment has been taken."}</p>}
     {error && <p role="alert" className="mt-3 text-destructive">{error}</p>}
     <Button className="mt-4 h-auto w-full whitespace-normal py-4" disabled={!ready||busy||!token||(provider === "payglocal" && !billingSchema.safeParse(billing).success)||!side} onClick={async()=>{setBusy(true);setError("");try{const r=await buy({data:{funnelId:funnelId.current || (funnelId.current=crypto.randomUUID()),sideId:side,pack,name,shout,...(provider === "payglocal" ? {billing}:{}),returnUrl:`${window.location.origin}/m/${slug}`,turnstileToken:token??undefined}});if("error" in r){setError(r.error);emit("failed");}else {
-      setEnvironment(r.environment); completed.current=false; failed.current=false;
+      setEnvironment(r.environment); completed.current=false; failed.current=false; setDismissed(false);
       try{sessionStorage.setItem(`tugg-funnel-${r.orderId}`,funnelId.current);}catch{/* Anonymous continuity is optional. */}
       const drawer=r.provider === "dodo" ? await openDodoOverlay(r.url,r.environment,result=>{
         if(result === "closed") void emit("cancelled",pack,"drawer");

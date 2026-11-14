@@ -27,7 +27,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
   const [lines, setLines] = useState<Line[]>([{ matchupId, title, sides, sideId: sides[0]?.id || "", pulls: 5 }]);
   const [custom, setCustom] = useState(""), [options, setOptions] = useState<Option[] | null>(null);
   const [name, setName] = useState(""), [shout, setShout] = useState(""), [token, setToken] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [dismissed, setDismissed] = useState(false);
   const [environment, setEnvironment] = useState<"sandbox" | "live">("sandbox");
   const ts = useRef<TurnstileHandle>(null), funnelId = useRef(""), section = useRef<HTMLElement>(null), viewed = useRef(false), completed = useRef(false);
   const total = basketTotal(lines);
@@ -62,7 +62,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
   return <section ref={section} className="mt-8 border-y-2 border-foreground py-6" aria-label="Pull the rope">
     <h2 className="font-display text-2xl font-extrabold">Pull the rope</h2>
     <p className="mt-2 text-muted-foreground">From $5 · $1 per pull. One payment can cover up to {BASKET_MAX_MATCHUPS} different matchups, applied immediately after confirmed payment. No stored balance.</p>
-    <PaymentConfirmation state={confirm.state} onCheckAgain={confirm.checkAgain} paidText={(() => { const r = confirm.state.result; if (!r) return "Pulls applied to your chosen sides."; return r.refundedPulls > 0 ? `${r.quantity - r.refundedPulls} pulls applied. ${r.refundedPulls} pulls are being refunded because a matchup stopped taking pulls before your payment was applied.` : `${r.quantity} pulls applied to your chosen sides.`; })()} />
+    <PaymentConfirmation state={confirm.state} onCheckAgain={confirm.checkAgain} dismissed={dismissed} onDismiss={() => setDismissed(true)} paidText={(() => { const r = confirm.state.result; if (!r) return "Pulls applied to your chosen sides."; return r.refundedPulls > 0 ? `${r.quantity - r.refundedPulls} pulls applied. ${r.refundedPulls} pulls are being refunded because a matchup stopped taking pulls before your payment was applied.` : `${r.quantity} pulls applied to your chosen sides.`; })()} />
     <div className="mt-4 grid grid-cols-4 gap-2">
       {BASKET_QUICK_PICKS.map((p) => <Button key={p} variant={p === total ? "default" : "outline"} aria-pressed={p === total} onClick={() => { setCustom(""); setTotal(p); }} className="h-auto flex-col py-3"><span className="font-mono text-xl">${p}</span><span>{p} pulls</span></Button>)}
       <label className="flex flex-col justify-center rounded-md border border-input px-2 py-1 text-xs text-muted-foreground">Custom $
@@ -99,7 +99,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
       try {
         const r = await buy({ data: { funnelId: funnelId.current || (funnelId.current = crypto.randomUUID()), lines: lines.map((l) => ({ matchupId: l.matchupId, sideId: l.sideId, pulls: l.pulls })), name, shout, returnUrl: `${window.location.origin}/m/${slug}`, turnstileToken: token ?? undefined } });
         if ("error" in r) { setError(r.error); void emit("failed"); return; }
-        setEnvironment(r.environment); completed.current = false;
+        setEnvironment(r.environment); completed.current = false; setDismissed(false);
         const drawer = await openDodoOverlay(r.url, r.environment, (result) => { if (result === "closed") void emit("cancelled", r.total, "drawer"); confirm.track(r.orderId); confirm.signal(result); });
         await emit("opened", r.total, drawer ? "drawer" : "redirect");
         if (drawer) confirm.track(r.orderId); else window.location.assign(r.url);

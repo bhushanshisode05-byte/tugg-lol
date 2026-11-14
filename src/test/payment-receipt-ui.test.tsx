@@ -95,3 +95,42 @@ it("returning from Dodo's redirect with ?payment= resumes checking that order", 
   expect(mocks.read).toHaveBeenCalledWith({ data: { orderId: order } });
   expect(screen.getByText("Payment confirmed")).toBeInTheDocument();
 });
+
+it("closing Dodo's window without paying shows the honest note; Dismiss hides it, and a payment landing later still shows the receipt", async () => {
+  let ok = false;
+  mocks.read.mockImplementation(async () => (ok ? { status: "paid", quantity: 25, refundedPulls: 0, receipt } : { status: "pending", quantity: 25, refundedPulls: 0 }));
+  await pay();
+  act(() => { mocks.overlay.cb?.("closed"); });
+  await flush();
+  expect(screen.getByRole("status")).toHaveTextContent("Checkout closed. Nothing was charged. If you did pay, your pulls will appear here in a moment.");
+  expect(screen.getByRole("button", { name: /^Pay \$25/ })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+  expect(screen.queryByText(/Checkout closed/)).toBeNull();
+  ok = true;
+  await flush(5000);
+  expect(screen.getByText("Payment confirmed")).toBeInTheDocument();
+  expect(pulled).toHaveBeenCalledTimes(1);
+});
+
+it("closing without paying and waiting: the note disappears after about 90 seconds, never 'still being confirmed'", async () => {
+  mocks.read.mockResolvedValue({ status: "pending", quantity: 25, refundedPulls: 0 });
+  await pay();
+  act(() => { mocks.overlay.cb?.("closed"); });
+  await flush(60000);
+  expect(screen.getByText(/Nothing was charged/)).toBeInTheDocument();
+  await flush(60000);
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.queryByText(/still being confirmed/)).toBeNull();
+});
+
+it("a dismissal does not carry into the next checkout", async () => {
+  mocks.read.mockResolvedValue({ status: "pending", quantity: 25, refundedPulls: 0 });
+  await pay();
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+  expect(screen.queryByText(/Confirming your payment/)).toBeNull();
+  mocks.buy.mockResolvedValue({ url: "https://test.checkout.dodopayments.com/session/cks_y", orderId: "bcfa7a89-1bcd-465f-9b6c-3e2d2319dd04", environment: "sandbox", provider: "dodo", codedropId: "" });
+  fireEvent.click(screen.getByText("Security passed"));
+  fireEvent.click(screen.getByRole("button", { name: /^Pay \$25/ }));
+  await flush();
+  expect(screen.getByText(/Confirming your payment/)).toBeInTheDocument();
+});
