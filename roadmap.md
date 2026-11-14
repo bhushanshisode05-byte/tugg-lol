@@ -5,8 +5,10 @@
 - [x] One-click unsubscribe (mail-app one-click and /unsubscribe page), permanent, no account; receipts and refund notices unaffected.
 - [x] Disclosure in both pull panels, the on-screen receipt and the receipt email; /privacy updated. All email templates moved to the site colours.
 - [x] Tests: 479 app tests, engagement.sql (20-flip round, environments, closing soon, results, streaks, unsubscribe, leases, retries), 10-way concurrency script.
-- [ ] Choose and connect the separate email provider (built for Resend): add RESEND_API_KEY and ENGAGEMENT_EMAIL_FROM on a sending subdomain other than hello.tugg.lol. Blocker: owner account and DNS.
-- [ ] After publishing: turn on sandbox (then live) sending and set the start time so only buyers who saw the disclosure are emailed. Blocker: owner publish + go-ahead.
+- [x] Resend connected by the owner (sender Tugg <rounds@updates.tugg.lol>); config valid; sample [TEST] email accepted by Resend (2026-11-14).
+- [x] Sandbox sending switch on, live switch off (2026-11-14 02:10 UTC).
+- [ ] Publish the player-email version (live tugg.lol still runs the 12 Nov version: job route and disclosure missing), then set the start time to the publish moment. Blocker: owner publish.
+- [ ] Live sending: only after PAYMENTS_ENV=live with live Dodo keys, an owner end-to-end test pass, and an explicit go-ahead. Blocker: owner decision.
 
 ## Noto emoji (2026-11-12, do not publish)
 - [x] Side emoji on site and share cards switched from Twemoji to pinned Noto Color Emoji (v2.051), one shared mapping; credit on About / Legal updated (Apache 2.0, public-domain flags); card link versions bumped.
