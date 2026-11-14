@@ -14,11 +14,19 @@ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-11T02:
 afterEach(() => { vi.useRealTimers(); });
 
 describe("post-payment confirmation", () => {
-  it("backs off gradually from 2 seconds to a 15 second cap and keeps checking for 10 minutes", () => {
-    expect(confirmDelay(0)).toBe(2000);
-    expect(confirmDelay(1)).toBe(2500);
-    expect(confirmDelay(4)).toBe(4883);
-    expect(confirmDelay(50)).toBe(15000);
+  it("backs off gently from 1 second, capped at 4 seconds for the first 3 minutes and 15 seconds after, for 10 minutes", () => {
+    expect(confirmDelay(0)).toBe(1000);
+    expect(confirmDelay(1)).toBe(1150);
+    expect(confirmDelay(4)).toBe(1749);
+    expect(confirmDelay(9)).toBe(3518);
+    expect(confirmDelay(10)).toBe(4000);
+    expect(confirmDelay(50)).toBe(4000);
+    expect(confirmDelay(50, 179999)).toBe(4000);
+    expect(confirmDelay(50, 180000)).toBe(15000);
+    expect(confirmDelay(0, 180000)).toBe(1000);
+    expect(CONFIRM_SCHEDULE.earlyMaxMs).toBe(4000);
+    expect(CONFIRM_SCHEDULE.earlyWindowMs).toBe(180000);
+    expect(CONFIRM_SCHEDULE.maxMs).toBe(15000);
     expect(CONFIRM_SCHEDULE.giveUpMs).toBe(600000);
   });
 
@@ -41,8 +49,8 @@ describe("post-payment confirmation", () => {
     expect(poller.state.phase).toBe("paid");
     expect(phases()).not.toContain("failed");
     expect(phases()).not.toContain("slow");
-    // Gentle on the server: about a dozen checks across 80 seconds rather than one every 4 seconds.
-    expect(read.mock.calls.length).toBeLessThanOrEqual(13);
+    // At most one check every 4 seconds once warmed up: 25 checks across the first 80 seconds.
+    expect(read.mock.calls.length).toBeLessThanOrEqual(26);
   });
 
   it("a confirmation five minutes late still recovers", async () => {
@@ -110,5 +118,62 @@ describe("post-payment confirmation", () => {
     poller.signal("closed");
     await vi.advanceTimersByTimeAsync(0);
     expect(poller.state.phase).toBe("closed");
+  });
+  it("with no checkout-window signal at all, a payment confirmed 90 seconds in shows within 4 seconds", async () => {
+    const start = Date.now();
+    let shownAt = 0;
+    const read = vi.fn(async () => (Date.now() - start >= 90000 ? paid : pending));
+    const poller = createConfirmationPoller({ read, onChange: (s) => { if (s.phase === "paid") shownAt = Date.now() - start; } });
+    poller.track("o-silent");
+    await vi.advanceTimersByTimeAsync(120000);
+    expect(poller.state.phase).toBe("paid");
+    expect(shownAt - 90000).toBeLessThanOrEqual(4000);
+  });
+
+  it("a signal after the backoff has widened to 15 seconds checks now and then again 1 second later, not 15", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller } = setup(read);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(200000); // past the 3-minute early window: gaps are now 15 seconds
+    const calls = read.mock.calls.length;
+    poller.signal("closed");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(read.mock.calls.length).toBe(calls + 1); // immediate check
+    await vi.advanceTimersByTimeAsync(999);
+    expect(read.mock.calls.length).toBe(calls + 1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(read.mock.calls.length).toBe(calls + 2); // next gap is 1 second
+    await vi.advanceTimersByTimeAsync(1150);
+    expect(read.mock.calls.length).toBe(calls + 3);
+  });
+
+  it("a signal inside the early window also restarts the short gaps", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller } = setup(read);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(60000); // gaps are at the 4-second early ceiling
+    const calls = read.mock.calls.length;
+    poller.signal("status");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(read.mock.calls.length).toBe(calls + 2);
+  });
+
+  it("Check again (tab visible) restarts the short gaps even when not in the calm note", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller } = setup(read);
+    poller.track("o1");
+    await vi.advanceTimersByTimeAsync(200000);
+    const calls = read.mock.calls.length;
+    poller.checkAgain();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(read.mock.calls.length).toBe(calls + 2);
+  });
+
+  it("repeated checkout-window signals never extend the 10-minute give-up deadline", async () => {
+    const read = vi.fn(async () => pending);
+    const { poller } = setup(read);
+    poller.track("o1");
+    for (let i = 0; i < 70; i++) { await vi.advanceTimersByTimeAsync(10000); if (poller.state.phase !== "slow") poller.signal("status"); }
+    expect(poller.state.phase).toBe("slow");
   });
 });

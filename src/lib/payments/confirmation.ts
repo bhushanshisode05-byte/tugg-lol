@@ -16,10 +16,13 @@ export type ConfirmPhase = "idle" | "checking" | "closed" | "slow" | "paid" | "f
 export type ConfirmState = { phase: ConfirmPhase; result?: PaymentResult | undefined };
 export type ConfirmSignal = "closed" | "status" | "completed" | "failed";
 
-/** Gradual backoff: 2s, 2.5s, 3.1s … capped at 15s, for 10 minutes before showing the calm "still confirming" note. */
-export const CONFIRM_SCHEDULE = { firstMs: 2000, factor: 1.25, maxMs: 15000, giveUpMs: 10 * 60 * 1000 } as const;
-export const confirmDelay = (attempt: number, s: { firstMs: number; factor: number; maxMs: number } = CONFIRM_SCHEDULE) =>
-  Math.min(s.maxMs, Math.round(s.firstMs * s.factor ** Math.max(0, attempt)));
+/** Gradual backoff: 1s, 1.15s, 1.3s … capped at 4s for the first 3 minutes after tracking starts (when almost every
+ *  confirmation lands), then capped at 15s, for 10 minutes before showing the calm "still confirming" note. */
+export const CONFIRM_SCHEDULE = { firstMs: 1000, factor: 1.15, earlyMaxMs: 4000, earlyWindowMs: 3 * 60 * 1000, maxMs: 15000, giveUpMs: 10 * 60 * 1000 } as const;
+type DelaySchedule = { firstMs: number; factor: number; earlyMaxMs: number; earlyWindowMs: number; maxMs: number };
+/** Gap before the next check: `attempt` counts checks since the last backoff reset, `elapsedMs` is time since tracking started. */
+export const confirmDelay = (attempt: number, elapsedMs = 0, s: DelaySchedule = CONFIRM_SCHEDULE) =>
+  Math.min(elapsedMs < s.earlyWindowMs ? s.earlyMaxMs : s.maxMs, Math.round(s.firstMs * s.factor ** Math.max(0, attempt)));
 
 const END: Record<string, ConfirmPhase> = { paid: "paid", refunded: "paid", failed: "failed", expired: "failed", needs_review: "review" };
 /** Only these stored statuses end checking. Anything else, a missing order or a network error means "still confirming". */
@@ -61,7 +64,7 @@ export function createConfirmationPoller(opts: {
     if (again) { void check(); return; }
     if (now() - started >= schedule.giveUpMs) { set({ phase: "slow", result: result ?? undefined }); return; }
     if (state.phase !== waiting()) set({ phase: waiting(), result: result ?? undefined });
-    timer = setTimeout(() => void check(), confirmDelay(attempt++, schedule));
+    timer = setTimeout(() => void check(), confirmDelay(attempt++, now() - started, schedule));
   }
   return {
     get state() { return state; },
@@ -76,14 +79,17 @@ export function createConfirmationPoller(opts: {
       if (!orderId || isEndPhase(state.phase)) return;
       if (kind === "closed") closed = true;
       if (kind === "completed" || kind === "status") closed = false;
-      if (state.phase === "slow") { attempt = 0; started = now(); }
+      // Any hint restarts the short gaps; only resuming from "slow" restarts the 10-minute give-up deadline.
+      attempt = 0;
+      if (state.phase === "slow") started = now();
       if (state.phase !== "slow" && state.phase !== waiting()) set({ phase: waiting(), result: state.result });
       void check();
     },
     /** Resume after the calm "still confirming" note or when the tab becomes visible again. */
     checkAgain() {
       if (!orderId || isEndPhase(state.phase)) return;
-      if (state.phase === "slow") { attempt = 0; started = now(); set({ phase: waiting(), result: state.result }); }
+      attempt = 0;
+      if (state.phase === "slow") { started = now(); set({ phase: waiting(), result: state.result }); }
       void check();
     },
     stop() { stopped = true; clear(); },
