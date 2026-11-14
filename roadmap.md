@@ -7,7 +7,7 @@
 - [x] Tests: 479 app tests, engagement.sql (20-flip round, environments, closing soon, results, streaks, unsubscribe, leases, retries), 10-way concurrency script.
 - [x] Resend connected by the owner (sender Tugg <rounds@updates.tugg.lol>); config valid; sample [TEST] email accepted by Resend (2026-11-14).
 - [x] Sandbox sending switch on, live switch off (2026-11-14 02:10 UTC).
-- [ ] Publish the player-email version (live tugg.lol still runs the 12 Nov version: job route and disclosure missing), then set the start time to the publish moment. Blocker: owner publish.
+- [x] Owner published; start time set to 2026-11-14 02:26:18.768433 UTC (test sending on, live off).
 - [ ] Live sending: only after PAYMENTS_ENV=live with live Dodo keys, an owner end-to-end test pass, and an explicit go-ahead. Blocker: owner decision.
 
 ## Noto emoji (2026-11-12, do not publish)
