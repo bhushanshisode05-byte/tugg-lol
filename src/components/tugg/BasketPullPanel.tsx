@@ -1,3 +1,4 @@
+import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -106,5 +107,6 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
       finally { ts.current?.reset(); setBusy(false); }
     }}>Pay ${total} · {total} pulls{lines.length > 1 ? ` across ${lines.length} matchups` : ` for ${lines[0]?.sides.find((s) => s.id === lines[0]?.sideId)?.name ?? ""}`}</Button>
     <p className="mt-4 text-xs text-muted-foreground">{paymentProviderText("dodo")} One charge of ${total}. Pulls are non-refundable except where required by law; if a matchup stops taking pulls before your payment is applied, that part is refunded automatically. No credits, stored balance, prizes or payouts.</p>
+    <p className="mt-2 text-xs text-muted-foreground" data-engagement-disclosure>{ENGAGEMENT_DISCLOSURE}</p>
   </section>;
 }

@@ -5,6 +5,7 @@ import { SideAvatar } from "./SideAvatar";
 import { ShareButton } from "./ShareButton";
 import { receiptHeadline } from "@/lib/og/card";
 import { currentRound } from "@/lib/rounds";
+import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
 import { CONFIRM_MESSAGES, totalsBefore, type ConfirmState, type PaymentReceipt as Receipt, type ReceiptLine } from "@/lib/payments/confirmation";
 
 /** Rope that starts where it was before this payment and slides to its new position. */
@@ -62,6 +63,7 @@ export function PaymentReceipt({ receipt, extras }: { receipt: Receipt; extras?:
     </div>
     {receipt.refundedPulls > 0 && <p className="mt-3 text-sm">{receipt.refundedPulls} pulls are being refunded because a matchup stopped taking pulls before your payment was applied.</p>}
     <div className="mt-4 space-y-3">{receipt.lines.map((line) => <LineResult key={line.matchupId} line={line} siteUrl={receipt.siteUrl} />)}</div>
+    <p className="mt-3 text-xs text-muted-foreground" data-engagement-disclosure>{ENGAGEMENT_DISCLOSURE}</p>
   </section>;
 }
 

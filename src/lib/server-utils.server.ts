@@ -32,6 +32,16 @@ export const config = () => ({
   ownerName: process.env["OWNER_NAME"]?.trim() || "",
   paymentProvider: (process.env["PAYMENT_PROVIDER"] || "dodo").toLowerCase(),
   pullMode: "immediate",
+  /**
+   * Player notification (engagement) emails go through a separate provider, never Lovable's app-email sender
+   * (that channel is for transactional mail only). Sending stays off until every value here is set.
+   */
+  engagement: {
+    provider: (process.env["ENGAGEMENT_EMAIL_PROVIDER"] || "resend").toLowerCase(),
+    apiKey: process.env["RESEND_API_KEY"] || "",
+    from: (process.env["ENGAGEMENT_EMAIL_FROM"] || "").trim(),
+    unsubscribeSecret: process.env["ENGAGEMENT_UNSUBSCRIBE_SECRET"] || "",
+  },
   /** Dodo-only pull basket ($5-$500 split across up to 10 matchups). Off = fixed 5/10/25 bundles. */
   pullBasket: flag("PULL_BASKET_ENABLED", false),
   dodo: (() => {

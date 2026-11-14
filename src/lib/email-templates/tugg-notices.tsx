@@ -1,25 +1,18 @@
 import * as React from 'react'
-import { Html, Head, Preview, Body, Container, Heading, Text, Link, Hr } from '@react-email/components'
+import { Text, Link } from '@react-email/components'
 import type { TemplateEntry } from './registry'
+import { EmailFrame, emailLink, emailText, EMAIL_COLORS } from './brand'
 
 type Props = { heading?: string; paragraphs?: string[]; details?: { label: string; value: string }[]; link?: string; linkLabel?: string }
+/** Transactional notices (receipts, refunds, replies, owner mail). Same site colours as every other Tugg email. */
 export function Notice({ heading = 'Tugg', paragraphs = [], details = [], link, linkLabel = 'View on Tugg' }: Props) {
   const safeLink = link && /^https:\/\/tugg\.lol\//.test(link) ? link : undefined
-  return <Html lang="en"><Head /><Preview>{heading}</Preview><Body style={body}><Container style={container}>
-    <Text style={brand}>Tugg</Text><Heading style={headingStyle}>{heading}</Heading>
-    {paragraphs.map((text, i) => <Text key={i} style={textStyle}>{text}</Text>)}
-    {details.map((item, i) => <Text key={i} style={textStyle}><strong>{item.label}: </strong>{item.value}</Text>)}
-    {safeLink && <Text><Link href={safeLink} style={linkStyle}>{linkLabel}</Link></Text>}
-    <Hr /><Text style={footer}>Tugg · hello@tugg.lol</Text>
-  </Container></Body></Html>
+  return <EmailFrame preview={heading} heading={heading} footer="Tugg · hello@tugg.lol">
+    {paragraphs.map((text, i) => <Text key={i} style={emailText}>{text}</Text>)}
+    {details.map((item, i) => <Text key={i} style={emailText}><strong style={{ color: EMAIL_COLORS.muted }}>{item.label}: </strong>{item.value}</Text>)}
+    {safeLink && <Text style={emailText}><Link href={safeLink} style={emailLink}>{linkLabel}</Link></Text>}
+  </EmailFrame>
 }
-const body = { backgroundColor: '#ffffff', color: '#202124', fontFamily: 'Arial, sans-serif' }
-const container = { maxWidth: '560px', padding: '28px 20px', margin: '0 auto' }
-const brand = { fontSize: '24px', fontWeight: '700', color: '#e53642' }
-const headingStyle = { fontSize: '22px', lineHeight: '30px' }
-const textStyle = { fontSize: '15px', lineHeight: '24px', overflowWrap: 'anywhere' as const }
-const linkStyle = { color: '#bc2235' }
-const footer = { fontSize: '12px', color: '#60646c' }
 const entry = (subject: string, heading: string): TemplateEntry => ({ component: Notice, subject, displayName: heading, previewData: { heading, paragraphs: ['Your Tugg update.'], details: [] } })
 export const receipt = entry('Your Tugg purchase receipt', 'Purchase receipt')
 export const rejection = entry('Your Tugg matchup and refund update', 'Matchup rejected')

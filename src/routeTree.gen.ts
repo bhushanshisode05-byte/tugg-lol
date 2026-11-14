@@ -27,6 +27,7 @@ import { Route as RulesRouteImport } from './routes/rules'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as FeedsLeaderboardDotjsonRouteImport } from './routes/feeds/leaderboard[.]json'
 import { Route as FeedsLeaderboardDotrssRouteImport } from './routes/feeds/leaderboard[.]rss'
@@ -40,7 +41,9 @@ import { Route as RecapDateRouteImport } from './routes/recap.$date'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
+import { Route as ApiPublicEmailUnsubscribeRouteImport } from './routes/api/public/email/unsubscribe'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
+import { Route as ApiPublicJobsEngagementRouteImport } from './routes/api/public/jobs/engagement'
 import { Route as ApiPublicJobsOwnerSummaryRouteImport } from './routes/api/public/jobs/owner-summary'
 import { Route as ApiPublicJobsPaymentsRouteImport } from './routes/api/public/jobs/payments'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -147,6 +150,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -212,9 +220,20 @@ const ApiPublicAdminDataRoute = ApiPublicAdminDataRouteImport.update({
   path: '/api/public/admin/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEmailUnsubscribeRoute =
+  ApiPublicEmailUnsubscribeRouteImport.update({
+    id: '/api/public/email/unsubscribe',
+    path: '/api/public/email/unsubscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsDailyRoute = ApiPublicJobsDailyRouteImport.update({
   id: '/api/public/jobs/daily',
   path: '/api/public/jobs/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicJobsEngagementRoute = ApiPublicJobsEngagementRouteImport.update({
+  id: '/api/public/jobs/engagement',
+  path: '/api/public/jobs/engagement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicJobsOwnerSummaryRoute =
@@ -323,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
   '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
@@ -336,7 +356,9 @@ export interface FileRoutesByFullPath {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
   '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -372,6 +394,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
   '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
@@ -385,7 +408,9 @@ export interface FileRoutesByTo {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
   '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -423,6 +448,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/feeds/leaderboard.json': typeof FeedsLeaderboardDotjsonRoute
   '/feeds/leaderboard.rss': typeof FeedsLeaderboardDotrssRoute
@@ -436,7 +462,9 @@ export interface FileRoutesById {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
+  '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
   '/api/public/jobs/owner-summary': typeof ApiPublicJobsOwnerSummaryRoute
   '/api/public/jobs/payments': typeof ApiPublicJobsPaymentsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -474,6 +502,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stats'
     | '/terms'
+    | '/unsubscribe'
     | '/admin'
     | '/feeds/leaderboard.json'
     | '/feeds/leaderboard.rss'
@@ -487,7 +516,9 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap/'
     | '/api/public/admin/data'
+    | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/engagement'
     | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
@@ -523,6 +554,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stats'
     | '/terms'
+    | '/unsubscribe'
     | '/admin'
     | '/feeds/leaderboard.json'
     | '/feeds/leaderboard.rss'
@@ -536,7 +568,9 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap'
     | '/api/public/admin/data'
+    | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/engagement'
     | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
@@ -573,6 +607,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stats'
     | '/terms'
+    | '/unsubscribe'
     | '/_authenticated/admin'
     | '/feeds/leaderboard.json'
     | '/feeds/leaderboard.rss'
@@ -586,7 +621,9 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap/'
     | '/api/public/admin/data'
+    | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
+    | '/api/public/jobs/engagement'
     | '/api/public/jobs/owner-summary'
     | '/api/public/jobs/payments'
     | '/api/public/payments/webhook'
@@ -624,6 +661,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   FeedsLeaderboardDotjsonRoute: typeof FeedsLeaderboardDotjsonRoute
   FeedsLeaderboardDotrssRoute: typeof FeedsLeaderboardDotrssRoute
   FeedsMatchupsDotjsonRoute: typeof FeedsMatchupsDotjsonRoute
@@ -636,7 +674,9 @@ export interface RootRouteChildren {
   RivalriesSlugRoute: typeof RivalriesSlugRoute
   RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
+  ApiPublicEmailUnsubscribeRoute: typeof ApiPublicEmailUnsubscribeRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
+  ApiPublicJobsEngagementRoute: typeof ApiPublicJobsEngagementRoute
   ApiPublicJobsOwnerSummaryRoute: typeof ApiPublicJobsOwnerSummaryRoute
   ApiPublicJobsPaymentsRoute: typeof ApiPublicJobsPaymentsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -783,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -874,11 +921,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/email/unsubscribe': {
+      id: '/api/public/email/unsubscribe'
+      path: '/api/public/email/unsubscribe'
+      fullPath: '/api/public/email/unsubscribe'
+      preLoaderRoute: typeof ApiPublicEmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/daily': {
       id: '/api/public/jobs/daily'
       path: '/api/public/jobs/daily'
       fullPath: '/api/public/jobs/daily'
       preLoaderRoute: typeof ApiPublicJobsDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/jobs/engagement': {
+      id: '/api/public/jobs/engagement'
+      path: '/api/public/jobs/engagement'
+      fullPath: '/api/public/jobs/engagement'
+      preLoaderRoute: typeof ApiPublicJobsEngagementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/jobs/owner-summary': {
@@ -1026,6 +1087,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   FeedsLeaderboardDotjsonRoute: FeedsLeaderboardDotjsonRoute,
   FeedsLeaderboardDotrssRoute: FeedsLeaderboardDotrssRoute,
   FeedsMatchupsDotjsonRoute: FeedsMatchupsDotjsonRoute,
@@ -1038,7 +1100,9 @@ const rootRouteChildren: RootRouteChildren = {
   RivalriesSlugRoute: RivalriesSlugRoute,
   RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
+  ApiPublicEmailUnsubscribeRoute: ApiPublicEmailUnsubscribeRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
+  ApiPublicJobsEngagementRoute: ApiPublicJobsEngagementRoute,
   ApiPublicJobsOwnerSummaryRoute: ApiPublicJobsOwnerSummaryRoute,
   ApiPublicJobsPaymentsRoute: ApiPublicJobsPaymentsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

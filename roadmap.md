@@ -1,5 +1,13 @@
 # Tugg roadmap
 
+## Player notification emails (2026-11-14, do not publish)
+- [x] Overtaken, closing soon and round result emails: scheduled scan every 2 minutes, once-only per kind/person/round, closable-gap rule, true streaks, live/sandbox separation, eligibility cut-off, staleness re-check at send time, per-person caps, small batches, retries with the same idempotency key.
+- [x] One-click unsubscribe (mail-app one-click and /unsubscribe page), permanent, no account; receipts and refund notices unaffected.
+- [x] Disclosure in both pull panels, the on-screen receipt and the receipt email; /privacy updated. All email templates moved to the site colours.
+- [x] Tests: 479 app tests, engagement.sql (20-flip round, environments, closing soon, results, streaks, unsubscribe, leases, retries), 10-way concurrency script.
+- [ ] Choose and connect the separate email provider (built for Resend): add RESEND_API_KEY and ENGAGEMENT_EMAIL_FROM on a sending subdomain other than hello.tugg.lol. Blocker: owner account and DNS.
+- [ ] After publishing: turn on sandbox (then live) sending and set the start time so only buyers who saw the disclosure are emailed. Blocker: owner publish + go-ahead.
+
 ## Noto emoji (2026-11-12, do not publish)
 - [x] Side emoji on site and share cards switched from Twemoji to pinned Noto Color Emoji (v2.051), one shared mapping; credit on About / Legal updated (Apache 2.0, public-domain flags); card link versions bumped.
 - [ ] Check Noto emoji on a real phone and in a real shared card. Blocker: needs a publish (owner).

@@ -15,6 +15,7 @@ import { usePaymentConfirmation } from "@/hooks/use-payment-confirmation";
 import { PaymentConfirmation } from "./PaymentReceipt";
 import type { PaymentResult } from "@/lib/payments/confirmation";
 import type { Side } from "@/lib/tugg.functions";
+import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
 export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, message, provider = "dodo" }: { sides: Side[]; slug: string; paused: boolean; onPulled: () => void; ready: boolean; message: string; provider?: string }) {
   const buy=useServerFn(buyImmediateBundle), read=useServerFn(getImmediatePayment);
   const [side,setSide]=useState(sides[0]?.id || ""),[pack,setPack]=useState<5|10|25>(5),[name,setName]=useState(""),[shout,setShout]=useState("");
@@ -67,5 +68,6 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
       if(drawer)confirm.track(r.orderId);else window.location.assign(r.url);
     }}catch{setError("Checkout could not open. No unverified pulls applied.");emit("failed");}finally{ts.current?.reset();setBusy(false);}}}>Pay ${pack} · {pack} pulls for {sides.find(s=>s.id===side)?.name}</Button>
     <p className="mt-4 text-xs text-muted-foreground">{paymentProviderText(provider)} Bundles are non-refundable except where required by law. No credits, stored balance, prizes or payouts.</p>
+    <p className="mt-2 text-xs text-muted-foreground" data-engagement-disclosure>{ENGAGEMENT_DISCLOSURE}</p>
   </section>;
 }

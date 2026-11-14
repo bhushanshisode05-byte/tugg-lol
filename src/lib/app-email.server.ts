@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { config } from './server-utils.server'
 import { sendTemplateEmail } from './email-templates/send-email'
+import { ENGAGEMENT_DISCLOSURE } from './engagement/rules'
 
 export const BUSINESS_EMAIL = 'hello@tugg.lol'
 export const EMAIL_LIMITS = { recipientPerHour: 6, ownerPerHour: 15, alertsPerHour: 3, attemptsPerEvent: 3 } as const
@@ -71,7 +72,7 @@ export async function sendPurchaseNotices(orderId: string, environment: string) 
       { label: 'Payment reference', value: order.merchant_unique_id },
       { label: 'Mode', value: environment === 'live' ? 'Live' : 'Sandbox / test' },
     ]
-    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, link, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.'] })
+    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, link, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.', ENGAGEMENT_DISCLOSURE] })
     if (order.review_allowed === false) {
       const completed = ['succeeded','refunded'].includes(order.refund_status || '')
       const submitted = ['submitted','pending','SENT_FOR_REFUND'].includes(order.refund_status || '')

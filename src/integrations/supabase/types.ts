@@ -391,6 +391,151 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_notifications: {
+        Row: {
+          attempts: number
+          backed_side_ids: string[]
+          claimed_at: string | null
+          created_at: string
+          data: Json
+          email_hash: string
+          environment: string
+          expires_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          lease_until: string | null
+          matchup_id: string
+          next_attempt_at: string
+          recipient_email: string | null
+          round_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          backed_side_ids: string[]
+          claimed_at?: string | null
+          created_at?: string
+          data: Json
+          email_hash: string
+          environment: string
+          expires_at: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          lease_until?: string | null
+          matchup_id: string
+          next_attempt_at?: string
+          recipient_email?: string | null
+          round_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          backed_side_ids?: string[]
+          claimed_at?: string | null
+          created_at?: string
+          data?: Json
+          email_hash?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          lease_until?: string | null
+          matchup_id?: string
+          next_attempt_at?: string
+          recipient_email?: string | null
+          round_id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_notifications_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement_round_state: {
+        Row: {
+          environment: string
+          leader_side_id: string | null
+          result_done: boolean
+          round_id: string
+          updated_at: string
+        }
+        Insert: {
+          environment: string
+          leader_side_id?: string | null
+          result_done?: boolean
+          round_id: string
+          updated_at?: string
+        }
+        Update: {
+          environment?: string
+          leader_side_id?: string | null
+          result_done?: boolean
+          round_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_round_state_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement_settings: {
+        Row: {
+          eligible_from: string | null
+          id: boolean
+          live_enabled: boolean
+          sandbox_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          eligible_from?: string | null
+          id?: boolean
+          live_enabled?: boolean
+          sandbox_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          eligible_from?: string | null
+          id?: boolean
+          live_enabled?: boolean
+          sandbox_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      engagement_unsubscribes: {
+        Row: {
+          created_at: string
+          email_hash: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email_hash: string
+          source: string
+        }
+        Update: {
+          created_at?: string
+          email_hash?: string
+          source?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -1296,6 +1441,70 @@ export type Database = {
         Returns: Json
       }
       dodo_reconcile_due: { Args: { p_env: string }; Returns: Json }
+      engagement_claim: {
+        Args: { p_lease_seconds?: number; p_limit: number; p_now?: string }
+        Returns: {
+          a_cents: number
+          attempts: number
+          b_cents: number
+          backed_side_ids: string[]
+          data: Json
+          email_hash: string
+          ends_at: string
+          environment: string
+          id: string
+          kind: string
+          recipient_email: string
+        }[]
+      }
+      engagement_closable: {
+        Args: { p_gap: number; p_leader: number }
+        Returns: boolean
+      }
+      engagement_closing_window: { Args: { p_length: string }; Returns: string }
+      engagement_email_hash: { Args: { p_email: string }; Returns: string }
+      engagement_enqueue: {
+        Args: {
+          p_data: Json
+          p_env: string
+          p_expires: string
+          p_from: string
+          p_kind: string
+          p_matchup: string
+          p_now: string
+          p_round: string
+          p_side: string
+        }
+        Returns: number
+      }
+      engagement_finish: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_now?: string
+          p_outcome: string
+          p_retry_after?: number
+        }
+        Returns: string
+      }
+      engagement_round_buyers: {
+        Args: { p_env: string; p_from: string; p_round: string }
+        Returns: {
+          created_at: string
+          email: string
+          email_hash: string
+          pull_id: string
+          side_id: string
+        }[]
+      }
+      engagement_scan: {
+        Args: { p_enqueue: boolean; p_now?: string }
+        Returns: Json
+      }
+      engagement_unsubscribe: {
+        Args: { p_hash: string; p_source: string }
+        Returns: string
+      }
       ensure_open_round: { Args: { p_matchup: string }; Returns: string }
       matchup_round_length: { Args: { p_matchup: string }; Returns: string }
       next_utc_midnight: { Args: never; Returns: string }

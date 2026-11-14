@@ -1,0 +1,2 @@
+-- Engagement tables are service-only: remove default Data API grants (row security already denied every row).
+REVOKE ALL ON public.engagement_settings, public.engagement_unsubscribes, public.engagement_round_state, public.engagement_notifications FROM anon, authenticated;

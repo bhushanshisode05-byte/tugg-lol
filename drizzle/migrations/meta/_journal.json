@@ -169,6 +169,20 @@
       "when": 1794445266838,
       "tag": "0023_matchup_history_read",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794618619106,
+      "tag": "0024_player_notification_emails",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794618641377,
+      "tag": "0025_engagement_tables_service_only",
+      "breakpoints": true
     }
   ]
 }
