@@ -48,4 +48,4 @@
 - Share-card fingerprints add week period/empty-round history only when present. Why: URLs change only with the drawing.
 - Player engagement emails come from the scheduled /api/public/jobs/engagement scan of committed pulls/rounds into a service-only outbox unique per kind, round, environment and address hash; caps and eligibility live in SQL, sending uses src/lib/engagement's own provider adapter, never the app-email sender. Why: app email is transactional-only and notification failures must never touch pulls, payments or closes.
 - All email templates read colours via src/lib/email-templates/brand.tsx from src/lib/og/theme.ts. Why: one colour source.
-- Rope round lines use shared RoundStatus; thresholds only in src/lib/round-urgency.ts; SSR renders calm, fixed height, aria-hidden ticker. Why: no hydration mismatch, shift or screen-reader spam.
+- Rope round lines use shared RoundStatus; thresholds only in src/lib/round-urgency.ts; SSR renders calm, fixed height, aria-hidden ticker. Why: no mismatch, shift or reader spam.
