@@ -45,6 +45,6 @@ export function cadenceSummary(lengths: RoundLength[]) {
 
 /** Policy wording that is true for every matchup, whichever length it is set to. */
 export const ROUND_LENGTH_RULE =
-  "Each matchup runs in rounds that last either one calendar week, ending Monday 00:00 UTC, or one day, ending at 00:00 UTC. Every matchup page shows its round length and exactly when the current round ends.";
+  "Each matchup runs in rounds that last either one calendar week, ending Monday 00:00 UTC, or one day, ending at 00:00 UTC. Every matchup page shows its round length, and a live countdown to the close during the round's final hours.";
 export const ROUND_LENGTH_SHORT = "Rounds end Monday 00:00 UTC (weekly) or 00:00 UTC (daily ropes).";
 export const ALL_TIME_RULE = "Each side's all-time total and round wins never reset: every dollar ever pulled stays counted after a round ends.";

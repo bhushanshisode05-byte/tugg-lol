@@ -9,7 +9,8 @@ import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { Shell } from "@/components/tugg/Shell";
 import { ShareButton } from "@/components/tugg/ShareButton";
 import { Rope, usd } from "@/components/tugg/Rope";
-import { Countdown } from "@/components/tugg/Countdown";
+import { RoundStatus } from "@/components/tugg/RoundStatus";
+import { ShoutOuts } from "@/components/tugg/ShoutOuts";
 import { PullPanel } from "@/components/tugg/PullPanel";
 import { useLive } from "@/hooks/use-live";
 import { RecentPulls } from "@/components/tugg/RecentPulls";
@@ -142,19 +143,12 @@ function MatchupPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          <span>
+        <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <span className="min-w-0 truncate">
             {m.category}
             {m.source === "ai" ? " · Added by Tugg" : ""}
           </span>
-          {m.round && (
-            <span>
-              {CurrentRound(len)} ends in <Countdown to={m.round.ends_at} />
-              {m.round.extensions > 0 && (
-                <span className="ml-2 text-accent">+{m.round.extensions * 10}m final hour</span>
-              )}
-            </span>
-          )}
+          {m.round && <RoundStatus round={m.round} />}
         </div>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           <h1 className="font-display text-4xl font-extrabold leading-none sm:text-6xl">
@@ -248,21 +242,8 @@ function MatchupPage() {
             </Panel>
           ))}
           <Panel title="Shout-outs">
-            {recent.filter((p) => p.shout_out).length ? (
-              <ul className="space-y-2">
-                {recent
-                  .filter((p) => p.shout_out)
-                  .slice(0, 8)
-                  .map((p) => (
-                    <li key={p.id}>
-                      <span className="font-bold">{p.display_name || "Anonymous"}</span>{" "}
-                      <span className="text-muted-foreground">
-                        for {sideById.get(p.side_id)?.name}:
-                      </span>{" "}
-                      {p.shout_out}
-                    </li>
-                  ))}
-              </ul>
+            {recent.some((p) => p.shout_out) ? (
+              <ShoutOuts pulls={recent} sides={m.sides} />
             ) : (
               <Empty />
             )}

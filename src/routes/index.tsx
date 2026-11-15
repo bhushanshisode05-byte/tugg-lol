@@ -9,7 +9,7 @@ import { RecentPulls } from "@/components/tugg/RecentPulls";
 import { RECENT_PULLS } from "@/lib/recent-pulls";
 import { Shell } from "@/components/tugg/Shell";
 import { Rope, usd } from "@/components/tugg/Rope";
-import { Countdown } from "@/components/tugg/Countdown";
+import { RoundStatus } from "@/components/tugg/RoundStatus";
 import { cadenceSummary, roundLengthOf } from "@/lib/rounds";
 import { useLive } from "@/hooks/use-live";
 
@@ -132,13 +132,9 @@ function Home() {
             params={{ slug: featured.slug }}
             className="mt-8 block rounded-2xl border-2 border-foreground bg-card p-5 shadow-pop transition-transform hover:-translate-y-1 sm:p-8"
           >
-            <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              <span>Featured rope</span>
-              {featured.round && (
-                <span>
-                  Ends in <Countdown to={featured.round.ends_at} />
-                </span>
-              )}
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="min-w-0 truncate">Featured rope</span>
+              {featured.round && <RoundStatus round={featured.round} />}
             </div>
             <h2 className="font-display text-3xl font-extrabold sm:text-5xl">{featured.title}</h2>
             <div className="mt-4">
@@ -210,7 +206,8 @@ function Home() {
                   <span>{usd(m.round?.total_b_cents ?? 0)}</span>
                 </div>
               </Link>
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex items-center justify-between gap-2">
+                {m.round ? <RoundStatus round={m.round} className="text-xs font-bold text-muted-foreground" /> : <span />}
                 <ShareButton siteUrl={data.siteUrl} m={toShare(m)} />
               </div>
             </div>

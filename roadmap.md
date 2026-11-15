@@ -1,5 +1,12 @@
 # Tugg roadmap
 
+## Conditional round countdown (2026-11-15, do not publish)
+- [x] One shared round status on the featured rope, every trending rope card, matchup pages and rivalry pages; old always-on countdowns removed.
+- [x] Calm name until 12 h (weekly) / 3 h (daily) left, then "Closes in …"; final hour in accent with the extension note; thresholds in one place.
+- [x] Server renders calm, no hydration warning, fixed height in every state, ticking hidden from screen readers behind a coarse label.
+- [x] Shout-outs say "Someone" for unnamed buyers. Round rule text updated to match (countdown only in the final hours).
+- [x] Tests for all seven requested cases plus thresholds, wording and hydration.
+
 ## Recent-pulls ticker (2026-11-15, do not publish)
 - [x] Five newest real pulls from the last 48 hours on the home page (with matchup title) and each matchup page; "Someone" for no name, country name only when stored; honest rounded-down times; nothing rendered when empty; live-only when payments are live.
 - [x] Replaced the old scrolling strip and its "No pulls yet" box; updates through the existing live hook; 15-second server cache.

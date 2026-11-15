@@ -9,14 +9,35 @@ export function countdownText(ms: number) {
   return `${d ? `${d}d ` : ""}${p(h)}:${p(m)}:${p(s)}`;
 }
 
-export function Countdown({ to }: { to: string }) {
-  const [now, setNow] = useState<number | null>(null);
+/**
+ * The current time, re-read every `intervalMs`. It is null on the server and during hydration (unless `initial` is
+ * given by a parent that is already mounted), so time-derived markup never mismatches.
+ */
+export function useNow(intervalMs: number, initial: number | null = null) {
+  const [now, setNow] = useState<number | null>(initial);
   useEffect(() => {
     setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
     return () => clearInterval(t);
-  }, []);
+  }, [intervalMs]);
+  return now;
+}
+
+export function Countdown({
+  to,
+  format = countdownText,
+  className,
+  startAt,
+}: {
+  to: string;
+  format?: (ms: number) => string;
+  /** Replaces the default "accent under 10 minutes" colouring. */
+  className?: string;
+  /** Time already known by a mounted parent, so the first frame shows real digits instead of a placeholder. */
+  startAt?: number;
+}) {
+  const now = useNow(1000, startAt ?? null);
   if (now === null) return <span className="font-mono tabular-nums">--:--:--</span>;
   const ms = Math.max(0, new Date(to).getTime() - now);
-  return <span className={`font-mono tabular-nums ${ms < 6e5 ? "text-accent" : ""}`}>{countdownText(ms)}</span>;
+  return <span className={`font-mono tabular-nums ${className ?? (ms < 6e5 ? "text-accent" : "")}`}>{format(ms)}</span>;
 }

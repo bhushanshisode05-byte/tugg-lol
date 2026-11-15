@@ -4,7 +4,7 @@ import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-
 import { Shell } from "@/components/tugg/Shell";
 import { RouteError, NotFoundBlock } from "@/components/tugg/RouteError";
 import { Rope, usd } from "@/components/tugg/Rope";
-import { Countdown } from "@/components/tugg/Countdown";
+import { RoundStatus } from "@/components/tugg/RoundStatus";
 import { useLive } from "@/hooks/use-live";
 import { getMatchup } from "@/lib/tugg.functions";
 import { cardVersion, matchupCardInput, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
@@ -153,12 +153,7 @@ function Rivalry() {
 
         <div className="mt-8 rounded-2xl border border-border bg-card p-5" data-live-round>
           <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            <span>{CurrentRound(f.len)}</span>
-            {m.round && (
-              <span>
-                Ends in <Countdown to={m.round.ends_at} />
-              </span>
-            )}
+            {m.round ? <RoundStatus round={m.round} /> : <span className="inline-flex h-5 items-center">{CurrentRound(f.len)}</span>}
           </div>
           <Rope sides={m.sides} a={f.a} b={f.b} />
           <div className={`flex justify-between font-mono ${f.empty ? "text-lg font-bold text-muted-foreground" : "text-2xl font-extrabold"}`}>
