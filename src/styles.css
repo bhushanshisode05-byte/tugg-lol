@@ -120,12 +120,6 @@
 }
 @utility animate-wiggle { animation: rope-wiggle 1.6s ease-in-out infinite; }
 
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-@utility animate-ticker { animation: ticker 40s linear infinite; }
-
 @media (prefers-reduced-motion: reduce) {
-  .animate-wiggle, .animate-ticker { animation: none; }
+  .animate-wiggle { animation: none; }
 }

@@ -1,5 +1,11 @@
 # Tugg roadmap
 
+## Recent-pulls ticker (2026-11-15, do not publish)
+- [x] Five newest real pulls from the last 48 hours on the home page (with matchup title) and each matchup page; "Someone" for no name, country name only when stored; honest rounded-down times; nothing rendered when empty; live-only when payments are live.
+- [x] Replaced the old scrolling strip and its "No pulls yet" box; updates through the existing live hook; 15-second server cache.
+- [x] Tests: order and times, absent when empty, Someone not Anonymous, sandbox excluded when live, exact payload fields, 48-hour window, cache.
+- [ ] While payments stay in test mode the ticker shows test pulls (like the rope totals). Blocker: owner decision to hide it in test mode, or switch payments to live.
+
 ## Player notification emails (2026-11-14, do not publish)
 - [x] Overtaken, closing soon and round result emails: scheduled scan every 2 minutes, once-only per kind/person/round, closable-gap rule, true streaks, live/sandbox separation, eligibility cut-off, staleness re-check at send time, per-person caps, small batches, retries with the same idempotency key.
 - [x] One-click unsubscribe (mail-app one-click and /unsubscribe page), permanent, no account; receipts and refund notices unaffected.

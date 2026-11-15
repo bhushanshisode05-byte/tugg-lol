@@ -3,8 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShareButton } from "@/components/tugg/ShareButton";
 import { cardVersion, matchupCardInput } from "@/lib/og/card";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { getHome, type Matchup } from "@/lib/tugg.functions";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getHome, getRecentPulls, type Matchup } from "@/lib/tugg.functions";
+import { RecentPulls } from "@/components/tugg/RecentPulls";
+import { RECENT_PULLS } from "@/lib/recent-pulls";
 import { Shell } from "@/components/tugg/Shell";
 import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
@@ -12,6 +14,7 @@ import { cadenceSummary, roundLengthOf } from "@/lib/rounds";
 import { useLive } from "@/hooks/use-live";
 
 const homeQuery = queryOptions({ queryKey: ["home"], queryFn: () => getHome() });
+const recentQuery = queryOptions({ queryKey: ["recent-pulls"], queryFn: () => getRecentPulls() });
 const CATEGORIES = [
   "All",
   "Tech",
@@ -26,7 +29,13 @@ const CATEGORIES = [
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
-  loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery),
+  loader: async ({ context }) => {
+    const [home] = await Promise.all([
+      context.queryClient.ensureQueryData(homeQuery),
+      context.queryClient.ensureQueryData(recentQuery),
+    ]);
+    return home;
+  },
   head: ({ loaderData }) => {
     const cadence = cadenceSummary((loaderData?.matchups ?? []).flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
     return {
@@ -66,8 +75,23 @@ function total(m: Matchup) {
 
 function Home() {
   const { data } = useSuspenseQuery(homeQuery);
+  const { data: recentPulls } = useSuspenseQuery(recentQuery);
   const qc = useQueryClient();
-  useLive(() => qc.invalidateQueries({ queryKey: ["home"] }));
+  // The feed is cached briefly on the server, so re-read once more after that cache has expired.
+  const trailing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(trailing.current), []);
+  const refreshRecent = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["recent-pulls"] });
+    clearTimeout(trailing.current);
+    trailing.current = setTimeout(
+      () => qc.invalidateQueries({ queryKey: ["recent-pulls"] }),
+      (RECENT_PULLS.cacheSeconds + 1) * 1000,
+    );
+  }, [qc]);
+  useLive(() => {
+    qc.invalidateQueries({ queryKey: ["home"] });
+    refreshRecent();
+  });
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
 
@@ -85,7 +109,6 @@ function Home() {
     .sort((a, b) => total(b) - total(a));
 
   const cadence = cadenceSummary(data.matchups.flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
-  const sideName = new Map(data.matchups.flatMap((m) => m.sides.map((s) => [s.id, s] as const)));
 
   return (
     <Shell>
@@ -131,31 +154,13 @@ function Home() {
             </div>
           </Link>
         )}
-        {featured && (
-          <div className="mt-3 flex justify-end">
-            <ShareButton siteUrl={data.siteUrl} m={toShare(featured)} />
-          </div>
-        )}
+        <RecentPulls
+          pulls={recentPulls}
+          showMatchup
+          className={featured ? "mt-3" : "mt-8"}
+          aside={featured && <ShareButton siteUrl={data.siteUrl} m={toShare(featured)} />}
+        />
       </section>
-
-      <div className="overflow-hidden border-y border-border bg-card py-2">
-        {data.recent.length ? (
-          <div className="flex w-max animate-ticker gap-8 whitespace-nowrap text-sm font-semibold">
-            {[...data.recent, ...data.recent].map((p, i) => (
-              <span key={p.id + i}>
-                <span className="text-primary">{usd(p.amount_cents)}</span>{" "}
-                {p.display_name || "Someone"} → <SideAvatar side={sideName.get(p.side_id)} />{" "}
-                {sideName.get(p.side_id)?.name}
-                {p.country ? ` · ${p.country}` : ""}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-sm text-muted-foreground">
-            No pulls yet. Be the first to move a rope.
-          </p>
-        )}
-      </div>
 
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

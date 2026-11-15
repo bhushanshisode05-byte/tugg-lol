@@ -8,6 +8,8 @@ import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { SIDE_IMAGES_ENABLED } from "./feature-flags";
 import { cardDisplayName } from "./og/card";
 import { roundLengthOf, type RoundLength } from "./rounds";
+import { toRecentPulls, type RecentPull } from "./recent-pulls";
+import { cachedRecentPulls, type RecentPullsDb } from "./recent-pulls.server";
 
 /** Verifies Turnstile server-side before any side effect; returns a user-facing error or null. */
 async function turnstileGate(
@@ -179,19 +181,22 @@ const startOfUtcDay = () => {
 export const getHome = createServerFn({ method: "GET" }).handler(async () => {
   const db = publicDb();
   const live = liveOnly();
-  const [matchups, stats, recent] = await Promise.all([
-    loadMatchups(),
-    db.rpc("tugg_stats", { p_live: live }),
-    db.rpc("tugg_recent_pulls", { p_live: live, p_limit: 20 }),
-  ]);
+  const [matchups, stats] = await Promise.all([loadMatchups(), db.rpc("tugg_stats", { p_live: live })]);
   return {
     matchups,
     pulledTodayCents: Number(stats.data?.[0]?.today_cents ?? 0),
-    recent: (recent.data ?? []) as PullRow[],
     paused: config().pausePulls,
     siteUrl: config().siteUrl,
   };
 });
+
+/**
+ * Site-wide recent-pulls ticker: up to five real pulls from the last 48 hours, newest first, live-only
+ * on the live site. Returns only RecentPull fields (no email, order/payment id or amount); briefly cached.
+ */
+export const getRecentPulls = createServerFn({ method: "GET" }).handler(
+  async (): Promise<RecentPull[]> => cachedRecentPulls(() => publicDb() as unknown as RecentPullsDb, liveOnly()),
+);
 
 export const getMatchup = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(100) }).parse(d))
@@ -237,6 +242,12 @@ export const getMatchup = createServerFn({ method: "GET" })
       matchup: m,
       top,
       recent: (recent.data ?? []) as PullRow[],
+      // Same public rows, narrowed to the ticker's fields and 48-hour window.
+      ticker: toRecentPulls(
+        (recent.data ?? []) as PullRow[],
+        new Map(m.sides.map((s) => [s.id, { side: s.name, matchup: m.title }])),
+        Date.now(),
+      ),
       countries: (countries.data ?? []).map((c: any) => ({
         country: c.country as string,
         cents: Number(c.cents),

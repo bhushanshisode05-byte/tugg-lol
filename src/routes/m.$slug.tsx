@@ -12,6 +12,7 @@ import { Rope, usd } from "@/components/tugg/Rope";
 import { Countdown } from "@/components/tugg/Countdown";
 import { PullPanel } from "@/components/tugg/PullPanel";
 import { useLive } from "@/hooks/use-live";
+import { RecentPulls } from "@/components/tugg/RecentPulls";
 
 import { cardVersion, matchupCardInput, matchupImagePath } from "@/lib/og/card";
 import { AllTimeScore } from "@/components/tugg/AllTimeScore";
@@ -190,6 +191,7 @@ function MatchupPage() {
             </p>
             <SideTotal side={B} cents={b} right quiet={empty} />
           </div>
+          <RecentPulls pulls={data.ticker} className="mt-4" />
         </div>
 
         {!empty && (
