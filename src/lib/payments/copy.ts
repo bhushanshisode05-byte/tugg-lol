@@ -1,6 +1,6 @@
 // Visitor-facing payment wording. Shared policy text uses {{tokens}} instead of a hardcoded
 // provider name so every page follows the active PAYMENT_PROVIDER.
-type ProviderCopy = { name: string; sentence: string; processes: string; billingPrivacy: string; buyerEmail: string };
+type ProviderCopy = { name: string; sentence: string; processes: string; billingPrivacy: string; buyerEmail: string; refundTiming: string };
 const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
   dodo: {
     name: "Dodo Payments",
@@ -10,6 +10,8 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
       "Dodo Payments, as merchant of record, collects billing and card details on its hosted checkout to process digital purchases, taxes and risk checks; card data never touches Tugg servers.",
     buyerEmail:
       "When you pay, Dodo Payments shares the email address you entered at its checkout with Tugg, and we store it privately with your order.",
+    refundTiming:
+      "Refunds are issued by Dodo Payments, our merchant of record, to the original payment method. How long it takes to appear depends on Dodo Payments and your bank; Tugg cannot promise an exact date.",
   },
   payglocal: {
     name: "PayGlocal",
@@ -18,11 +20,15 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
     billingPrivacy:
       "Billing name, email and address are sent securely to PayGlocal to process digital purchases and risk checks. PayGlocal handles card details on its hosted checkout; card data never touches Tugg servers.",
     buyerEmail: "We store the email address you enter at checkout privately with your order.",
+    refundTiming:
+      "Refunds return to the original payment method. The time to appear depends on PayGlocal and your bank; Tugg cannot promise an exact date.",
   },
 };
 const copyFor = (provider: string = "dodo") => (provider === "payglocal" ? COPY.payglocal : COPY.dodo);
 export const paymentProviderName = (provider: string = "dodo") => copyFor(provider).name;
 export const paymentProviderText = (provider: string = "dodo") => copyFor(provider).sentence;
+/** Refund-timing sentence for customer emails, worded for the provider that took that order's payment. */
+export const refundTimingText = (provider: string = "dodo") => copyFor(provider).refundTiming;
 // Pull offer wording. "bundles" is the exact pre-basket text; "basket" applies only with PULL_BASKET_ENABLED on Dodo.
 const OFFER = {
   bundles: {

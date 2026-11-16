@@ -2,12 +2,15 @@ import { z } from 'zod'
 import { config } from './server-utils.server'
 import { sendTemplateEmail } from './email-templates/send-email'
 import { ENGAGEMENT_DISCLOSURE } from './engagement/rules'
+import { refundTimingText } from './payments/copy'
+import type { PaymentReceipt, ReceiptLine } from './payments/confirmation'
 
 export const BUSINESS_EMAIL = 'hello@tugg.lol'
 export const EMAIL_LIMITS = { recipientPerHour: 6, ownerPerHour: 15, alertsPerHour: 3, attemptsPerEvent: 3 } as const
 const ownerTemplates = new Set(['contact-owner', 'owner-alert', 'weekly-summary', 'owner-test'])
 export type NoticeTemplate = 'purchase-receipt' | 'matchup-rejection' | 'contact-reply' | 'contact-owner' | 'owner-alert' | 'weekly-summary' | 'owner-test'
 async function db() { return (await import('@/integrations/supabase/client.server')).supabaseAdmin }
+type Db = Awaited<ReturnType<typeof db>>
 const address = z.string().max(254).email().refine(s => !/[\r\n]/.test(s))
 async function hash(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
@@ -42,51 +45,126 @@ export async function deliverNotice(template: NoticeTemplate, recipient: string,
     }
   } catch { await log(key, template, 'send_failed'); return { sent: false, reason: 'send_failed' } }
 }
-export const REFUND_TIMING = 'Refunds return to the original payment method. The time to appear depends on PayGlocal and your bank; Tugg cannot promise an exact date.'
 const usd = (cents: number) => `$${(cents / 100).toFixed(2)} USD`
+const plural = (n: number) => `${n} pull${n === 1 ? '' : 's'}`
 
-export async function sendPurchaseNotices(orderId: string, environment: string) {
+/** Which provider took the payment. Every provider's fulfilment calls sendPurchaseNotices with its own id. */
+export type ReceiptProvider = 'dodo' | 'payglocal'
+/** The table each provider's fulfilment writes its orders to; the receipt reads only from there.
+ *  A provider without an entry fails to compile, so a new provider cannot silently read an empty table. */
+export const RECEIPT_ORDER_TABLE = { dodo: 'dodo_orders', payglocal: 'payglocal_orders' } as const satisfies Record<ReceiptProvider, string>
+/** Refund timing for the default (Dodo, merchant of record) provider. */
+export const REFUND_TIMING = refundTimingText('dodo')
+
+/** Provider-neutral view of a stored order. `reference` is the customer-facing payment reference only. */
+type ReceiptOrder = {
+  id: string; environment: string; kind: string; status: string; expected_cents: number; quantity: number
+  side_id: string | null; matchup_id: string | null; paid_at: string | null; created_at: string
+  buyer_email: string | null; review_allowed: boolean | null; review_reason: string | null; refund_status: string | null
+  basket_refund_cents: number; reference: string
+}
+// Named columns only: checkout sessions, refund ids and processing keys are never read into the email path.
+const DODO_COLUMNS = 'id,environment,kind,status,expected_cents,quantity,side_id,matchup_id,payment_id,paid_at,created_at,buyer_email,review_allowed,review_reason,refund_status,basket_refund_cents'
+const PAYGLOCAL_COLUMNS = 'id,environment,kind,status,expected_cents,quantity,side_id,matchup_id,merchant_unique_id,paid_at,created_at,buyer_email,review_allowed,review_reason,refund_status'
+async function loadReceiptOrder(client: Db, provider: ReceiptProvider, orderId: string, environment: string): Promise<ReceiptOrder | null> {
+  if (provider === 'dodo') {
+    const r = await client.from(RECEIPT_ORDER_TABLE.dodo).select(DODO_COLUMNS).eq('id', orderId).eq('environment', environment).single()
+    const o = r.data as any
+    if (r.error || !o) return null
+    // Dodo's payment ID (pay_…) is the reference printed on Dodo's own receipt to the buyer; the checkout session ID is never shown.
+    return { ...o, basket_refund_cents: o.basket_refund_cents ?? 0, reference: o.payment_id || o.id }
+  }
+  const r = await client.from(RECEIPT_ORDER_TABLE.payglocal).select(PAYGLOCAL_COLUMNS).eq('id', orderId).eq('environment', environment).single()
+  const o = r.data as any
+  if (r.error || !o) return null
+  // Tugg's merchant reference, never the PayGlocal gid.
+  return { ...o, basket_refund_cents: 0, reference: o.merchant_unique_id }
+}
+type Detail = { label: string; value: string }
+/** Email lines from the same receipt the confirmation screen shows, so the two can never disagree. */
+export function pullReceiptDetails(receipt: PaymentReceipt): Detail[] {
+  const sideName = (l: ReceiptLine) => l.sides.find(s => s.id === l.sideId)?.name || 'your side'
+  const applied = receipt.pulls - receipt.refundedPulls
+  const [single] = receipt.lines
+  const lines: Detail[] = receipt.lines.length === 1 && single
+    ? [{ label: 'Matchup', value: single.title }, { label: 'Side', value: sideName(single) }, { label: 'Pulls', value: String(single.pulls) }]
+    : receipt.lines.map((l, i) => ({ label: `Matchup ${i + 1}`, value: `${l.title}: ${plural(l.pulls)} for ${sideName(l)}` }))
+  return [
+    { label: 'Purchase', value: receipt.lines.length > 1 ? `${plural(applied)} across ${receipt.lines.length} matchups` : plural(applied) },
+    ...lines,
+  ]
+}
+async function pullDetails(client: Db, order: ReceiptOrder, provider: ReceiptProvider): Promise<{ details: Detail[]; link?: string; refundedPulls: number } | null> {
+  if (provider === 'dodo' && (order.kind === 'basket' || order.side_id)) {
+    const { dodoReceipt } = await import('./payments/receipt.server')
+    const receipt = await dodoReceipt(client as any, order)
+    if (!receipt || !receipt.lines.length) return null
+    const [only] = receipt.lines
+    const link = receipt.lines.length === 1 && only ? `https://tugg.lol/m/${encodeURIComponent(only.slug)}` : 'https://tugg.lol/'
+    return { details: pullReceiptDetails(receipt), link, refundedPulls: receipt.refundedPulls }
+  }
+  if (!order.side_id) return null
+  const side = await client.from('sides').select('name,matchups(title,slug)').eq('id', order.side_id).single()
+  const matchup = (side.data as any)?.matchups as { title: string; slug: string } | null
+  if (side.error || !matchup) return null
+  return { details: [{ label: 'Purchase', value: plural(order.quantity) }, { label: 'Matchup', value: matchup.title }, { label: 'Side', value: (side.data as any).name }, { label: 'Pulls', value: String(order.quantity) }], link: `https://tugg.lol/m/${encodeURIComponent(matchup.slug)}`, refundedPulls: 0 }
+}
+function refundState(status: string | null) {
+  const completed = ['succeeded', 'refunded'].includes(status || '')
+  const submitted = ['submitted', 'pending', 'SENT_FOR_REFUND'].includes(status || '')
+  return { key: completed ? 'completed' : submitted ? 'submitted' : 'review', label: completed ? 'Refund confirmed' : submitted ? 'Refund requested, not yet confirmed' : 'Refund outcome is being reviewed' }
+}
+
+/** Buyer receipt (and rejection/refund notice) from the stored order in the table `provider` writes to. Observer only. */
+export async function sendPurchaseNotices(orderId: string, environment: string, provider: ReceiptProvider) {
   try {
     const client = await db()
-    const result = await client.from('payglocal_orders').select('*').eq('id', orderId).eq('environment', environment).single()
-    const order = result.data
-    if (result.error || !order || order.status !== 'paid') return
+    const order = await loadReceiptOrder(client, provider, orderId, environment)
+    if (!order || order.status !== 'paid') return
+    const mode = order.environment === 'live' ? 'Live' : 'Sandbox / test'
+    const refundTiming = refundTimingText(provider)
+    const isPull = order.kind === 'basket' || Boolean(order.side_id)
     let matchup: { title: string; slug: string } | null = null
-    let sideName = ''
-    if (order.side_id) {
-      const side = await client.from('sides').select('name,matchups(title,slug)').eq('id', order.side_id).single()
-      matchup = side.data?.matchups ?? null; sideName = side.data?.name ?? ''
+    let pull: Awaited<ReturnType<typeof pullDetails>> = null
+    if (isPull) {
+      pull = await pullDetails(client, order, provider)
+      if (!pull) { await log(`purchase-receipt:${orderId}`, 'purchase-receipt', 'notice_data_unavailable'); return }
     } else if (order.matchup_id) {
       const m = await client.from('matchups').select('title,slug').eq('id', order.matchup_id).single()
       matchup = m.data
     }
     if (!order.buyer_email) { await log(`purchase-receipt:${orderId}`, 'purchase-receipt', 'missing_buyer_email'); return }
-    const link = matchup ? `https://tugg.lol/m/${encodeURIComponent(matchup.slug)}` : undefined
-    const details = [
-      { label: 'Purchase', value: order.quantity ? `${order.quantity} pulls` : `${order.kind === 'featured' ? 'Featured' : 'Standard'} matchup` },
-      { label: 'Matchup', value: matchup?.title || 'Tugg matchup' },
-      ...(sideName ? [{ label: 'Side', value: sideName }] : []),
+    const refunded = pull && pull.refundedPulls > 0 ? refundState(order.refund_status) : null
+    const details: Detail[] = [
+      ...(pull ? pull.details : [
+        { label: 'Purchase', value: `${order.kind === 'featured' ? 'Featured' : 'Standard'} matchup` },
+        { label: 'Matchup', value: matchup?.title || 'Tugg matchup' },
+      ]),
       { label: 'Amount', value: usd(order.expected_cents) },
+      ...(pull && refunded ? [
+        { label: 'Refunded', value: `${usd(order.basket_refund_cents)} for ${plural(pull.refundedPulls)}, because a matchup stopped taking pulls before your payment was applied` },
+        { label: 'Refund status', value: refunded.label },
+      ] : []),
       { label: 'Date (UTC)', value: order.paid_at || order.created_at },
-      // Merchant reference, never a full provider token/gid.
-      { label: 'Payment reference', value: order.merchant_unique_id },
-      { label: 'Mode', value: environment === 'live' ? 'Live' : 'Sandbox / test' },
+      { label: 'Payment reference', value: order.reference },
+      { label: 'Mode', value: mode },
     ]
-    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, link, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.', ENGAGEMENT_DISCLOSURE] })
-    if (order.review_allowed === false) {
-      const completed = ['succeeded','refunded'].includes(order.refund_status || '')
-      const submitted = ['submitted','pending','SENT_FOR_REFUND'].includes(order.refund_status || '')
-      await deliverNotice('matchup-rejection', order.buyer_email, `${orderId}:${completed ? 'completed' : submitted ? 'submitted' : 'review'}`, {
+    const link = pull?.link ?? (matchup ? `https://tugg.lol/m/${encodeURIComponent(matchup.slug)}` : undefined)
+    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, link, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.', ...(refunded ? [refundTiming] : []), ENGAGEMENT_DISCLOSURE] })
+    if (!isPull && order.review_allowed === false) {
+      const state = refundState(order.refund_status)
+      await deliverNotice('matchup-rejection', order.buyer_email, `${orderId}:${state.key}`, {
         heading: 'Your matchup was rejected', details: [
           { label: 'Matchup', value: matchup?.title || 'Tugg matchup' },
           { label: 'Reason', value: order.review_reason || 'The submission did not meet the published content policy.' },
           { label: 'Refund amount', value: usd(order.expected_cents) },
-          { label: 'Refund status', value: completed ? 'Refund confirmed' : submitted ? 'Refund requested, not yet confirmed' : 'Refund outcome is being reviewed' },
-          { label: 'Payment reference', value: order.merchant_unique_id },
-        ], paragraphs: [REFUND_TIMING],
+          { label: 'Refund status', value: state.label },
+          { label: 'Payment reference', value: order.reference },
+          { label: 'Mode', value: mode },
+        ], paragraphs: [refundTiming],
       })
     }
-    if (['needs_review','failed'].includes(order.refund_status || '')) await sendOwnerAlert('refund_review', orderId, environment)
+    if (['needs_review','failed'].includes(order.refund_status || '')) await sendOwnerAlert('refund_review', orderId, order.environment)
   } catch { await log(`purchase-receipt:${orderId}`, 'purchase-receipt', 'notice_data_unavailable') }
 }
 export async function sendContactNotices(threadId: string) {

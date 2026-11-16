@@ -244,5 +244,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
     }
   } finally {
     checked(await db.from("dodo_orders").update({ processing_until: null, processing_key: null }).eq("id", id).eq("processing_key", key));
+    // Email observes the committed outcome after the lease is released; it reads stored state and never affects fulfilment.
+    try { await (await import("../app-email.server")).sendPurchaseNotices(id, provider.environment, "dodo"); } catch { /* payment outcome unchanged */ }
   }
 }

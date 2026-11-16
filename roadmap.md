@@ -213,3 +213,9 @@
 ## Pre-launch data reset (2026-11-16, owner-approved, do not publish)
 - [x] Cleared all sandbox payments, pulls, funnels, checkout limits and player-email records in one transaction; zeroed side scores; removed all 639 empty closed rounds; kept the 39 open weekly rounds untouched; removed all 18 recaps (each would now be empty).
 - [ ] Decide whether the nightly recap job should skip days with no pulls and no results (it currently publishes "A quiet day on Tugg").
+
+## Dodo purchase receipts fix (2026-11-16, do not publish)
+- [x] Receipts and matchup-rejection notices read dodo_orders and are sent after every Dodo payment outcome
+- [x] Basket receipts list every applied line and the refunded portion, from the shared screen receipt builder
+- [x] Dodo refund-timing wording; mode label from the order's own environment
+- [x] Regression guard: wrong table or missing fulfilment hook fails tests

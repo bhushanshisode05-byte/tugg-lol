@@ -83,7 +83,7 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
   } finally {
     checked(await db.from("payglocal_orders").update({ processing_until: null, processing_key: null }).eq("id", id).eq("processing_key", key));
     // Email is a post-outcome observer, never payment authority or a fulfillment dependency.
-    try { await (await import('../app-email.server')).sendPurchaseNotices(id, provider.environment); } catch { /* payment outcome unchanged */ }
+    try { await (await import('../app-email.server')).sendPurchaseNotices(id, provider.environment, 'payglocal'); } catch { /* payment outcome unchanged */ }
   }
 }
 export async function handlePayglocalCallback(request: Request) {
