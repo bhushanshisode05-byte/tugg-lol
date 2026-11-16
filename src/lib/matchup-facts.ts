@@ -1,11 +1,12 @@
 /** Browser-safe, quotable sentences about a matchup's live round and its never-resetting history. */
 import { usd } from "@/components/tugg/Rope";
 import type { Matchup, Side } from "@/lib/tugg.functions";
-import { closedRoundName, currentRound, roundLengthOf, type RoundLength } from "@/lib/rounds";
+import { closedRoundName, currentRound, type RoundLength } from "@/lib/rounds";
 
 type M = Pick<Matchup, "sides" | "round" | "history">;
 
-export const roundLength = (m: Pick<Matchup, "round">): RoundLength => roundLengthOf(m.round?.round_length);
+/** The open round's own length, or null with no open round (wording then stays neutral instead of guessing "daily"). */
+export const roundLength = (m: Pick<Matchup, "round">): RoundLength | null => m.round?.round_length ?? null;
 export const roundTotals = (m: Pick<Matchup, "round">) => ({ a: m.round?.total_a_cents ?? 0, b: m.round?.total_b_cents ?? 0 });
 export const isEmptyRound = (m: Pick<Matchup, "round">) => { const t = roundTotals(m); return t.a === 0 && t.b === 0; };
 

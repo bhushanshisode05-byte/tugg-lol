@@ -178,13 +178,11 @@ const startOfUtcDay = () => {
   return d.toISOString();
 };
 
+// The home badge sums the open rounds' own totals (worded from their lengths), so no separate UTC-day stat is read.
 export const getHome = createServerFn({ method: "GET" }).handler(async () => {
-  const db = publicDb();
-  const live = liveOnly();
-  const [matchups, stats] = await Promise.all([loadMatchups(), db.rpc("tugg_stats", { p_live: live })]);
+  const matchups = await loadMatchups();
   return {
     matchups,
-    pulledTodayCents: Number(stats.data?.[0]?.today_cents ?? 0),
     paused: config().pausePulls,
     siteUrl: config().siteUrl,
   };

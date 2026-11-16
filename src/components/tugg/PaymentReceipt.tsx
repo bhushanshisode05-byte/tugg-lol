@@ -33,7 +33,7 @@ function LineResult({ line, siteUrl }: { line: ReceiptLine; siteUrl: string }) {
     </div>
     <div className="mt-2"><RopeMove line={line} /></div>
     <p className="mt-1 text-sm text-muted-foreground">
-      <strong className="text-foreground">{side?.name} now {usd(sideCents)}</strong> in {currentRound(line.roundLength ?? "daily")} vs {other?.name} {usd(otherCents)}
+      <strong className="text-foreground">{side?.name} now {usd(sideCents)}</strong> in {currentRound(line.roundLength)} vs {other?.name} {usd(otherCents)}
       {side ? <> · {side.name} all-time {usd(side.all_time_cents)}</> : null}
     </p>
   </div>;

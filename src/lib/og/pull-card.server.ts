@@ -4,6 +4,7 @@ import { CARD_SIZES, receiptCredit, receiptHeadline, type CardInput, type CardSi
 import { SITE_COLORS } from "./theme";
 import { ropePosition, usd } from "@/components/tugg/Rope";
 import { drawable, getFonts, loadSide } from "./render.server";
+import { currentRound } from "@/lib/rounds";
 
 /**
  * The personal pull card: the on-screen "Payment confirmed" receipt (src/components/tugg/PaymentReceipt.tsx)
@@ -278,7 +279,7 @@ export async function renderPullCard(input: CardInput, size: CardSize): Promise<
     summary: {
       // Non-breaking spaces keep "Ronaldo $25" and "Messi all-time $25" together when the line wraps.
       strong: `${name} now ${usd(pulled.cents)} `,
-      rest: `in ${input.period === "week" ? "this week's" : "today's"} round vs ${otherName}\u00a0${usd(other.cents)} · ${nb(name)}\u00a0all-time\u00a0${usd(pull.allTimeCents)}`,
+      rest: `in ${currentRound(input.period === "week" ? "weekly" : "daily")} vs ${otherName}\u00a0${usd(other.cents)} · ${nb(name)}\u00a0all-time\u00a0${usd(pull.allTimeCents)}`,
     },
   };
 

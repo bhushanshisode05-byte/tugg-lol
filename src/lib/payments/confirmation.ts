@@ -5,7 +5,7 @@ import type { RoundLength } from "@/lib/rounds";
 
 /** `pull` is the public pull id plus the round totals right after it, for the personal share card. */
 export type ReceiptPull = { id: string; totalA: number; totalB: number };
-/** `roundLength` is display-only: it words the round ("today's" or "this week's"). */
+/** `roundLength` is display-only: it words the round ("today's" or "this week's"); missing means neutral wording, never a guessed length. */
 export type ReceiptLine = { matchupId: string; slug: string; title: string; sides: Side[]; sideId: string; pulls: number; totalA: number; totalB: number; pull?: ReceiptPull | null | undefined; roundLength?: RoundLength | undefined };
 export type PaymentReceipt = { amountCents: number; pulls: number; refundedPulls: number; lines: ReceiptLine[]; siteUrl: string };
 export type PaymentResult = { status: string; quantity: number; refundedPulls: number; receipt?: PaymentReceipt | null | undefined };

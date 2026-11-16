@@ -1,8 +1,9 @@
 import { Countdown, useNow } from "@/components/tugg/Countdown";
-import { CurrentRound, roundLengthOf } from "@/lib/rounds";
+import { CurrentRound, type RoundLength } from "@/lib/rounds";
 import { closesInLabel, closesInText, extensionNote, roundUrgency } from "@/lib/round-urgency";
 
-type RoundLike = { ends_at: string; extensions: number; round_length?: string | null };
+/** Every caller passes a stored round, so its own length is always known: no fallback. */
+type RoundLike = { ends_at: string; extensions: number; round_length: RoundLength };
 
 /**
  * One status line for every rope. Calm: the round's name only. Urgent: a live countdown in the primary colour.
@@ -12,7 +13,7 @@ type RoundLike = { ends_at: string; extensions: number; round_length?: string | 
  */
 export function RoundStatus({ round, className = "" }: { round: RoundLike; className?: string }) {
   const now = useNow(15_000);
-  const len = roundLengthOf(round.round_length);
+  const len = round.round_length;
   const state = now === null ? "calm" : roundUrgency(len, round.ends_at, now);
   const base = `inline-flex h-5 shrink-0 items-center whitespace-nowrap leading-5 ${className}`;
 

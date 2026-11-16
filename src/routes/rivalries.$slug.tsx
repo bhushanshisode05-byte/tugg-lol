@@ -10,7 +10,7 @@ import { getMatchup } from "@/lib/tugg.functions";
 import { cardVersion, matchupCardInput, matchupImagePath, PUBLIC_SITE } from "@/lib/og/card";
 import { AllTimeScore } from "@/components/tugg/AllTimeScore";
 import { allTimeSentence, isEmptyRound, recordText, roundLength, roundSentence } from "@/lib/matchup-facts";
-import { CurrentRound, closedRoundName, currentRound } from "@/lib/rounds";
+import { CurrentRound, closedRoundName, currentRound, pullersText, roundCloses } from "@/lib/rounds";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -52,7 +52,7 @@ function facts(d: Data) {
     },
     {
       q: "How does the vote work?",
-      a: `Anyone can pay to pull the rope toward their side. The side with more money when the ${len === "weekly" ? "weekly round ends on Monday at 00:00 UTC" : "daily round ends at 00:00 UTC"} wins. All-time totals and round wins never reset. Nothing is paid out: it is entertainment and bragging rights only.`,
+      a: `Anyone can pay to pull the rope toward their side. The side with more money when the ${roundCloses(len)} wins. All-time totals and round wins never reset. Nothing is paid out: it is entertainment and bragging rights only.`,
     },
   ];
   return { A, B, a, b, answer, record, allTime, faq, leader, len, empty };
@@ -159,7 +159,7 @@ function Rivalry() {
           <div className={`flex justify-between font-mono ${f.empty ? "text-lg font-bold text-muted-foreground" : "text-2xl font-extrabold"}`}>
             <span>{usd(f.a)}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {f.empty ? "No pulls yet" : `${m.round?.pullers ?? 0} pullers`}
+              {pullersText(f.len, f.empty ? 0 : (m.round?.pullers ?? 0))}
             </span>
             <span>{usd(f.b)}</span>
           </div>

@@ -174,8 +174,11 @@ describe("empty round on the page and in share text", () => {
     const line = { matchupId: "m1", slug: "notion-vs-obsidian", title: "Notion vs Obsidian", sides: notion, sideId: "n", pulls: 25, totalA: 2500, totalB: 0 };
     const { rerender } = render(<PaymentReceipt receipt={{ amountCents: 2500, pulls: 25, refundedPulls: 0, siteUrl: "https://tugg.lol", lines: [{ ...line, roundLength: "weekly" }] }} />);
     expect(screen.getByText(/in this week's round vs/)).toBeInTheDocument();
-    rerender(<PaymentReceipt receipt={{ amountCents: 2500, pulls: 25, refundedPulls: 0, siteUrl: "https://tugg.lol", lines: [line] }} />);
+    rerender(<PaymentReceipt receipt={{ amountCents: 2500, pulls: 25, refundedPulls: 0, siteUrl: "https://tugg.lol", lines: [{ ...line, roundLength: "daily" }] }} />);
     expect(screen.getByText(/in today's round vs/)).toBeInTheDocument();
+    // Unknown length (the round closed before the receipt loaded): neutral, never a guessed "today".
+    rerender(<PaymentReceipt receipt={{ amountCents: 2500, pulls: 25, refundedPulls: 0, siteUrl: "https://tugg.lol", lines: [line] }} />);
+    expect(screen.getByText(/in the current round vs/)).toBeInTheDocument();
   });
 });
 

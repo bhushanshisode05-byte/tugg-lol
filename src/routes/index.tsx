@@ -1,7 +1,6 @@
-import { SideAvatar } from "@/components/tugg/SideAvatar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShareButton } from "@/components/tugg/ShareButton";
-import { cardVersion, matchupCardInput } from "@/lib/og/card";
+import { OpenRoundsPulled, TrendingRopeCard, toShare } from "@/components/tugg/HomeRopes";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getHome, getRecentPulls, type Matchup } from "@/lib/tugg.functions";
@@ -10,7 +9,7 @@ import { RECENT_PULLS } from "@/lib/recent-pulls";
 import { Shell } from "@/components/tugg/Shell";
 import { Rope, usd } from "@/components/tugg/Rope";
 import { RoundStatus } from "@/components/tugg/RoundStatus";
-import { cadenceSummary, roundLengthOf } from "@/lib/rounds";
+import { cadenceSummary, pullersText } from "@/lib/rounds";
 import { useLive } from "@/hooks/use-live";
 
 const homeQuery = queryOptions({ queryKey: ["home"], queryFn: () => getHome() });
@@ -37,7 +36,7 @@ export const Route = createFileRoute("/")({
     return home;
   },
   head: ({ loaderData }) => {
-    const cadence = cadenceSummary((loaderData?.matchups ?? []).flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
+    const cadence = cadenceSummary((loaderData?.matchups ?? []).flatMap((m) => (m.round ? [m.round.round_length] : [])));
     return {
     meta: [
       { title: "Tugg — Pay to pull. The world's rivalry rope." },
@@ -58,15 +57,6 @@ export const Route = createFileRoute("/")({
     };
   },
   component: Home,
-});
-
-const toShare = (m: Matchup) => ({
-  slug: m.slug,
-  title: m.title,
-  sides: m.sides,
-  a: m.round?.total_a_cents ?? 0,
-  b: m.round?.total_b_cents ?? 0,
-  v: (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })(),
 });
 
 function total(m: Matchup) {
@@ -108,14 +98,12 @@ function Home() {
     .filter((m) => !q || m.title.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => total(b) - total(a));
 
-  const cadence = cadenceSummary(data.matchups.flatMap((m) => (m.round ? [roundLengthOf(m.round.round_length)] : [])));
+  const cadence = cadenceSummary(data.matchups.flatMap((m) => (m.round ? [m.round.round_length] : [])));
 
   return (
     <Shell>
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:pt-16">
-        <p className="mb-3 inline-block rounded-full border border-border px-3 py-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          {usd(data.pulledTodayCents)} pulled today
-        </p>
+        <OpenRoundsPulled matchups={data.matchups} />
         <h1 className="font-display text-5xl font-extrabold leading-[0.9] sm:text-8xl">
           Pay to pull.
           <br />
@@ -146,6 +134,9 @@ function Home() {
             </div>
             <div className="flex justify-between font-mono text-xl font-bold">
               <span>{usd(featured.round?.total_a_cents ?? 0)}</span>
+              <span className="self-center text-center text-sm font-normal text-muted-foreground">
+                {pullersText(featured.round?.round_length, featured.round?.pullers ?? 0)}
+              </span>
               <span>{usd(featured.round?.total_b_cents ?? 0)}</span>
             </div>
           </Link>
@@ -182,35 +173,7 @@ function Home() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((m) => (
-            <div
-              key={m.id}
-              className="flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
-            >
-              <Link to="/m/$slug" params={{ slug: m.slug }} className="block">
-                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  <span>{m.category}</span>
-                  {m.source === "ai" && <span>Added by Tugg</span>}
-                </div>
-                <h3 className="mt-1 text-xl font-extrabold">
-                  <SideAvatar side={m.sides[0]} /> {m.title} <SideAvatar side={m.sides[1]} />
-                </h3>
-                <Rope
-                  size="sm"
-                  sides={m.sides}
-                  a={m.round?.total_a_cents ?? 0}
-                  b={m.round?.total_b_cents ?? 0}
-                />
-                <div className="flex justify-between font-mono text-sm">
-                  <span>{usd(m.round?.total_a_cents ?? 0)}</span>
-                  <span className="text-muted-foreground">{m.round?.pullers ?? 0} pullers</span>
-                  <span>{usd(m.round?.total_b_cents ?? 0)}</span>
-                </div>
-              </Link>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                {m.round ? <RoundStatus round={m.round} className="text-xs font-bold text-muted-foreground" /> : <span />}
-                <ShareButton siteUrl={data.siteUrl} m={toShare(m)} />
-              </div>
-            </div>
+            <TrendingRopeCard key={m.id} m={m} siteUrl={data.siteUrl} />
           ))}
         </div>
         {!list.length && (

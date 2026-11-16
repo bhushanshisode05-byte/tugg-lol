@@ -9,6 +9,7 @@ import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { emojiArtUrl, emojiCode } from "@/lib/emoji-art";
 import { SITE_COLORS } from "./theme";
+import { roundPeriod, type RoundLength } from "@/lib/rounds";
 
 // Live and result card palette: the site's real tokens from ./theme, the same single source the pull card reads.
 const BG = SITE_COLORS.background;
@@ -221,6 +222,8 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
 
   const inner = W - m.pad * 2;
   const week = input.period === "week";
+  // Card inputs mark weekly rounds only (daily URLs predate the field), so a missing period is a daily round.
+  const len: RoundLength = week ? "weekly" : "daily";
   const header =
     input.kind === "live"
       ? `LIVE ROUND · ${week ? "WEEK OF " : ""}${fmtDay(input.day)} · UTC`
@@ -324,7 +327,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
 
   if (history) {
     drawHistory(r, history, A, B, m, W, inner);
-    const cta = fit(display, `Be the first to pull ${week ? "this week" : "today"} →`, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
+    const cta = fit(display, `Be the first to pull ${roundPeriod(len)} →`, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
     text(r, display, cta.text, m.centered ? (W - cta.w) / 2 : m.pad, m.pullY, cta.size, hex(LIME));
     const bw = width(mono, "tugg.lol", m.brand);
     text(r, mono, "tugg.lol", m.centered ? (W - bw) / 2 : W - m.pad - bw, m.brandY, m.brand, hex(FG));
@@ -378,7 +381,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
   const cta =
     input.kind !== "result"
       ? "Pull your side →"
-      : `Final totals · ${input.pullers ?? 0} puller${input.pullers === 1 ? "" : "s"} · Pull your side ${week ? "this week" : "today"}`;
+      : `Final totals · ${input.pullers ?? 0} puller${input.pullers === 1 ? "" : "s"} · Pull your side ${roundPeriod(len)}`;
   const ct = fit(display, cta, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
   text(r, display, ct.text, m.centered ? (W - ct.w) / 2 : m.pad, m.pullY, ct.size, hex(LIME));
   const bw = width(mono, "tugg.lol", m.brand);
