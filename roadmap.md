@@ -209,3 +209,7 @@
 - [x] Redesign the personal pull share card to mirror the on-screen receipt (real site colours, three sizes, story/square two-by-two fields); live and result cards unchanged; do not publish.
 - [x] Side emoji on the website drawn as the same Twemoji artwork as share cards (unpublished)
 - [x] Live and result cards use the site colour tokens like the pull card (render version 4; unpublished)
+
+## Pre-launch data reset (2026-11-16, owner-approved, do not publish)
+- [x] Cleared all sandbox payments, pulls, funnels, checkout limits and player-email records in one transaction; zeroed side scores; removed all 639 empty closed rounds; kept the 39 open weekly rounds untouched; removed all 18 recaps (each would now be empty).
+- [ ] Decide whether the nightly recap job should skip days with no pulls and no results (it currently publishes "A quiet day on Tugg").
