@@ -1,5 +1,10 @@
 # Tugg roadmap
 
+## Round-period wording sweep (2026-11-16, do not publish)
+- [x] Home badge, featured rope, trending cards, matchup and rivalry pages, receipt and share-image text worded from each round's own length; no guessed "daily" for a missing length.
+- [x] Tests: weekly card says "this week" never "today", daily the reverse, neutral wording when unknown, and a scan that fails on hardcoded period copy or a "daily" default.
+- [ ] Share card for a matchup with no open round still draws as a daily card (fixing it changes cached card links). Blocker: owner decision.
+
 ## Conditional round countdown (2026-11-15, do not publish)
 - [x] One shared round status on the featured rope, every trending rope card, matchup pages and rivalry pages; old always-on countdowns removed.
 - [x] Calm name until 12 h (weekly) / 3 h (daily) left, then "Closes in …"; final hour in accent with the extension note; thresholds in one place.
