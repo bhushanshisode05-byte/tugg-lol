@@ -1,0 +1,2 @@
+# src/lib
+- Side emoji render as pinned Noto Color Emoji on both site and share cards through src/lib/emoji-art.ts (SVG on site, PNG in cards, same code; flags use Noto waved SVG on site and the Noto-rendered emoji-datasource-google PNG in cards because the Noto repo ships no PNG flags), falling back to the plain character; ordinary text emoji stay native; changing artwork bumps CARD_RENDER_VERSION and PULL_CARD_DESIGN. Why: one look per side on every device and no year-cached card with old artwork.
