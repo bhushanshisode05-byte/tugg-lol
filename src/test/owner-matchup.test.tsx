@@ -76,14 +76,18 @@ function from(table: string) {
   };
   return b;
 }
-// Mirrors tugg_creation_revenue: paid creator records on public matchups, at published prices, never owner matchups.
-// The real function is checked against a disposable database in src/test/owner-matchup.sql.
+// Mirrors tugg_creation_revenue: actual amounts on paid creation orders per provider, never refunded, inactive or owner matchups.
+// The real function is checked against a disposable database in src/test/creation-revenue.sql and owner-matchup.sql.
 function creationRevenue() {
-  const out: Record<string, number> = {};
-  for (const c of state.tables["creators"] ?? []) {
-    const m = (state.tables["matchups"] ?? []).find((x) => x["id"] === c["matchup_id"]);
-    if (c["refunded"] || !m || !["active", "retired"].includes(m["status"]) || m["source"] === "owner") continue;
-    out[c["environment"]] = (out[c["environment"]] ?? 0) + (c["tier"] === "featured" ? 2900 : 900);
+  const out: Record<string, Record<string, number>> = { dodo: {}, payglocal: {} };
+  for (const [provider, table] of [["dodo", "dodo_orders"], ["payglocal", "payglocal_orders"]] as const) {
+    for (const o of state.tables[table] ?? []) {
+      const m = (state.tables["matchups"] ?? []).find((x) => x["id"] === o["matchup_id"]);
+      if (!["standard", "featured"].includes(o["kind"]) || o["status"] !== "paid" || o["refund_status"] === "succeeded") continue;
+      if (!m || !["active", "retired"].includes(m["status"]) || m["source"] === "owner") continue;
+      const env = out[provider]!;
+      env[o["environment"]] = (env[o["environment"]] ?? 0) + Number(o["expected_cents"]);
+    }
   }
   return out;
 }
@@ -143,7 +147,7 @@ beforeEach(() => {
     rounds: [{ id: "r-paid", matchup_id: "m-paid", status: "open" }],
     creators: [{ id: "c1", matchup_id: "m-paid", tier: "standard", environment: "sandbox", refunded: false }],
     moderation_log: [],
-    dodo_orders: [],
+    dodo_orders: [{ id: "o1", matchup_id: "m-paid", kind: "standard", status: "paid", expected_cents: 900, environment: "sandbox", refund_status: null }],
     payglocal_orders: [],
   };
 });
@@ -194,13 +198,13 @@ describe("a valid owner submission", () => {
     expect((await post(valid)).status).toBe(201);
     expect(new Set(state.writes.map((w) => w.table))).toEqual(new Set(["moderation_log", "matchups", "sides", "rounds"]));
     for (const t of ORDER_TABLES) expect(state.touched.has(t)).toBe(false);
-    expect(rows("dodo_orders")).toEqual([]);
+    expect(rows("dodo_orders")).toHaveLength(1);
     expect(rows("payglocal_orders")).toEqual([]);
     expect(rows("creators")).toHaveLength(1);
   });
   it("leaves the creation revenue figure unchanged", async () => {
     const before = (await supabaseAdmin.rpc("tugg_creation_revenue")).data;
-    expect(before).toEqual({ sandbox: 900 });
+    expect(before).toEqual({ dodo: { sandbox: 900 }, payglocal: {} });
     expect((await post(valid)).status).toBe(201);
     expect((await supabaseAdmin.rpc("tugg_creation_revenue")).data).toEqual(before);
   });

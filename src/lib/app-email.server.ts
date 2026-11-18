@@ -244,6 +244,6 @@ export async function sendWeeklySummary(now = new Date()) {
       ...Object.entries(facts.new_matchups).map(([source,count]) => ({ label: `New matchups: ${source}`, value: String(count) })),
       { label: 'Genuine errors / failed payments', value: `${facts.errors} / ${facts.failed_payments}` },
       { label: 'Confirmed refunds', value: String(facts.refunds_confirmed) },
-    ], paragraphs: ['Gross revenue is before refunds. Refund requests are not confirmed refunds. Funnel counts use the same private events as the owner view.'] })
+    ], paragraphs: ['Gross revenue is what buyers paid, before refunds, before payment-processing fees and before tax collected by the merchant of record; it is not an accounting figure. Refund requests are not confirmed refunds. Funnel counts use the same private events as the owner view.'] })
   } catch { return { sent: false, reason: 'facts_unavailable' } }
 }

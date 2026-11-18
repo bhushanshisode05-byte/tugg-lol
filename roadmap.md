@@ -232,3 +232,8 @@
 - [x] Same owner check as the records page; binding moderation logged as owner_matchup; duplicate, same-side and slug-clash rules; first round opens; no order or fee
 - [x] New "owner" matchup source; creation income excludes owner matchups; "Added by Tugg" on matchup page, home cards and feeds
 - [ ] Owner tries the form signed in with the owner account (not checkable from here)
+
+## Honest owner money figures (2026-11-18, do not publish)
+- [x] Matchup creation income sums actual amounts on paid creation orders per provider; refunds, inactive and owner matchups excluded
+- [x] Every owner-page money figure says beside the number it is gross, before payment-processing fees and merchant-of-record tax, not an accounting figure
+- [x] Weekly owner summary counts Dodo payments in every line and labels revenue the same way

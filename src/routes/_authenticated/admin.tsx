@@ -4,6 +4,7 @@ import { pageHead } from "@/lib/policies";
 import { loadOwnerRecords } from "@/lib/admin-access";
 import { Button } from "@/components/ui/button";
 import { OwnerMatchupForm } from "@/components/tugg/OwnerMatchupForm";
+import { OwnerRevenue, grossLabel } from "@/components/tugg/OwnerRevenue";
 type AdminData = {
   summary: {
     pullRevenue: { environment: string; cents: string; pulls: number }[];
@@ -51,6 +52,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 function Admin() {
   const data = Route.useLoaderData();
+  const notes: Record<string, string> = {
+    [data.provider === "dodo" ? "Dodo payments" : "PayGlocal payments"]: `expected cents is the order price in US cents. An order is marked paid only when the provider's charged total matches it, so on paid rows it is the amount actually charged. ${grossLabel(data.provider)}`,
+    Pulls: `amount cents is what the buyer paid for that pull ($1 per pull), in US cents. ${grossLabel(data.provider)}`,
+  };
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <p className="font-mono text-sm text-primary">TUGG / OWNER</p>
@@ -59,37 +64,7 @@ function Admin() {
         <h2 className="text-2xl font-bold">Add a matchup</h2>
         <OwnerMatchupForm />
       </section>
-      <section className="border-b border-border py-6">
-        <h2 className="text-2xl font-bold">Revenue</h2>
-        <div className="mt-4 grid gap-6 sm:grid-cols-2">
-          {(["live", "sandbox"] as const).map((env) => {
-            const pg = data.payglocal.environments.find((r) => r.environment === env);
-            const dodo = data.dodo.environments.find((r) => r.environment === env);
-            const active = data.provider === "dodo" ? dodo : pg;
-            const providerName = data.provider === "dodo" ? "Dodo Payments" : "PayGlocal";
-            return (
-              <div key={env}>
-                <h3 className="font-bold">{env === "live" ? "Live money" : "Test money"}</h3>
-                <p className="mt-2 font-mono text-3xl">
-                  ${(Number(active?.revenue_cents ?? 0) / 100).toFixed(2)}
-                </p>
-                <p className="text-muted-foreground">
-                  {providerName} bundles: {active?.bundles_sold ?? 0} · Pulls applied: {active?.pulls_applied ?? 0}<br/>
-                  Refund requests: {active?.refunds ?? 0} · Refund reviews: {active?.refund_reviews ?? 0}<br/>
-                  Pending: {active?.pending ?? 0} · Expired: {active?.expired ?? 0}<br/>
-                  Reconcile checks: {active?.reconcile_checks ?? 0} · Paid: {active?.reconciled_paid ?? 0} · Expired: {active?.reconciled_expired ?? 0}<br/>
-                  {data.provider === "dodo" && <>Baskets: {dodo?.baskets_sold ?? 0} · Held for review: {dodo?.basket_reviews ?? 0} · Partial refunds owed: ${(Number(dodo?.basket_refund_cents ?? 0) / 100).toFixed(2)}<br/></>}
-
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Confirmed purchase revenue, before refunds and fees; not settlement balances.
-          Historical purchases remain in the records below.
-        </p>
-      </section>
+      <OwnerRevenue provider={data.provider} dodo={data.dodo} payglocal={data.payglocal} creationRevenue={data.creationRevenue} />
       <section className="border-b border-border py-6">
         <h2 className="text-2xl font-bold">Pull payment funnel</h2>
         <div className="mt-4 grid gap-6 sm:grid-cols-2">
@@ -129,6 +104,7 @@ function Admin() {
         <section key={title} className="border-t border-border py-6">
           <h2 className="text-2xl font-bold">{title}</h2>
           <p className="my-2 text-sm text-muted-foreground">Latest 200 records</p>
+          {notes[title] && <p className="my-2 text-sm">{notes[title]}</p>}
           {!rows.length ? (
             <p className="text-muted-foreground">No records.</p>
           ) : (

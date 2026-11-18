@@ -6,7 +6,7 @@ import { getAdminData } from "@/lib/admin.server";
 const mocks = vi.hoisted(() => ({ getUser: vi.fn(), rpc: vi.fn(), from: vi.fn(), ownerEmail: "owner@example.com" }));
 vi.mock("@/lib/server-utils.server", () => ({
   publicDb: () => ({ auth: { getUser: mocks.getUser } }),
-  config: () => ({ ownerEmail: mocks.ownerEmail }),
+  config: () => ({ ownerEmail: mocks.ownerEmail, paymentProvider: "dodo" }),
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: { rpc: mocks.rpc, from: mocks.from },
@@ -83,7 +83,7 @@ describe("owner endpoint remains anonymous-safe", () => {
   });
   it("confirmed configured owner with the unique role receives real query results without mutations", async () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: "owner-id", email: "OWNER@example.com", email_confirmed_at: "2026-11-04" } }, error: null });
-    mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "claim_tugg_owner" ? true : name === "tugg_admin_summary" ? { pullRevenue: [], sources: [] } : name === "tugg_creation_revenue" ? { live: 900, sandbox: 2900 } : name === "tugg_payglocal_funnel" ? [] : { environments: [] }, error: null }));
+    mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "claim_tugg_owner" ? true : name === "tugg_admin_summary" ? { pullRevenue: [], sources: [] } : name === "tugg_creation_revenue" ? { dodo: { live: 1234, sandbox: 2900 }, payglocal: { live: 900 } } : name === "tugg_payglocal_funnel" ? [] : { environments: [] }, error: null }));
     const rows = [{ id: "stored-pull", amount_cents: 500, environment: "sandbox" }];
     const query = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), limit: vi.fn() };
     mocks.from.mockImplementation((table: string) => ({ ...query, limit: vi.fn().mockResolvedValue({ data: table === "pulls" ? rows : [], error: null }) }));
@@ -92,7 +92,8 @@ describe("owner endpoint remains anonymous-safe", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     const body = await response.json();
     expect(body.pulls).toEqual(rows);
-    expect(body.creationRevenue).toEqual({ live: 900, sandbox: 2900 });
+    // Actual paid amounts for the active provider only, never a published price.
+    expect(body.creationRevenue).toEqual({ live: 1234, sandbox: 2900 });
     expect(mocks.rpc).toHaveBeenCalledWith("claim_tugg_owner", { p_user: "owner-id", p_email: "owner@example.com" });
     expect(mocks.from.mock.calls.map(([table]) => table)).toEqual(["pulls", "matchups", "moderation_log", "events", "support_threads", "payglocal_orders", "pull_wallets", "dodo_orders"]);
   });

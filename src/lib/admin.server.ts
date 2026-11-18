@@ -54,8 +54,9 @@ export async function getAdminData(request: Request) {
     )
   )
     return Response.json({ error: "Could not load owner records." }, { status: 503 });
-  // Creator amounts are inferred from published prices on paid creator records; unpaid/rejected records and owner-created matchups are never revenue.
-  const fees = creators.data as { live?: number; sandbox?: number } | null;
+  // Creation income is the actual amount paid on the active provider's paid creation orders; refunds, inactive and owner-created matchups never count.
+  const byProvider = creators.data as Record<string, { live?: number; sandbox?: number } | undefined> | null;
+  const fees = byProvider?.[config().paymentProvider];
   const creationRevenue = { live: Number(fees?.live ?? 0), sandbox: Number(fees?.sandbox ?? 0) };
   return Response.json(
     {

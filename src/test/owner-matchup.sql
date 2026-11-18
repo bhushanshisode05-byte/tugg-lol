@@ -6,9 +6,9 @@ DECLARE before jsonb; after jsonb; m uuid; u uuid; r uuid; n int;
 BEGIN
   -- A paid user matchup already counted, so the figure is non-trivial.
   INSERT INTO matchups(slug,title,description,category,source,status) VALUES ('paid-x-vs-y','Paid X vs Y','','Tech','user','active') RETURNING id INTO u;
-  INSERT INTO creators(matchup_id,tier,environment) VALUES (u,'standard','sandbox');
+  INSERT INTO dodo_orders(environment,kind,expected_cents,product_id,matchup_id,status,payment_id) VALUES ('sandbox','standard',900,'p',u,'paid','pay_paid_x');
   before := tugg_creation_revenue();
-  IF (before->>'sandbox')::int < 900 THEN RAISE EXCEPTION 'fixture not counted: %', before; END IF;
+  IF coalesce((before->'dodo'->>'sandbox')::int,0) < 900 THEN RAISE EXCEPTION 'fixture not counted: %', before; END IF;
 
   -- The owner path: matchup with source owner, two sides, first round.
   INSERT INTO matchups(slug,title,description,category,source,status) VALUES ('owner-a-vs-b','Owner A vs B','','Food','owner','active') RETURNING id INTO m;
@@ -18,15 +18,16 @@ BEGIN
   after := tugg_creation_revenue();
   IF after IS DISTINCT FROM before THEN RAISE EXCEPTION 'owner matchup changed revenue: % -> %', before, after; END IF;
 
-  -- Even a stray creator record on an owner matchup is never income.
+  -- Even a stray paid order or creator record on an owner matchup is never income.
   INSERT INTO creators(matchup_id,tier,environment) VALUES (m,'featured','sandbox'),(m,'standard','live');
+  INSERT INTO dodo_orders(environment,kind,expected_cents,product_id,matchup_id,status,payment_id) VALUES ('sandbox','featured',2900,'p',m,'paid','pay_owner_a'),('live','standard',900,'p',m,'paid','pay_owner_b');
   after := tugg_creation_revenue();
   IF after IS DISTINCT FROM before THEN RAISE EXCEPTION 'owner creator record counted: % -> %', before, after; END IF;
 
   -- Control: the figure does move for a paid user matchup, so the checks above can fail.
-  INSERT INTO creators(matchup_id,tier,environment) VALUES (u,'featured','sandbox');
+  INSERT INTO dodo_orders(environment,kind,expected_cents,product_id,matchup_id,status,payment_id) VALUES ('sandbox','featured',2900,'p',u,'paid','pay_paid_y');
   after := tugg_creation_revenue();
-  IF (after->>'sandbox')::int <> (before->>'sandbox')::int + 2900 THEN RAISE EXCEPTION 'paid record not counted: %', after; END IF;
+  IF (after->'dodo'->>'sandbox')::int IS DISTINCT FROM (before->'dodo'->>'sandbox')::int + 2900 THEN RAISE EXCEPTION 'paid record not counted: %', after; END IF;
 
   -- Unknown sources are still refused; old sources still accepted.
   BEGIN
