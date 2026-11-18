@@ -1,4 +1,4 @@
-import { activePaymentCopy } from "@/lib/payments/copy";
+import { activePaymentCopy, PAYMENT_SUPPORT_LINE } from "@/lib/payments/copy";
 import { getPublicContact } from "@/lib/support.functions";
 import { IMAGE_POLICY } from "@/lib/side-image";
 import { createFileRoute } from "@tanstack/react-router";
@@ -71,13 +71,15 @@ const sections: [string, string[]][] = [
   ],
   ["Side pictures and takedowns", [IMAGE_POLICY]],
   [
-    "Refund policy",
+    "Refunds and payments",
     [
+      "{{providerStatement}}",
       "Each pull is $1. {{pullOfferShort}} No credits or stored balance; failed or expired payments apply nothing.",
-      "Bundles are non-refundable except where required by law. {{providerSentence}} Genuine payment errors must be verified through support.",
+      "Bundles are non-refundable except where required by law. Genuine payment errors must be verified through support.",
       "Matchup creation fees are refunded automatically and in full if the matchup is rejected by moderation.",
     ],
   ],
+  ["Support", [PAYMENT_SUPPORT_LINE]],
 ];
 
 function Rules() {

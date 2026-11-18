@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { moderationRules } from "./content-policy";
 
 export function publicDb() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -84,11 +85,7 @@ export type Verdict = { allowed: boolean; reason: string };
 export async function moderate(kind: "matchup" | "shout_out", text: string): Promise<Verdict> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) return { allowed: false, reason: "Moderation unavailable" };
-  const rules =
-    "You moderate content for Tugg, a playful rivalry site. ALLOWED: brands, products, places, cities, countries, sports teams and famous athletes, foods, ideas, hobbies, entertainment franchises and well-known public entertainers. NOT ALLOWED: private individuals, political parties, politicians or candidates, hate, harassment, slurs, sexual content, illegal content, drugs, scams, doxxing, gambling promotion, links/URLs. " +
-    (kind === "shout_out"
-      ? "This is a short shout-out message attached to a pull. Allow friendly trash talk; reject anything above or personal attacks."
-      : "This is a new two-sided matchup (title, sides, description).");
+  const rules = moderationRules(kind);
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",

@@ -88,8 +88,10 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
           offset += data.length;
         }
-        const recapIndex = entries.find((e) => e.path === "/recap");
-        if (recapIndex && newestRecap) recapIndex.lastmod = newestRecap;
+        const recapIndex = entries.findIndex((e) => e.path === "/recap");
+        // The recap index is listed only once a recap exists; with none it is an empty, noindexed page.
+        if (recapIndex >= 0 && newestRecap) entries[recapIndex]!.lastmod = newestRecap;
+        else if (recapIndex >= 0) entries.splice(recapIndex, 1);
 
         return new Response(sitemapXML(BASE_URL, entries), {
           headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" },

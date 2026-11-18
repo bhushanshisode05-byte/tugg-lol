@@ -12,7 +12,7 @@ Every matchup and rivalry page starts with a short, dated factual summary (UTC) 
 - [How it works](https://tugg.lol/how-it-works): Pulls, weekly and daily rounds, tie-breaks and the all-time score.
 - [Leaderboards](https://tugg.lol/leaderboards): Biggest ropes ever, longest win streaks, most pulled live rounds, top countries.
 - [Hall of Fame](https://tugg.lol/hall-of-fame): Every past round winner with result cards.
-- [Yesterday on Tugg](https://tugg.lol/recap): Daily recap published every day (whatever the round length) from stored facts: that day's pulls and any rounds that closed, with a dated summary; archive at /recap/YYYY-MM-DD.
+- [Yesterday on Tugg](https://tugg.lol/recap): Dated recap published for each UTC day with pulls or a round that closed with pulls (whatever the round length), built from stored facts: that day's pulls and any rounds that closed. Quiet days get no recap; archive at /recap/YYYY-MM-DD.
 - [Stats](https://tugg.lol/stats): Site-wide totals.
 - [Example matchup](https://tugg.lol/m/pizza-vs-burgers): Live round, rope, all-time score, history and countries for one matchup.
 - [Example rivalry](https://tugg.lol/rivalries/pizza-vs-burgers): "Who is winning?" page with live result, history and FAQ.

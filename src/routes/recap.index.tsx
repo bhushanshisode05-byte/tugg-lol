@@ -19,6 +19,8 @@ export const Route = createFileRoute("/recap/")({
         { property: "og:description", content: desc },
         { property: "og:type", content: "article" },
         { name: "twitter:card", content: "summary_large_image" },
+        // No recap yet: keep the empty page out of search results until there is something to cite.
+        ...(loaderData?.recap ? [] : [{ name: "robots", content: "noindex" }]),
       ],
       links: [{ rel: "canonical", href: "https://tugg.lol/recap" }],
     };

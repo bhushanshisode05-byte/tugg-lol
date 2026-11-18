@@ -10,7 +10,7 @@ import { buyImmediateBundle, getImmediatePayment, getCodeDropConfig, recordPayme
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { openCodeDrop } from "@/lib/payments/codedrop";
 import { openDodoOverlay } from "@/lib/payments/dodo-overlay";
-import { paymentProviderText } from "@/lib/payments/copy";
+import { paymentStatementText } from "@/lib/payments/copy";
 import { usePaymentConfirmation } from "@/hooks/use-payment-confirmation";
 import { PaymentConfirmation } from "./PaymentReceipt";
 import type { PaymentResult } from "@/lib/payments/confirmation";
@@ -68,7 +68,8 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
       await emit("opened",pack,drawer?"drawer":"redirect");
       if(drawer)confirm.track(r.orderId);else window.location.assign(r.url);
     }}catch{setError("Checkout could not open. No unverified pulls applied.");emit("failed");}finally{ts.current?.reset();setBusy(false);}}}>Pay ${pack} · {pack} pulls for {sides.find(s=>s.id===side)?.name}</Button>
-    <p className="mt-4 text-xs text-muted-foreground">{paymentProviderText(provider)} Bundles are non-refundable except where required by law. No credits, stored balance, prizes or payouts.</p>
+    <p className="mt-3 text-sm text-foreground" data-payment-descriptor>{paymentStatementText(provider)}</p>
+    <p className="mt-2 text-xs text-muted-foreground">Bundles are non-refundable except where required by law. No credits, stored balance, prizes or payouts.</p>
     <p className="mt-2 text-xs text-muted-foreground" data-engagement-disclosure>{ENGAGEMENT_DISCLOSURE}</p>
   </section>;
 }

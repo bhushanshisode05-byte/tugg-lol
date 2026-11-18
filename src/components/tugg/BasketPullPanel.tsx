@@ -11,7 +11,7 @@ import { buyPullBasket, listBasketMatchups } from "@/lib/basket-payments.functio
 import { getImmediatePayment, recordPaymentFunnel } from "@/lib/immediate-payments.functions";
 import { TURNSTILE_ACTIONS } from "@/lib/turnstile";
 import { openDodoOverlay } from "@/lib/payments/dodo-overlay";
-import { paymentProviderText } from "@/lib/payments/copy";
+import { paymentStatementText } from "@/lib/payments/copy";
 import { usePaymentConfirmation } from "@/hooks/use-payment-confirmation";
 import { PaymentConfirmation } from "./PaymentReceipt";
 import { BASKET_MAX_MATCHUPS, BASKET_MAX_PULLS, BASKET_MIN_PULLS, BASKET_QUICK_PICKS, basketTotal, isWholeBasketAmount, splitPulls } from "@/lib/payments/basket";
@@ -106,7 +106,8 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
       } catch { setError("Checkout could not open. No unverified pulls applied."); void emit("failed"); }
       finally { ts.current?.reset(); setBusy(false); }
     }}>Pay ${total} · {total} pulls{lines.length > 1 ? ` across ${lines.length} matchups` : ` for ${lines[0]?.sides.find((s) => s.id === lines[0]?.sideId)?.name ?? ""}`}</Button>
-    <p className="mt-4 text-xs text-muted-foreground">{paymentProviderText("dodo")} One charge of ${total}. Pulls are non-refundable except where required by law; if a matchup stops taking pulls before your payment is applied, that part is refunded automatically. No credits, stored balance, prizes or payouts.</p>
+    <p className="mt-3 text-sm text-foreground" data-payment-descriptor>{paymentStatementText("dodo")}</p>
+    <p className="mt-2 text-xs text-muted-foreground">One charge of ${total}. Pulls are non-refundable except where required by law; if a matchup stops taking pulls before your payment is applied, that part is refunded automatically. No credits, stored balance, prizes or payouts.</p>
     <p className="mt-2 text-xs text-muted-foreground" data-engagement-disclosure>{ENGAGEMENT_DISCLOSURE}</p>
   </section>;
 }

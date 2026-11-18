@@ -1,10 +1,11 @@
 // Visitor-facing payment wording. Shared policy text uses {{tokens}} instead of a hardcoded
 // provider name so every page follows the active PAYMENT_PROVIDER.
-type ProviderCopy = { name: string; sentence: string; processes: string; billingPrivacy: string; buyerEmail: string; refundTiming: string };
+type ProviderCopy = { name: string; sentence: string; statement: string; processes: string; billingPrivacy: string; buyerEmail: string; refundTiming: string };
 const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
   dodo: {
     name: "Dodo Payments",
     sentence: "Payments are processed by Dodo Payments as merchant of record.",
+    statement: "Payments are processed by Dodo Payments as merchant of record. Your card or bank statement will show the charge from Dodo Payments, not Tugg.",
     processes: "Dodo Payments, as merchant of record, processes payments",
     billingPrivacy:
       "Dodo Payments, as merchant of record, collects billing and card details on its hosted checkout to process digital purchases, taxes and risk checks; card data never touches Tugg servers.",
@@ -16,6 +17,8 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
   payglocal: {
     name: "PayGlocal",
     sentence: "PayGlocal (RBI-authorised) processes payments.",
+    // PayGlocal's statement descriptor is unconfirmed, so no descriptor claim is made for it.
+    statement: "PayGlocal (RBI-authorised) processes payments.",
     processes: "PayGlocal (RBI-authorised) processes payments",
     billingPrivacy:
       "Billing name, email and address are sent securely to PayGlocal to process digital purchases and risk checks. PayGlocal handles card details on its hosted checkout; card data never touches Tugg servers.",
@@ -27,6 +30,10 @@ const COPY: Record<"dodo" | "payglocal", ProviderCopy> = {
 const copyFor = (provider: string = "dodo") => (provider === "payglocal" ? COPY.payglocal : COPY.dodo);
 export const paymentProviderName = (provider: string = "dodo") => copyFor(provider).name;
 export const paymentProviderText = (provider: string = "dodo") => copyFor(provider).sentence;
+/** Stated support route and response time for payment questions (card issuers look for one in disputes). */
+export const PAYMENT_SUPPORT_LINE = "Questions about a payment? Email hello@tugg.lol and we'll reply within 2 business days.";
+/** Who processes the payment and whose name appears on the buyer's statement; shown beside the pay button and in the rules. */
+export const paymentStatementText = (provider: string = "dodo") => copyFor(provider).statement;
 /** Refund-timing sentence for customer emails, worded for the provider that took that order's payment. */
 export const refundTimingText = (provider: string = "dodo") => copyFor(provider).refundTiming;
 // Pull offer wording. "bundles" is the exact pre-basket text; "basket" applies only with PULL_BASKET_ENABLED on Dodo.
@@ -43,13 +50,14 @@ const OFFER = {
   },
 } as const;
 export const pullOfferFooter = (basket = false) => OFFER[basket ? "basket" : "bundles"].footer;
-/** Resolves {{provider}}, {{providerSentence}}, {{providerProcesses}}, {{billingPrivacy}}, {{buyerEmailPrivacy}}, {{pullOffer}} and {{pullOfferShort}}. */
+/** Resolves {{provider}}, {{providerSentence}}, {{providerStatement}}, {{providerProcesses}}, {{billingPrivacy}}, {{buyerEmailPrivacy}}, {{pullOffer}} and {{pullOfferShort}}. */
 export function activePaymentCopy(text: string, provider: string = "dodo", basket = false) {
   const c = copyFor(provider);
   const offer = OFFER[basket && provider !== "payglocal" ? "basket" : "bundles"];
   return text
     .replaceAll("{{pullOfferShort}}", offer.short)
     .replaceAll("{{pullOffer}}", offer.long)
+    .replaceAll("{{providerStatement}}", c.statement)
     .replaceAll("{{providerSentence}}", c.sentence)
     .replaceAll("{{providerProcesses}}", c.processes)
     .replaceAll("{{billingPrivacy}}", c.billingPrivacy)

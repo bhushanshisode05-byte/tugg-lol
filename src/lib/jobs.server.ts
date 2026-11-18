@@ -4,6 +4,7 @@ import { createLovableAiGatewayRunIdFetch } from "./ai/run-id.ts";
 import { config, liveOnly, moderate, slugify } from "./server-utils.server";
 import { roundLengthOf, type RoundLength } from "./rounds";
 import { AI_CATEGORIES } from "./owner-matchup-schema";
+import { GENERATOR_INSTRUCTIONS } from "./content-policy";
 export { AI_CATEGORIES };
 
 export const AI_DAILY = 3;
@@ -120,7 +121,7 @@ export async function runGenerator(opts: { force?: boolean } = {}) {
     const { candidates } = await aiObject(
       "generator",
       candidateSchema,
-      "Suggest 8 popular, well-known, friendly two-sided rivalries for Tugg, a playful pay-to-pull rope game. Spread them across Tech, Sports, Entertainment, Food and Cities. Only brands, products, cities, sports teams, foods, franchises. No politics, no private people, nothing offensive. Side names under 30 characters. Description: one short neutral sentence under 120 characters. Never repeat a pair from the existing list in either order.",
+      GENERATOR_INSTRUCTIONS,
       `Existing matchups:\n${taken.join("\n")}`,
     );
 
@@ -193,7 +194,7 @@ export const recapActivity = (f: RecapFacts) =>
     .sort((x, y) => y.a_cents + y.b_cents - (x.a_cents + x.b_cents));
 
 /**
- * Deterministic, quotable summary built only from stored facts. Published every day whatever the round length:
+ * Deterministic, quotable summary built only from stored facts. Published for every day with news (see recapHasNews), whatever the round length:
  * the day's pulls across the site, plus any rounds (weekly or daily) that closed at the end of that day.
  */
 export function recapSummary(f: RecapFacts) {
@@ -271,6 +272,9 @@ export async function collectFacts(day: string): Promise<RecapFacts> {
   };
 }
 
+/** A recap is written only when the day has something true to say: a pull, or a round that closed with pulls. */
+export const recapHasNews = (f: RecapFacts) => f.pulls > 0 || f.rounds.some((r) => r.a_cents + r.b_cents > 0);
+
 const recapSchema = z.object({ headline: z.string(), paragraphs: z.array(z.string()) });
 
 export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
@@ -285,9 +289,15 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
   if (!opts.force && !(await lock("recap", day))) return { skipped: "already running" };
 
   const facts = await collectFacts(day);
+  if (!recapHasNews(facts)) {
+    // Quiet day: no page, no search-engine ping, but the run is accounted for rather than looking like a failure.
+    const detail = { reason: "no_activity", pulls: facts.pulls, closed_rounds: facts.rounds.length, closed_rounds_with_pulls: 0, note: "No pulls and no round closed with pulls; no recap written and no IndexNow ping." };
+    await db.from("job_runs").upsert({ job: "recap", day, status: "skipped", detail, finished_at: new Date().toISOString() });
+    return { day, skipped: "no activity", detail };
+  }
   const summary = recapSummary(facts);
   const champs = recapChampions(facts);
-  let body: z.infer<typeof recapSchema> = { headline: facts.pulls ? `Yesterday on Tugg` : champs.length ? `Round winners crowned` : `A quiet day on Tugg`, paragraphs: [] };
+  let body: z.infer<typeof recapSchema> = { headline: facts.pulls ? `Yesterday on Tugg` : `Round winners crowned`, paragraphs: [] };
   if ((facts.pulls || champs.length) && !(await paused("recap"))) {
     const compact = { ...facts, rounds: facts.rounds.filter((r) => r.a_cents + r.b_cents > 0), activity: recapActivity(facts) };
     try {
@@ -303,7 +313,7 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
   }
   await db.from("recaps").upsert({ day, summary, body: body as any, facts: facts as any });
   await finish("recap", day, "done", { pulls: facts.pulls });
-  // Every day, whatever the round length: tell search engines about the new dated recap and the pages that changed
+  // Every recap day, whatever the round length: tell search engines about the new dated recap and the pages that changed
   // (only on the public domain with a key).
   const { pingIndexNow } = await import("./indexnow.server");
   const slugs = [...new Set([...facts.rounds, ...(facts.activity ?? [])].map((r) => r.slug))];

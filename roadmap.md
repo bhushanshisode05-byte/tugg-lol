@@ -212,7 +212,7 @@
 
 ## Pre-launch data reset (2026-11-16, owner-approved, do not publish)
 - [x] Cleared all sandbox payments, pulls, funnels, checkout limits and player-email records in one transaction; zeroed side scores; removed all 639 empty closed rounds; kept the 39 open weekly rounds untouched; removed all 18 recaps (each would now be empty).
-- [ ] Decide whether the nightly recap job should skip days with no pulls and no results (it currently publishes "A quiet day on Tugg").
+- [x] Nightly recap skips days with no pulls and no closed rounds with pulls (no page, no IndexNow ping, logged as skipped); the two empty recaps were removed (2026-11-18)
 
 ## Dodo purchase receipts fix (2026-11-16, do not publish)
 - [x] Receipts and matchup-rejection notices read dodo_orders and are sent after every Dodo payment outcome
@@ -237,3 +237,8 @@
 - [x] Matchup creation income sums actual amounts on paid creation orders per provider; refunds, inactive and owner matchups excluded
 - [x] Every owner-page money figure says beside the number it is gross, before payment-processing fees and merchant-of-record tax, not an accounting figure
 - [x] Weekly owner summary counts Dodo payments in every line and labels revenue the same way
+
+## Content policy and payment copy (2026-11-18, do not publish)
+- [x] Generator allows famous athletes and public entertainers like moderation; every exclusion kept; real-person preference-or-merit rule in both
+- [x] Dodo statement descriptor line beside the pull pay button and in the rules; rules Support section with hello@tugg.lol and 2 business days
+- [ ] Decide whether recaps should count sandbox test pulls while payments are in test mode. Blocker: owner decision (tonight's recap for 18 Nov would include one $25 test pull).

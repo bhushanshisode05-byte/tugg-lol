@@ -218,11 +218,32 @@ describe("daily recap on a weekly-round site", () => {
     expect(state.pings[0]).toEqual(expect.arrayContaining(["/recap", "/recap/2026-11-11", "/m/notion-vs-obsidian", "/rivalries/notion-vs-obsidian"]));
     expect(state.rpc).toContain("tugg_day_matchups");
   });
-  it("still publishes and pings on a day with no pulls and no closes", async () => {
+  it("an empty day writes no recap, pings nothing and records the skip", async () => {
     reset();
     state.dayFacts = { total_cents: 0, pulls: 0, countries: [] };
-    await runRecap({ day: "2026-11-10" });
-    expect(state.writes.some((w) => w.table === "recaps" && w.op === "upsert" && w.payload.day === "2026-11-10")).toBe(true);
-    expect(state.pings[0]).toEqual(expect.arrayContaining(["/", "/recap", "/recap/2026-11-10"]));
+    const out: any = await runRecap({ day: "2026-11-10" });
+    expect(out.skipped).toBe("no activity");
+    expect(state.writes.some((w) => w.table === "recaps")).toBe(false);
+    expect(state.pings).toEqual([]);
+    expect(state.writes).toContainEqual(expect.objectContaining({ table: "job_runs", op: "upsert", payload: expect.objectContaining({ job: "recap", day: "2026-11-10", status: "skipped", detail: expect.objectContaining({ reason: "no_activity", pulls: 0 }) }) }));
+  });
+  it("a day whose only closed rounds were empty is still skipped", async () => {
+    reset();
+    state.dayFacts = { total_cents: 0, pulls: 0, countries: [] };
+    state.closed = [{ id: "r1", winner_side_id: null, result_note: "empty", round_length: "weekly", matchups: { slug: "notion-vs-obsidian", title: "Notion vs Obsidian", status: "active", sides: [{ id: "s1", position: 0, name: "Notion" }, { id: "s2", position: 1, name: "Obsidian" }] } }];
+    state.roundTotals = [{ round_id: "r1", total_a_cents: 0, total_b_cents: 0, pullers: 0 }];
+    const out: any = await runRecap({ day: "2026-11-08" });
+    expect(out.skipped).toBe("no activity");
+    expect(state.writes.some((w) => w.table === "recaps")).toBe(false);
+    expect(state.pings).toEqual([]);
+  });
+  it("a day with no pulls but a round that closed with pulls is published", async () => {
+    reset();
+    state.dayFacts = { total_cents: 0, pulls: 0, countries: [] };
+    state.closed = [{ id: "r1", winner_side_id: "s1", result_note: null, round_length: "weekly", matchups: { slug: "notion-vs-obsidian", title: "Notion vs Obsidian", status: "active", sides: [{ id: "s1", position: 0, name: "Notion" }, { id: "s2", position: 1, name: "Obsidian" }] } }];
+    state.roundTotals = [{ round_id: "r1", total_a_cents: 2500, total_b_cents: 500, pullers: 2 }];
+    await runRecap({ day: "2026-11-08" });
+    expect(state.writes.some((w) => w.table === "recaps" && w.op === "upsert" && w.payload.day === "2026-11-08")).toBe(true);
+    expect(state.pings).toHaveLength(1);
   });
 });
