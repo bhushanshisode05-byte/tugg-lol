@@ -42,6 +42,7 @@ import { Route as RecapDateRouteImport } from './routes/recap.$date'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
+import { Route as ApiPublicAdminMatchupsRouteImport } from './routes/api/public/admin/matchups'
 import { Route as ApiPublicEmailUnsubscribeRouteImport } from './routes/api/public/email/unsubscribe'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
 import { Route as ApiPublicJobsEngagementRouteImport } from './routes/api/public/jobs/engagement'
@@ -226,6 +227,11 @@ const ApiPublicAdminDataRoute = ApiPublicAdminDataRouteImport.update({
   path: '/api/public/admin/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminMatchupsRoute = ApiPublicAdminMatchupsRouteImport.update({
+  id: '/api/public/admin/matchups',
+  path: '/api/public/admin/matchups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicEmailUnsubscribeRoute =
   ApiPublicEmailUnsubscribeRouteImport.update({
     id: '/api/public/email/unsubscribe',
@@ -363,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
   '/api/public/jobs/engagement': typeof ApiPublicJobsEngagementRoute
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap/'
     | '/api/public/admin/data'
+    | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
     | '/api/public/jobs/engagement'
@@ -579,6 +589,7 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap'
     | '/api/public/admin/data'
+    | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
     | '/api/public/jobs/engagement'
@@ -633,6 +644,7 @@ export interface FileRouteTypes {
     | '/rivalries/$slug'
     | '/recap/'
     | '/api/public/admin/data'
+    | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
     | '/api/public/jobs/engagement'
@@ -687,6 +699,7 @@ export interface RootRouteChildren {
   RivalriesSlugRoute: typeof RivalriesSlugRoute
   RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
+  ApiPublicAdminMatchupsRoute: typeof ApiPublicAdminMatchupsRoute
   ApiPublicEmailUnsubscribeRoute: typeof ApiPublicEmailUnsubscribeRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
   ApiPublicJobsEngagementRoute: typeof ApiPublicJobsEngagementRoute
@@ -941,6 +954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/matchups': {
+      id: '/api/public/admin/matchups'
+      path: '/api/public/admin/matchups'
+      fullPath: '/api/public/admin/matchups'
+      preLoaderRoute: typeof ApiPublicAdminMatchupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/email/unsubscribe': {
       id: '/api/public/email/unsubscribe'
       path: '/api/public/email/unsubscribe'
@@ -1121,6 +1141,7 @@ const rootRouteChildren: RootRouteChildren = {
   RivalriesSlugRoute: RivalriesSlugRoute,
   RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
+  ApiPublicAdminMatchupsRoute: ApiPublicAdminMatchupsRoute,
   ApiPublicEmailUnsubscribeRoute: ApiPublicEmailUnsubscribeRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,
   ApiPublicJobsEngagementRoute: ApiPublicJobsEngagementRoute,

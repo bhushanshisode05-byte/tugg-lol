@@ -1,4 +1,5 @@
 import { SideAvatar } from "@/components/tugg/SideAvatar";
+import { MatchupKicker } from "@/components/tugg/MatchupKicker";
 import { ReportImage } from "@/components/tugg/ReportImage";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
@@ -143,10 +144,7 @@ function MatchupPage() {
         )}
 
         <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          <span className="min-w-0 truncate">
-            {m.category}
-            {m.source === "ai" ? " · Added by Tugg" : ""}
-          </span>
+          <MatchupKicker category={m.category} source={m.source} />
           {m.round && <RoundStatus round={m.round} />}
         </div>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">

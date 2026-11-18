@@ -1,21 +1,9 @@
-import { publicDb, config } from "./server-utils.server";
-import { ownerMatches } from "./support-schema";
+import { config } from "./server-utils.server";
+import { requireOwner } from "./owner-auth.server";
 export async function getAdminData(request: Request) {
-  const header = request.headers.get("authorization");
-  if (!header?.startsWith("Bearer "))
-    return Response.json({ error: "Owner login required." }, { status: 401 });
-  const db = publicDb();
-  const { data: identity, error } = await db.auth.getUser(header.slice(7));
-  if (error || !identity.user)
-    return Response.json({ error: "Owner login required." }, { status: 401 });
-  if (!ownerMatches(identity.user.email, config().ownerEmail) || !identity.user.email_confirmed_at)
-    return Response.json({ error: "Owner access only." }, { status: 403 });
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: owner, error: roleError } = await supabaseAdmin.rpc("claim_tugg_owner", {
-    p_user: identity.user.id,
-    p_email: config().ownerEmail,
-  });
-  if (roleError || !owner) return Response.json({ error: "Owner access only." }, { status: 403 });
+  const owner = await requireOwner(request);
+  if (!owner.ok) return owner.response;
+  const supabaseAdmin = owner.admin;
   const [summary, pulls, matchups, moderation, events, support, creators, dodo, payglocal, payglocalOrders, funnel, flaggedWallets, dodoOrders, dodoFunnel] =
     await Promise.all([
       supabaseAdmin.rpc("tugg_admin_summary"),
@@ -66,7 +54,7 @@ export async function getAdminData(request: Request) {
     )
   )
     return Response.json({ error: "Could not load owner records." }, { status: 503 });
-  // Creator amounts are inferred from published prices; unpaid/rejected records are never revenue.
+  // Creator amounts are inferred from published prices on paid creator records; unpaid/rejected records and owner-created matchups are never revenue.
   const fees = creators.data as { live?: number; sandbox?: number } | null;
   const creationRevenue = { live: Number(fees?.live ?? 0), sandbox: Number(fees?.sandbox ?? 0) };
   return Response.json(

@@ -226,3 +226,9 @@
 - [ ] Decide whether the on-screen Share button should share the new pull card page instead of the matchup page. Blocker: owner decision.
 
 - [x] Fix blank home page from the shared recent-pulls read; fix preview buttons (picture-upload code in browser bundle) (2026-11-18, do not publish)
+
+## Owner matchup creation (2026-11-18, do not publish)
+- [x] "Add a matchup" form on the owner page (title, sides, emoji, category, description; generator limits)
+- [x] Same owner check as the records page; binding moderation logged as owner_matchup; duplicate, same-side and slug-clash rules; first round opens; no order or fee
+- [x] New "owner" matchup source; creation income excludes owner matchups; "Added by Tugg" on matchup page, home cards and feeds
+- [ ] Owner tries the form signed in with the owner account (not checkable from here)

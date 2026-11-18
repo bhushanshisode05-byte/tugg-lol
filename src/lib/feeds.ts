@@ -1,4 +1,5 @@
 import { usd } from "@/components/tugg/Rope";
+import { addedByTugg } from "./matchup-source";
 import { PUBLIC_SITE, cardVersion, matchupCardInput, matchupImagePath, resultCardInput, resultImagePath } from "@/lib/og/card";
 import { ROUND_LENGTH_SHORT, roundLengthOf, roundName } from "@/lib/rounds";
 
@@ -34,7 +35,7 @@ export function matchupItems(ms: HomeM[]) {
       rivalry_url: `${PUBLIC_SITE}/rivalries/${m.slug}`,
       image: `${PUBLIC_SITE}${matchupImagePath(m.slug, "link", (() => { const input = matchupCardInput(m); return input ? cardVersion(input) : null; })())}`,
       category: m.category,
-      added_by: m.source === "ai" ? "Tugg" : m.source === "seed" ? "Tugg" : "player",
+      added_by: addedByTugg(m.source) || m.source === "seed" ? "Tugg" : "player",
       created_at: m.created_at,
       round: m.round
         ? { length: roundLengthOf(m.round.round_length), name: roundName(roundLengthOf(m.round.round_length), m.round.starts_at), starts_at: m.round.starts_at, ends_at: m.round.ends_at, pullers: m.round.pullers, a: { name: a?.name, dollars: ra / 100 }, b: { name: b?.name, dollars: rb / 100 } }

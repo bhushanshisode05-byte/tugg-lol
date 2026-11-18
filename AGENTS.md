@@ -21,7 +21,7 @@
 - Matchup checkout is rate-limited per hashed IP via the service-only take_checkout_slot SQL function. Why: atomic count+insert without storing raw IPs.
 - Legal pages and AI support share one policy catalog; AI selects an approved answer ID rather than generating advice. Why: prevents invented policies and refund promises.
 - Support messages and replies are archived through service-only access; abuse counters reuse the atomic hashed-IP limiter in separate support namespaces. Why: keeps personal messages private and limits AI spending.
-- Admin handlers verify token, configured owner email, confirmed identity and unique owner role before private reads; loaders redirect 401/403 to owner sign-in. Why: denial is navigation, not a crash; APIs stay authoritative.
+- Admin handlers pass shared requireOwner (token, owner email, confirmed identity, unique owner role) before any private read/write; loaders redirect 401/403 to owner sign-in. Why: denial is navigation, not a crash; APIs stay authoritative.
 - Daily jobs (recap, AI generator) run through the managed-schedule route /api/public/jobs/daily and lock once per UTC day in job_runs; AI 402/403 pauses them in job_state. Why: no duplicate runs or runaway AI spend.
 - Recap summaries are built in code from stored facts; AI only writes prose from those facts. Why: numbers can never be invented.
 - Turnstile tokens are verified server-side (src/lib/turnstile.server.ts) per operation before side effects, failing closed; widgets share public src/lib/turnstile-config.ts (VITE_TURNSTILE_SITE_KEY override, server-function fallback). Why: widget alone is not protection; public keys aren't secrets.

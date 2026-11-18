@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { addedByTugg } from "@/lib/matchup-source";
 import { SideAvatar } from "./SideAvatar";
 import { ShareButton } from "./ShareButton";
 import { Rope, usd } from "./Rope";
@@ -34,7 +35,7 @@ export function TrendingRopeCard({ m, siteUrl }: { m: Matchup; siteUrl: string }
       <Link to="/m/$slug" params={{ slug: m.slug }} className="block">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
           <span>{m.category}</span>
-          {m.source === "ai" && <span>Added by Tugg</span>}
+          {addedByTugg(m.source) && <span>Added by Tugg</span>}
         </div>
         <h3 className="mt-1 text-xl font-extrabold">
           <SideAvatar side={m.sides[0]} /> {m.title} <SideAvatar side={m.sides[1]} />

@@ -3,11 +3,12 @@ import { z } from "zod";
 import { createLovableAiGatewayRunIdFetch } from "./ai/run-id.ts";
 import { config, liveOnly, moderate, slugify } from "./server-utils.server";
 import { roundLengthOf, type RoundLength } from "./rounds";
+import { AI_CATEGORIES } from "./owner-matchup-schema";
+export { AI_CATEGORIES };
 
 export const AI_DAILY = 3;
 export const AI_ACTIVE_CAP = 30;
-export const AI_CATEGORIES = ["Tech", "Sports", "Entertainment", "Food", "Cities"] as const;
-const PALETTE = ["#ff3b30", "#0a84ff", "#ffd60a", "#30d158", "#bf5af2", "#ff9f0a", "#64d2ff", "#ff375f"];
+export const PALETTE = ["#ff3b30", "#0a84ff", "#ffd60a", "#30d158", "#bf5af2", "#ff9f0a", "#64d2ff", "#ff375f"];
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

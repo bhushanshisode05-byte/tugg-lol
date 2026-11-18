@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { pageHead } from "@/lib/policies";
 import { loadOwnerRecords } from "@/lib/admin-access";
 import { Button } from "@/components/ui/button";
+import { OwnerMatchupForm } from "@/components/tugg/OwnerMatchupForm";
 type AdminData = {
   summary: {
     pullRevenue: { environment: string; cents: string; pulls: number }[];
@@ -53,8 +54,12 @@ function Admin() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <p className="font-mono text-sm text-primary">TUGG / OWNER</p>
-      <h1 className="mt-3 font-display text-4xl font-extrabold">Read-only records</h1>
+      <h1 className="mt-3 font-display text-4xl font-extrabold">Owner records</h1>
       <section className="mt-8 border-y border-border py-6">
+        <h2 className="text-2xl font-bold">Add a matchup</h2>
+        <OwnerMatchupForm />
+      </section>
+      <section className="border-b border-border py-6">
         <h2 className="text-2xl font-bold">Revenue</h2>
         <div className="mt-4 grid gap-6 sm:grid-cols-2">
           {(["live", "sandbox"] as const).map((env) => {
@@ -103,7 +108,7 @@ function Admin() {
       <section className="py-6">
         <h2 className="text-2xl font-bold">Matchups by source</h2>
         <div className="mt-3 flex gap-8">
-          {["seed", "user", "ai"].map((s) => (
+          {["seed", "user", "ai", "owner"].map((s) => (
             <p key={s}>
               {s}: {data.summary.sources.find((r) => r.source === s)?.count ?? 0}
             </p>
