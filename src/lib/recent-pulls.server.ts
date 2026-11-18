@@ -24,22 +24,25 @@ export async function loadRecentPulls(db: RecentPullsDb, live: boolean, now = Da
   return toRecentPulls(rows, labels, now);
 }
 
-const cache = new Map<boolean, { until: number; value: Promise<RecentPull[]> }>();
+// Holds finished results only. A pending read belongs to the request that started it, and the
+// hosting runtime never lets a later request wait on it, so each cache miss reads on its own.
+const cache = new Map<boolean, { until: number; value: RecentPull[] }>();
 
 /**
- * Short per-instance cache (also shares one in-flight read between concurrent visitors), so a spike
- * costs one small read per instance every few seconds. Failures are never cached and render nothing.
+ * Short per-instance cache, so a spike costs one small read per instance every few seconds.
+ * Failures are never cached and render nothing.
  */
-export function cachedRecentPulls(db: () => RecentPullsDb, live: boolean, now = Date.now()): Promise<RecentPull[]> {
+export async function cachedRecentPulls(db: () => RecentPullsDb, live: boolean, now = Date.now()): Promise<RecentPull[]> {
   const hit = cache.get(live);
   if (hit && hit.until > now) return hit.value;
-  const entry = { until: now + RECENT_PULLS.cacheSeconds * 1000, value: Promise.resolve([] as RecentPull[]) };
-  entry.value = loadRecentPulls(db(), live, now).catch(() => {
-    if (cache.get(live) === entry) cache.delete(live);
+  try {
+    const value = await loadRecentPulls(db(), live, now);
+    cache.set(live, { until: now + RECENT_PULLS.cacheSeconds * 1000, value });
+    return value;
+  } catch {
+    cache.delete(live);
     return [];
-  });
-  cache.set(live, entry);
-  return entry.value;
+  }
 }
 
 export const clearRecentPullsCache = () => cache.clear();

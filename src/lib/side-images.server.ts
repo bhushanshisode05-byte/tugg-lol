@@ -1,13 +1,18 @@
+import { createServerOnlyFn } from "@tanstack/react-start";
 import { validateSideImage } from "./side-image-codec.server";
 import { moderateSideImage } from "./side-image-moderation.server";
 import { imageVisible, orphanExpired } from "./side-image";
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
-export async function imageIpHash(request: Request) {
+// Server-only so the browser bundle never resolves the server request helpers.
+const requestIp = createServerOnlyFn(async () => {
   // Hosting supplies the trusted request IP; do not accept arbitrary client headers.
   const { getRequestIP } = await import("@tanstack/react-start/server");
-  const ip = getRequestIP({ xForwardedFor: true }) || "unknown";
+  return getRequestIP({ xForwardedFor: true }) || "unknown";
+});
+export async function imageIpHash(_request: Request) {
+  const ip = await requestIp();
   const bytes = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(`side-images:${ip}`),

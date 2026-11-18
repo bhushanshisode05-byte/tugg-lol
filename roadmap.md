@@ -224,3 +224,5 @@
 - [x] Receipt date reads "18 November 2026, 00:44 UTC"; owner weekly summary period uses the same format; tests reject raw ISO dates in notice text
 - [x] Receipt links each applied line to that buyer's own public pull card page (/pull/<id>), falling back to the matchup page, then home
 - [ ] Decide whether the on-screen Share button should share the new pull card page instead of the matchup page. Blocker: owner decision.
+
+- [x] Fix blank home page from the shared recent-pulls read; fix preview buttons (picture-upload code in browser bundle) (2026-11-18, do not publish)

@@ -183,4 +183,15 @@ describe("recent pulls ticker: site-wide server function", () => {
     await getRecentPulls();
     expect(state.rpc).toHaveBeenCalledTimes(4);
   });
+
+  it("never hands one visitor another visitor's unfinished read", async () => {
+    clearRecentPullsCache();
+    const first = getRecentPulls();
+    const second = getRecentPulls();
+    await Promise.all([first, second]);
+    // Each cache miss reads for itself; only the finished result is reused.
+    expect(state.rpc).toHaveBeenCalledTimes(2);
+    await getRecentPulls();
+    expect(state.rpc).toHaveBeenCalledTimes(2);
+  });
 });
