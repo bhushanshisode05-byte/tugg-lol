@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 type Row = Record<string, any>;
-const state = vi.hoisted(() => ({ tables: {} as Record<string, any[]>, reads: [] as string[], sends: [] as any[], claims: new Set<string>(), refund: vi.fn() }));
+const state = vi.hoisted(() => ({ cards: {} as Record<string, any>, cardError: false, tables: {} as Record<string, any[]>, reads: [] as string[], sends: [] as any[], claims: new Set<string>(), refund: vi.fn() }));
 
 vi.mock("@/lib/server-utils.server", () => ({
   config: () => ({ pauseEmails: false, siteUrl: "https://tugg.lol", paymentProvider: "dodo", paymentsEnv: "sandbox" }),
@@ -16,6 +16,8 @@ vi.mock("@/lib/tugg.functions", () => ({
   loadMatchups: async ({ ids }: { ids: string[] }) => (state.tables["matchups"] ?? []).filter((m) => ids.includes(m.id)).map((m) => ({
     ...m, sides: (state.tables["sides"] ?? []).filter((s) => s.matchup_id === m.id), round: { total_a_cents: 0, total_b_cents: 0, round_length: "weekly" },
   })),
+  // Stands in for the public card loader the image route uses: null means the card can't be drawn.
+  loadPullCard: async (id: string) => { if (state.cardError) throw new Error("rpc down"); return state.cards[id] ?? null; },
 }));
 vi.mock("@/integrations/supabase/client.server", () => {
   // Tiny in-memory table store: filters really filter, so a wrong table or id returns nothing, just like production.
@@ -91,9 +93,10 @@ const dodoOrder = (patch: Row = {}): Row => ({
 const receipt = () => state.sends.find((s) => s[0] === "purchase-receipt");
 const details = () => receipt()?.[2].templateData.details as { label: string; value: string }[];
 const detail = (label: string) => details()?.find((d) => d.label === label)?.value;
+const links = () => receipt()?.[2].templateData.links as { href: string; label: string }[];
 const logs = () => JSON.stringify(state.tables["events"] ?? []);
 
-beforeEach(() => { state.tables = {}; state.reads = []; state.sends = []; state.claims.clear(); state.refund.mockReset(); seedMatchups(); });
+beforeEach(() => { state.cards = {}; state.cardError = false; state.tables = {}; state.reads = []; state.sends = []; state.claims.clear(); state.refund.mockReset(); seedMatchups(); });
 
 describe("Dodo purchase receipts", () => {
   it("a paid Dodo bundle sends one receipt with the right matchup, side, pulls, amount, reference and mode", async () => {
@@ -107,7 +110,7 @@ describe("Dodo purchase receipts", () => {
     expect(detail("Amount")).toBe("$5.00 USD");
     expect(detail("Payment reference")).toBe("pay_0NabcDEF123");
     expect(detail("Mode")).toBe("Sandbox / test");
-    expect(receipt()?.[2].templateData.link).toBe("https://tugg.lol/m/pizza-vs-burgers");
+    expect(links()).toEqual([{ href: "https://tugg.lol/m/pizza-vs-burgers", label: "View the matchup on Tugg" }]);
   });
 
   it("the mode label comes from the order's own environment", async () => {
@@ -239,5 +242,124 @@ describe("guard: the receipt reads the table the active provider writes to", () 
     expect(state.sends.map((s) => s[0])).toEqual(["purchase-receipt"]);
     expect(detail("Matchup")).toBe("Pizza vs Burgers");
     expect(detail("Refunded")).toBe("$5.00 USD for 5 pulls, because a matchup stopped taking pulls before your payment was applied");
+  });
+});
+
+// A pull recorded for a receipt line, plus the public card the image route would draw for it.
+const P = (n: number) => `c0000000-0000-4000-8000-00000000000${n}`;
+function recordPull(n: number, session: string, matchupId: string, sideId: string, slug: string, { card = true } = {}) {
+  (state.tables["pulls"] ??= []).push({ id: P(n), stripe_session_id: session, round_a_after_cents: 500, round_b_after_cents: 0 });
+  if (card) state.cards[P(n)] = { id: P(n), slug, sideId, matchupId };
+}
+const ISO = /\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2})?/;
+/** Every piece of text a reader sees in a notice: heading, paragraphs, detail labels and values, link labels. */
+const visibleText = (data: any): string[] => [data.heading, ...(data.paragraphs ?? []), ...(data.details ?? []).flatMap((d: any) => [d.label, d.value]), ...(data.links ?? []).map((l: any) => l.label)].filter(Boolean);
+const basket = (lines: Row[], patch: Row = {}) => {
+  state.tables["dodo_orders"] = [dodoOrder({ kind: "basket", side_id: null, quantity: 15, expected_cents: 1500, ...patch })];
+  state.tables["dodo_basket_lines"] = lines.map((l, position) => ({ order_id: ORDER, position, status: "applied", ...l }));
+};
+
+describe("receipt date", () => {
+  it("renders the stored timestamp as a readable, labelled UTC date", async () => {
+    state.tables["dodo_orders"] = [dodoOrder({ paid_at: "2026-11-18T00:44:10.019322+00:00" })];
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(detail("Date")).toBe("18 November 2026, 00:44 UTC");
+    expect(detail("Date (UTC)")).toBeUndefined();
+  });
+
+  it("falls back to the order's created time when paid_at is empty", async () => {
+    state.tables["dodo_orders"] = [dodoOrder({ paid_at: null, created_at: "2026-11-16 19:59:00+00" })];
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(detail("Date")).toBe("16 November 2026, 19:59 UTC");
+  });
+
+  it.each([
+    ["bundle", () => { state.tables["dodo_orders"] = [dodoOrder({ paid_at: "2026-11-18T00:44:10.019322+00:00" })]; }],
+    ["basket with a refund", () => basket([{ matchup_id: M1, side_id: S(1), quantity: 10 }, { matchup_id: M3, side_id: S(5), quantity: 5, status: "refunded" }], { basket_refund_cents: 500, refund_status: "pending" })],
+    ["rejected matchup", () => { state.tables["dodo_orders"] = [dodoOrder({ kind: "standard", side_id: null, quantity: 0, expected_cents: 900, matchup_id: M1, review_allowed: false, refund_status: "needs_review" })]; }],
+  ])("no user-visible field of a %s notice looks like a raw ISO-8601 date", async (_name, seed) => {
+    seed();
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(state.sends.length).toBeGreaterThan(0);
+    for (const send of state.sends) for (const text of visibleText(send[2].templateData)) expect(text).not.toMatch(ISO);
+  });
+});
+
+describe("receipt link", () => {
+  it("a single-matchup receipt links to that buyer's own pull card page", async () => {
+    state.tables["dodo_orders"] = [dodoOrder()];
+    recordPull(1, `dodo:${ORDER}`, M1, S(1), "pizza-vs-burgers");
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([{ href: `https://tugg.lol/pull/${P(1)}`, label: "See your pull card" }]);
+  });
+
+  it("a basket receipt links every line to its own pull card, naming the matchup", async () => {
+    basket([{ matchup_id: M1, side_id: S(2), quantity: 10 }, { matchup_id: M2, side_id: S(3), quantity: 5 }]);
+    recordPull(1, `dodo:${ORDER}:0`, M1, S(2), "pizza-vs-burgers");
+    recordPull(2, `dodo:${ORDER}:1`, M2, S(3), "cats-vs-dogs");
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([
+      { href: `https://tugg.lol/pull/${P(1)}`, label: "See your pull card: Pizza vs Burgers" },
+      { href: `https://tugg.lol/pull/${P(2)}`, label: "See your pull card: Cats vs Dogs" },
+    ]);
+  });
+
+  it("a basket line without a card falls back on its own; the other line keeps its card", async () => {
+    basket([{ matchup_id: M1, side_id: S(2), quantity: 10 }, { matchup_id: M2, side_id: S(3), quantity: 5 }]);
+    recordPull(1, `dodo:${ORDER}:0`, M1, S(2), "pizza-vs-burgers");
+    recordPull(2, `dodo:${ORDER}:1`, M2, S(3), "cats-vs-dogs", { card: false });
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([
+      { href: `https://tugg.lol/pull/${P(1)}`, label: "See your pull card: Pizza vs Burgers" },
+      { href: "https://tugg.lol/m/cats-vs-dogs", label: "View Cats vs Dogs on Tugg" },
+    ]);
+  });
+
+  it("a refunded basket line gets no link, the applied line links to its card", async () => {
+    basket([{ matchup_id: M1, side_id: S(1), quantity: 10 }, { matchup_id: M3, side_id: S(5), quantity: 5, status: "refunded" }], { basket_refund_cents: 500, refund_status: "pending" });
+    recordPull(1, `dodo:${ORDER}:0`, M1, S(1), "pizza-vs-burgers");
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([{ href: `https://tugg.lol/pull/${P(1)}`, label: "See your pull card" }]);
+  });
+
+  it.each([
+    ["no snapshot was recorded", () => {}],
+    ["the card loader finds nothing", () => recordPull(1, `dodo:${ORDER}`, M1, S(1), "pizza-vs-burgers", { card: false })],
+    ["the card loader fails", () => { recordPull(1, `dodo:${ORDER}`, M1, S(1), "pizza-vs-burgers"); state.cardError = true; }],
+    ["the card belongs to another matchup", () => { recordPull(1, `dodo:${ORDER}`, M1, S(1), "pizza-vs-burgers"); state.cards[P(1)].slug = "cats-vs-dogs"; }],
+  ])("falls back to the matchup page when %s", async (_why, seed) => {
+    state.tables["dodo_orders"] = [dodoOrder()];
+    seed();
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([{ href: "https://tugg.lol/m/pizza-vs-burgers", label: "View the matchup on Tugg" }]);
+  });
+
+  it("a matchup purchase links to the matchup only once it is public, otherwise home", async () => {
+    state.tables["dodo_orders"] = [dodoOrder({ kind: "standard", side_id: null, quantity: 0, expected_cents: 900, matchup_id: M1 })];
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([{ href: "https://tugg.lol/m/pizza-vs-burgers", label: "View your matchup on Tugg" }]);
+    state.sends = []; state.claims.clear();
+    state.tables["matchups"]![0].status = "rejected";
+    await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+    expect(links()).toEqual([{ href: "https://tugg.lol/", label: "Visit Tugg" }]);
+  });
+
+  it("every receipt link is a public tugg.lol page with no email, order id, payment id or token", async () => {
+    const seeds = [
+      () => { state.tables["dodo_orders"] = [dodoOrder()]; recordPull(1, `dodo:${ORDER}`, M1, S(1), "pizza-vs-burgers"); },
+      () => { basket([{ matchup_id: M1, side_id: S(2), quantity: 10 }, { matchup_id: M2, side_id: S(3), quantity: 5 }]); recordPull(1, `dodo:${ORDER}:0`, M1, S(2), "pizza-vs-burgers"); },
+      () => { state.tables["dodo_orders"] = [dodoOrder({ kind: "featured", side_id: null, quantity: 0, expected_cents: 2900, matchup_id: M2 })]; },
+    ];
+    for (const seed of seeds) {
+      state.tables = {}; state.cards = {}; state.sends = []; state.claims.clear(); seedMatchups(); seed();
+      await sendPurchaseNotices(ORDER, "sandbox", "dodo");
+      expect(links().length).toBeGreaterThan(0);
+      for (const { href, label } of links()) {
+        expect(href).toMatch(/^https:\/\/tugg\.lol\/(?:$|m\/[a-z0-9-]+$|pull\/[0-9a-f-]{36}$)/);
+        expect(label.trim()).not.toBe("");
+        expect(href).not.toContain(ORDER);
+        expect(href).not.toMatch(/@|%40|pay_|cks_|rfd_|99999999-9999|token|session|[?#]/i);
+      }
+    }
   });
 });

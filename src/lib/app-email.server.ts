@@ -4,6 +4,8 @@ import { sendTemplateEmail } from './email-templates/send-email'
 import { ENGAGEMENT_DISCLOSURE } from './engagement/rules'
 import { refundTimingText } from './payments/copy'
 import type { PaymentReceipt, ReceiptLine } from './payments/confirmation'
+import { formatUtcDateTime } from './utc-format'
+import { pullPagePath, PUBLIC_SITE } from './og/card'
 
 export const BUSINESS_EMAIL = 'hello@tugg.lol'
 export const EMAIL_LIMITS = { recipientPerHour: 6, ownerPerHour: 15, alertsPerHour: 3, attemptsPerEvent: 3 } as const
@@ -94,20 +96,54 @@ export function pullReceiptDetails(receipt: PaymentReceipt): Detail[] {
     ...lines,
   ]
 }
-async function pullDetails(client: Db, order: ReceiptOrder, provider: ReceiptProvider): Promise<{ details: Detail[]; link?: string; refundedPulls: number } | null> {
+/** A link in a notice. Every href is a public tugg.lol page: never an email, order, payment or session id. */
+export type NoticeLink = { href: string; label: string }
+export const HOME_LINK: NoticeLink = { href: `${PUBLIC_SITE}/`, label: 'Visit Tugg' }
+const matchupHref = (slug: string) => `${PUBLIC_SITE}/m/${encodeURIComponent(slug)}`
+const PUBLIC_MATCHUP = ['active', 'retired'] // the only statuses with a public matchup page
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const dedupe = (links: NoticeLink[]) => links.filter((l, i) => links.findIndex(o => o.href === l.href) === i)
+
+/**
+ * One link per applied receipt line, to that buyer's own pull card page (the same pull the on-screen Share button
+ * draws). A line whose card can't be drawn right now falls back to its public matchup page, then home, so a receipt
+ * never carries a dead link. Refunded basket lines are not receipt lines and get no link.
+ */
+export async function receiptLinks(receipt: PaymentReceipt): Promise<NoticeLink[]> {
+  const many = receipt.lines.length > 1
+  const { loadPullCard } = await import('./tugg.functions')
+  const links = await Promise.all(receipt.lines.map(async (l): Promise<NoticeLink> => {
+    const pullId = l.pull?.id
+    if (pullId && UUID.test(pullId)) {
+      // Exactly what the public card route checks before drawing; any doubt falls back.
+      const card = await loadPullCard(pullId).catch(() => null)
+      if (card && card.id === pullId && card.slug === l.slug && card.sideId === l.sideId)
+        return { href: `${PUBLIC_SITE}${pullPagePath(pullId)}`, label: many ? `See your pull card: ${l.title}` : 'See your pull card' }
+    }
+    // Receipt lines only exist for matchups the public can read, so this page exists.
+    if (l.slug) return { href: matchupHref(l.slug), label: many ? `View ${l.title} on Tugg` : 'View the matchup on Tugg' }
+    return HOME_LINK
+  }))
+  return links.length ? dedupe(links) : [HOME_LINK]
+}
+async function pullDetails(client: Db, order: ReceiptOrder, provider: ReceiptProvider): Promise<{ details: Detail[]; links: NoticeLink[]; refundedPulls: number } | null> {
   if (provider === 'dodo' && (order.kind === 'basket' || order.side_id)) {
     const { dodoReceipt } = await import('./payments/receipt.server')
     const receipt = await dodoReceipt(client as any, order)
     if (!receipt || !receipt.lines.length) return null
-    const [only] = receipt.lines
-    const link = receipt.lines.length === 1 && only ? `https://tugg.lol/m/${encodeURIComponent(only.slug)}` : 'https://tugg.lol/'
-    return { details: pullReceiptDetails(receipt), link, refundedPulls: receipt.refundedPulls }
+    return { details: pullReceiptDetails(receipt), links: await receiptLinks(receipt), refundedPulls: receipt.refundedPulls }
   }
   if (!order.side_id) return null
-  const side = await client.from('sides').select('name,matchups(title,slug)').eq('id', order.side_id).single()
-  const matchup = (side.data as any)?.matchups as { title: string; slug: string } | null
+  const side = await client.from('sides').select('name,matchups(title,slug,status)').eq('id', order.side_id).single()
+  const matchup = (side.data as any)?.matchups as { title: string; slug: string; status: string } | null
   if (side.error || !matchup) return null
-  return { details: [{ label: 'Purchase', value: plural(order.quantity) }, { label: 'Matchup', value: matchup.title }, { label: 'Side', value: (side.data as any).name }, { label: 'Pulls', value: String(order.quantity) }], link: `https://tugg.lol/m/${encodeURIComponent(matchup.slug)}`, refundedPulls: 0 }
+  const links = PUBLIC_MATCHUP.includes(matchup.status) ? [{ href: matchupHref(matchup.slug), label: 'View the matchup on Tugg' }] : [HOME_LINK]
+  return { details: [{ label: 'Purchase', value: plural(order.quantity) }, { label: 'Matchup', value: matchup.title }, { label: 'Side', value: (side.data as any).name }, { label: 'Pulls', value: String(order.quantity) }], links, refundedPulls: 0 }
+}
+/** "Date: 18 November 2026, 00:44 UTC"; an unreadable value omits the line instead of printing raw text. */
+function dateDetail(value: string | null | undefined): Detail[] {
+  const formatted = formatUtcDateTime(value)
+  return formatted ? [{ label: 'Date', value: formatted }] : []
 }
 function refundState(status: string | null) {
   const completed = ['succeeded', 'refunded'].includes(status || '')
@@ -124,13 +160,13 @@ export async function sendPurchaseNotices(orderId: string, environment: string, 
     const mode = order.environment === 'live' ? 'Live' : 'Sandbox / test'
     const refundTiming = refundTimingText(provider)
     const isPull = order.kind === 'basket' || Boolean(order.side_id)
-    let matchup: { title: string; slug: string } | null = null
+    let matchup: { title: string; slug: string; status: string } | null = null
     let pull: Awaited<ReturnType<typeof pullDetails>> = null
     if (isPull) {
       pull = await pullDetails(client, order, provider)
       if (!pull) { await log(`purchase-receipt:${orderId}`, 'purchase-receipt', 'notice_data_unavailable'); return }
     } else if (order.matchup_id) {
-      const m = await client.from('matchups').select('title,slug').eq('id', order.matchup_id).single()
+      const m = await client.from('matchups').select('title,slug,status').eq('id', order.matchup_id).single()
       matchup = m.data
     }
     if (!order.buyer_email) { await log(`purchase-receipt:${orderId}`, 'purchase-receipt', 'missing_buyer_email'); return }
@@ -145,12 +181,13 @@ export async function sendPurchaseNotices(orderId: string, environment: string, 
         { label: 'Refunded', value: `${usd(order.basket_refund_cents)} for ${plural(pull.refundedPulls)}, because a matchup stopped taking pulls before your payment was applied` },
         { label: 'Refund status', value: refunded.label },
       ] : []),
-      { label: 'Date (UTC)', value: order.paid_at || order.created_at },
+      ...dateDetail(order.paid_at || order.created_at),
       { label: 'Payment reference', value: order.reference },
       { label: 'Mode', value: mode },
     ]
-    const link = pull?.link ?? (matchup ? `https://tugg.lol/m/${encodeURIComponent(matchup.slug)}` : undefined)
-    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, link, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.', ...(refunded ? [refundTiming] : []), ENGAGEMENT_DISCLOSURE] })
+    // A new matchup's page is public only once approved; pending or rejected ones link home instead.
+    const links = pull?.links ?? (matchup && PUBLIC_MATCHUP.includes(matchup.status) ? [{ href: matchupHref(matchup.slug), label: 'View your matchup on Tugg' }] : [HOME_LINK])
+    await deliverNotice('purchase-receipt', order.buyer_email, orderId, { heading: 'Your Tugg purchase receipt', details, links, paragraphs: ['This is a one-time purchase of digital entertainment. No prizes or payouts.', ...(refunded ? [refundTiming] : []), ENGAGEMENT_DISCLOSURE] })
     if (!isPull && order.review_allowed === false) {
       const state = refundState(order.refund_status)
       await deliverNotice('matchup-rejection', order.buyer_email, `${orderId}:${state.key}`, {
@@ -203,7 +240,7 @@ export async function sendWeeklySummary(now = new Date()) {
       { label: `${e.environment} 7-day funnel viewed → opened → completed`, value: `${e.viewed} → ${e.opened} → ${e.completed}; viewed-to-completed ${e.viewed ? (100*e.completed/e.viewed).toFixed(1) : '0.0'}%` },
     ])
     return deliverNotice('weekly-summary', BUSINESS_EMAIL, window.id, { heading: 'Tugg weekly owner summary', details: [
-      { label: 'UTC period', value: `${window.from} to ${window.to}` }, ...details,
+      { label: 'Period', value: `${formatUtcDateTime(window.from)} to ${formatUtcDateTime(window.to)}` }, ...details,
       ...Object.entries(facts.new_matchups).map(([source,count]) => ({ label: `New matchups: ${source}`, value: String(count) })),
       { label: 'Genuine errors / failed payments', value: `${facts.errors} / ${facts.failed_payments}` },
       { label: 'Confirmed refunds', value: String(facts.refunds_confirmed) },

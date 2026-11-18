@@ -219,3 +219,8 @@
 - [x] Basket receipts list every applied line and the refunded portion, from the shared screen receipt builder
 - [x] Dodo refund-timing wording; mode label from the order's own environment
 - [x] Regression guard: wrong table or missing fulfilment hook fails tests
+
+## Receipt date and link (2026-11-18, do not publish)
+- [x] Receipt date reads "18 November 2026, 00:44 UTC"; owner weekly summary period uses the same format; tests reject raw ISO dates in notice text
+- [x] Receipt links each applied line to that buyer's own public pull card page (/pull/<id>), falling back to the matchup page, then home
+- [ ] Decide whether the on-screen Share button should share the new pull card page instead of the matchup page. Blocker: owner decision.

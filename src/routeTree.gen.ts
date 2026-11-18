@@ -36,6 +36,7 @@ import { Route as FeedsMatchupsDotrssRouteImport } from './routes/feeds/matchups
 import { Route as FeedsResultsDotjsonRouteImport } from './routes/feeds/results[.]json'
 import { Route as FeedsResultsDotrssRouteImport } from './routes/feeds/results[.]rss'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
+import { Route as PullIdRouteImport } from './routes/pull.$id'
 import { Route as RecapIndexRouteImport } from './routes/recap.index'
 import { Route as RecapDateRouteImport } from './routes/recap.$date'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
@@ -195,6 +196,11 @@ const MSlugRoute = MSlugRouteImport.update({
   path: '/m/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PullIdRoute = PullIdRouteImport.update({
+  id: '/pull/$id',
+  path: '/pull/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecapIndexRoute = RecapIndexRouteImport.update({
   id: '/recap/',
   path: '/recap/',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/feeds/results.json': typeof FeedsResultsDotjsonRoute
   '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
+  '/pull/$id': typeof PullIdRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/feeds/results.json': typeof FeedsResultsDotjsonRoute
   '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
+  '/pull/$id': typeof PullIdRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -457,6 +465,7 @@ export interface FileRoutesById {
   '/feeds/results.json': typeof FeedsResultsDotjsonRoute
   '/feeds/results.rss': typeof FeedsResultsDotrssRoute
   '/m/$slug': typeof MSlugRoute
+  '/pull/$id': typeof PullIdRoute
   '/recap/$date': typeof RecapDateRoute
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/feeds/results.json'
     | '/feeds/results.rss'
     | '/m/$slug'
+    | '/pull/$id'
     | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -563,6 +573,7 @@ export interface FileRouteTypes {
     | '/feeds/results.json'
     | '/feeds/results.rss'
     | '/m/$slug'
+    | '/pull/$id'
     | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -616,6 +627,7 @@ export interface FileRouteTypes {
     | '/feeds/results.json'
     | '/feeds/results.rss'
     | '/m/$slug'
+    | '/pull/$id'
     | '/recap/$date'
     | '/results/$id'
     | '/rivalries/$slug'
@@ -669,6 +681,7 @@ export interface RootRouteChildren {
   FeedsResultsDotjsonRoute: typeof FeedsResultsDotjsonRoute
   FeedsResultsDotrssRoute: typeof FeedsResultsDotrssRoute
   MSlugRoute: typeof MSlugRoute
+  PullIdRoute: typeof PullIdRoute
   RecapDateRoute: typeof RecapDateRoute
   ResultsIdRoute: typeof ResultsIdRoute
   RivalriesSlugRoute: typeof RivalriesSlugRoute
@@ -886,6 +899,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pull/$id': {
+      id: '/pull/$id'
+      path: '/pull/$id'
+      fullPath: '/pull/$id'
+      preLoaderRoute: typeof PullIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recap/': {
       id: '/recap/'
       path: '/recap'
@@ -1095,6 +1115,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedsResultsDotjsonRoute: FeedsResultsDotjsonRoute,
   FeedsResultsDotrssRoute: FeedsResultsDotrssRoute,
   MSlugRoute: MSlugRoute,
+  PullIdRoute: PullIdRoute,
   RecapDateRoute: RecapDateRoute,
   ResultsIdRoute: ResultsIdRoute,
   RivalriesSlugRoute: RivalriesSlugRoute,

@@ -643,6 +643,11 @@ export type PullCard = {
   roundLength: RoundLength;
 };
 
+/** The public pull card page (/pull/$id): the same public snapshot the card image draws, nothing more. */
+export const getPullCard = createServerFn({ method: "GET" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => loadPullCard(data.id));
+
 /** Public snapshot of one pull for its share card. Reads only public facts: never email, payment or session ids. */
 export async function loadPullCard(id: string): Promise<PullCard | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;

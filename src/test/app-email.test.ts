@@ -34,3 +34,13 @@ it('contact sends reply to sender and copy only to owner', async () => { state.r
 it('owner alerts allow only genuine categories and safe internal references', async () => { expect((await sendOwnerAlert('promotion' as any,'one','live')).sent).toBe(false); await sendOwnerAlert('dispute','order1','live'); expect(state.sends[0]?.[1]).toBe('hello@tugg.lol'); expect(JSON.stringify(state.sends)).not.toContain('payment_id') })
 it('weekly summary separates environment and derives conversion from stored counts', async () => { await sendWeeklySummary(new Date('2026-11-09T08:00:15Z')); expect(state.sends[0]?.[0]).toBe('weekly-summary'); expect(state.sends[0]?.[2].templateData.details).toContainEqual({label:'live gross revenue',value:'$5.00 USD'}); expect(state.sends[0]?.[2].templateData.details).toContainEqual({label:'live 7-day funnel viewed → opened → completed',value:'10 → 5 → 2; viewed-to-completed 20.0%'}) })
 it('Monday window uses 08:00 UTC and seven days', () => { expect(weeklyWindow(new Date('2026-11-09T08:00:30Z'))).toEqual({from:'2026-11-02T08:00:00.000Z',to:'2026-11-09T08:00:00.000Z',id:'2026-11-09'}) })
+it('weekly summary shows its period as readable UTC dates, and no owner notice prints a raw ISO date', async () => {
+  await sendWeeklySummary(new Date('2026-11-09T08:00:15Z'))
+  await sendOwnerAlert('refund_review', 'order-1', 'sandbox')
+  const weekly = state.sends[0]?.[2].templateData
+  expect(weekly.details).toContainEqual({ label: 'Period', value: '2 November 2026, 08:00 UTC to 9 November 2026, 08:00 UTC' })
+  for (const send of state.sends) {
+    const d = send[2].templateData
+    for (const text of [d.heading, ...(d.paragraphs ?? []), ...(d.details ?? []).flatMap((x: any) => [x.label, x.value])]) expect(text).not.toMatch(/\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2})?/)
+  }
+})

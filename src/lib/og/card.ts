@@ -227,6 +227,8 @@ export const resultImagePath = (id: string, size: CardSize = "link", v?: string 
  * design number is part of the URL; the route ignores it and always draws the current design.
  */
 export const PULL_CARD_DESIGN = 3; // 3: Noto Color Emoji artwork
+/** Public page showing one pull's card; linked from that buyer's receipt email. Keyed only by the public pull id. */
+export const pullPagePath = (pullId: string) => `/pull/${encodeURIComponent(pullId)}`;
 /** Personal pull cards are permanent snapshots keyed by the public pull id; no score token needed. */
 export const pullImagePath = (pullId: string, size: CardSize = "link") =>
   `/api/public/og/p/${encodeURIComponent(pullId)}?size=${size}&d=${PULL_CARD_DESIGN}`;

@@ -3,14 +3,17 @@ import { Text, Link } from '@react-email/components'
 import type { TemplateEntry } from './registry'
 import { EmailFrame, emailLink, emailText, EMAIL_COLORS } from './brand'
 
-type Props = { heading?: string; paragraphs?: string[]; details?: { label: string; value: string }[]; link?: string; linkLabel?: string }
+type NoticeLink = { href: string; label: string }
+type Props = { heading?: string; paragraphs?: string[]; details?: { label: string; value: string }[]; links?: NoticeLink[]; link?: string; linkLabel?: string }
+const SAFE_LINK = /^https:\/\/tugg\.lol\//
 /** Transactional notices (receipts, refunds, replies, owner mail). Same site colours as every other Tugg email. */
-export function Notice({ heading = 'Tugg', paragraphs = [], details = [], link, linkLabel = 'View on Tugg' }: Props) {
-  const safeLink = link && /^https:\/\/tugg\.lol\//.test(link) ? link : undefined
+export function Notice({ heading = 'Tugg', paragraphs = [], details = [], links, link, linkLabel = 'View on Tugg' }: Props) {
+  // Only tugg.lol links with text are drawn; anything else is dropped rather than shown broken.
+  const safeLinks = (links ?? (link ? [{ href: link, label: linkLabel }] : [])).filter(l => SAFE_LINK.test(l.href) && l.label.trim())
   return <EmailFrame preview={heading} heading={heading} footer="Tugg · hello@tugg.lol">
     {paragraphs.map((text, i) => <Text key={i} style={emailText}>{text}</Text>)}
     {details.map((item, i) => <Text key={i} style={emailText}><strong style={{ color: EMAIL_COLORS.muted }}>{item.label}: </strong>{item.value}</Text>)}
-    {safeLink && <Text style={emailText}><Link href={safeLink} style={emailLink}>{linkLabel}</Link></Text>}
+    {safeLinks.map((l, i) => <Text key={`link-${i}`} style={emailText}><Link href={l.href} style={emailLink}>{l.label}</Link></Text>)}
   </EmailFrame>
 }
 const entry = (subject: string, heading: string): TemplateEntry => ({ component: Notice, subject, displayName: heading, previewData: { heading, paragraphs: ['Your Tugg update.'], details: [] } })
