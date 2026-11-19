@@ -2,9 +2,10 @@ import { Output, streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { createLovableAiGatewayRunIdFetch } from "./ai/run-id";
-import type { Verdict } from "./server-utils.server";
+/** Picture verdicts keep their own two-state shape (pictures are dormant behind SIDE_IMAGES_ENABLED). */
+export type ImageVerdict = { allowed: boolean; reason: string };
 const verdict = z.object({ allowed: z.boolean(), reason: z.string() }).strict();
-export async function moderateSideImage(bytes: Uint8Array): Promise<Verdict> {
+export async function moderateSideImage(bytes: Uint8Array): Promise<ImageVerdict> {
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const { data: state, error } = await db
     .from("job_state")

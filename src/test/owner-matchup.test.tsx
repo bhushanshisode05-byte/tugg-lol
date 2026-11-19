@@ -11,7 +11,7 @@ const state = vi.hoisted(() => ({
   fail: {} as Record<string, boolean>,
   user: null as null | { id: string; email: string; email_confirmed_at: string | null },
   role: true,
-  verdict: { allowed: true, reason: "Fun food rivalry" },
+  verdict: { outcome: "allowed", reason: "Fun food rivalry" } as { outcome: string; reason: string },
   moderate: vi.fn(),
   rpc: [] as { name: string; args: any }[],
   seq: 0,
@@ -134,7 +134,7 @@ beforeEach(() => {
   state.rpc = [];
   state.user = OWNER;
   state.role = true;
-  state.verdict = { allowed: true, reason: "Fun food rivalry" };
+  state.verdict = { outcome: "allowed", reason: "Fun food rivalry" };
   state.moderate.mockReset();
   state.tables = {
     matchups: [
@@ -212,7 +212,7 @@ describe("a valid owner submission", () => {
 
 describe("moderation is binding for the owner", () => {
   it("a rejection creates nothing, returns the reason and logs the verdict", async () => {
-    state.verdict = { allowed: false, reason: "Politicians are not allowed" };
+    state.verdict = { outcome: "rejected", reason: "Politicians are not allowed" };
     const res = await post({ ...valid, title: "Senator X vs Senator Y", a: "Senator X", b: "Senator Y" });
     expect(res.status).toBe(422);
     expect(await res.json()).toMatchObject({ created: false, reason: "Politicians are not allowed" });
@@ -224,15 +224,18 @@ describe("moderation is binding for the owner", () => {
     ]);
   });
   it("there is no override: extra force/bypass fields are ignored", async () => {
-    state.verdict = { allowed: false, reason: "Private individual" };
+    state.verdict = { outcome: "rejected", reason: "Private individual" };
     const res = await post({ ...valid, force: true, bypass: true, override: true, skipModeration: true });
     expect(res.status).toBe(422);
     expect(rows("matchups")).toHaveLength(1);
   });
-  it("unavailable moderation fails closed", async () => {
-    state.verdict = { allowed: false, reason: "Moderation unavailable" };
-    expect((await post(valid)).status).toBe(422);
+  it("unavailable moderation fails closed without logging a fake verdict", async () => {
+    state.verdict = { outcome: "unavailable", reason: "Moderation error 503" };
+    const res = await post(valid);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ created: false, error: expect.stringContaining("Moderation is unavailable") });
     expect(rows("matchups")).toHaveLength(1);
+    expect(rows("moderation_log")).toEqual([]);
   });
 });
 

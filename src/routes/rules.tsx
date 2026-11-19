@@ -4,6 +4,10 @@ import { IMAGE_POLICY } from "@/lib/side-image";
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/tugg/Shell";
 import { ALL_TIME_RULE, ROUND_LENGTH_RULE } from "@/lib/rounds";
+import { rulesPolicy } from "@/lib/content-policy";
+
+/** Same lists the generator and moderation use, so the published rules match what is enforced. */
+const POLICY = rulesPolicy();
 
 export const Route = createFileRoute("/rules")({
   staticData: { sitemap: true },
@@ -58,14 +62,11 @@ const sections: [string, string[]][] = [
       "Tugg is paid entertainment. Nothing is ever paid out to pullers or creators. It is not gambling: you are buying a pull, not a chance to win money.",
     ],
   ],
-  [
-    "Allowed matchups",
-    ["Brands, products, places, cities, countries, teams, foods, ideas and entertainment."],
-  ],
+  ["Allowed matchups", POLICY.allowed],
   [
     "Not allowed",
     [
-      "Private individuals, political parties or candidates, hate or harassment, sexual content, illegal content and scams.",
+      ...POLICY.notAllowed,
       "Every matchup, side name and shout-out is checked automatically. Rejected shout-outs are replaced with a placeholder.",
     ],
   ],

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { config, moderate } from "./server-utils.server";
+import { config, moderate, SHOUT_OUT_UNAVAILABLE } from "./server-utils.server";
 import { billingSchema } from "./payments/billing";
 import { basketActive, paymentReadiness, selectedProvider, selectedProduct } from "./payments/selection.server";
 import { verifyTurnstileForRequest } from "./turnstile.server";
@@ -24,7 +24,9 @@ export const buyImmediateBundle = createServerFn({ method: "POST" })
       let name=data.name, shout=data.shout;
       if (name || shout) {
         const verdict = await moderate("shout_out", `Name: ${name}\nShout-out: ${shout}`);
-        if (!verdict.allowed) { name=""; shout=""; }
+        // An outage is not a rejection: ask the buyer before payment instead of silently dropping their words.
+        if (verdict.outcome === "unavailable") return { error: SHOUT_OUT_UNAVAILABLE };
+        if (verdict.outcome !== "allowed") { name=""; shout=""; }
       }
       const kind = `pull_${data.pack}` as "pull_5" | "pull_10" | "pull_25";
       const product = selectedProduct(kind);

@@ -50,7 +50,14 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
             checked(await db.from("matchups").update({ status: "pending_review" }).eq("id", m.id).eq("status", "pending_payment"));
             const sides = [...m.sides].sort((a,b) => a.position-b.position);
             const content = `Title: ${m.title}\nSide A: ${sides[0]?.name}\nSide B: ${sides[1]?.name}\nDescription: ${m.description}`;
-            const verdict = await moderate("matchup", content); allowed = verdict.allowed;
+            const verdict = await moderate("matchup", content);
+            // An outage is not a verdict: stay unpublished and unrefunded; the order is processed again on its next check.
+            if (verdict.outcome === "unavailable") {
+              checked(await db.from("events").insert({ kind: "moderation_unavailable", detail: { provider: "payglocal", orderId: id } }));
+              if (reconcile) checked(await db.from("payglocal_orders").update({ reconcile_count: o.reconcile_count+1, reconciled_at: new Date().toISOString(), reconcile_result: "moderation_pending" }).eq("id", id));
+              return { status: "paid" };
+            }
+            allowed = verdict.outcome === "allowed";
             checked(await db.from("moderation_log").insert({ subject_type: "matchup", subject_id: id, content, verdict: allowed ? "allowed" : "rejected", reason: verdict.reason }));
             checked(await db.from("payglocal_orders").update({ review_allowed: allowed, review_reason: verdict.reason }).eq("id", id));
           }

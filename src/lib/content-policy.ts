@@ -1,17 +1,37 @@
 // One matchup content policy for the AI generator and the moderation classifier, so the generator never
 // suggests less (or more) than moderation allows. Exclusions are kept word for word.
 
+// The published rules page reads the same lists (see rulesPolicy), so what visitors are told is what is enforced.
+
 /** What a matchup may be about. */
-export const ALLOWED_SUBJECTS =
-  "brands, products, places, cities, countries, sports teams and famous athletes, foods, ideas, hobbies, entertainment franchises and well-known public entertainers";
+export const ALLOWED_SUBJECT_LIST = [
+  "brands", "products", "places", "cities", "countries", "sports teams and famous athletes", "foods", "ideas", "hobbies",
+  "entertainment franchises and well-known public entertainers",
+] as const;
+export const ALLOWED_SUBJECTS = ALLOWED_SUBJECT_LIST.join(", ");
 
 /** What a matchup may never be about. */
-export const NOT_ALLOWED_SUBJECTS =
-  "private individuals, political parties, politicians or candidates, hate, harassment, slurs, sexual content, illegal content, drugs, scams, doxxing, gambling promotion, links/URLs";
+export const NOT_ALLOWED_SUBJECT_LIST = [
+  "private individuals", "political parties, politicians or candidates", "hate", "harassment", "slurs", "sexual content",
+  "illegal content", "drugs", "scams", "doxxing", "gambling promotion", "links/URLs",
+] as const;
+export const NOT_ALLOWED_SUBJECTS = NOT_ALLOWED_SUBJECT_LIST.join(", ");
 
-/** Real named people are only ever compared on preference or merit. */
-export const REAL_PERSON_RULE =
-  "A matchup involving a real, named person must be about preference or merit only: who is better, who you would pick. It must never be framed around an accusation, alleged wrongdoing, a legal matter, a death, an illness or a personal controversy. Reject any matchup framed that way, even when the person is otherwise allowed.";
+/** Real named people are only ever compared on preference or merit (the public wording; moderation adds the instruction). */
+export const REAL_PERSON_RULE_PUBLIC =
+  "A matchup involving a real, named person must be about preference or merit only: who is better, who you would pick. It must never be framed around an accusation, alleged wrongdoing, a legal matter, a death, an illness or a personal controversy.";
+export const REAL_PERSON_RULE = `${REAL_PERSON_RULE_PUBLIC} Reject any matchup framed that way, even when the person is otherwise allowed.`;
+
+const sentence = (items: readonly string[]) => {
+  const text = items.join(", ");
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
+};
+
+/** Visitor-facing wording of the policy above, for the rules page. */
+export const rulesPolicy = () => ({
+  allowed: [sentence(ALLOWED_SUBJECT_LIST), REAL_PERSON_RULE_PUBLIC],
+  notAllowed: [sentence(NOT_ALLOWED_SUBJECT_LIST)],
+});
 
 /** Instructions for the daily AI matchup generator. */
 export const GENERATOR_INSTRUCTIONS =

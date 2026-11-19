@@ -1,18 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { createConfirmationPoller, type ConfirmSignal, type ConfirmState, type PaymentResult } from "@/lib/payments/confirmation";
+import { createConfirmationPoller, type ConfirmPhase, type ConfirmSignal, type ConfirmState, type PaymentResult } from "@/lib/payments/confirmation";
 
-/** Tracks one stored order until a real end state; calls onPaid once per order when it is confirmed. */
-export function usePaymentConfirmation(read: (orderId: string) => Promise<PaymentResult | null | undefined>, onPaid: (result: PaymentResult) => void) {
-  const [state, setState] = useState<ConfirmState>({ phase: "idle" });
-  const readRef = useRef(read), paidRef = useRef(onPaid), notified = useRef(""), orderRef = useRef("");
-  const poller = useRef<ReturnType<typeof createConfirmationPoller> | null>(null);
-  useEffect(() => { readRef.current = read; paidRef.current = onPaid; }, [read, onPaid]);
+type Options<R> = {
+  /** Called once per order when it reaches the "paid" end phase. */
+  onPaid?: (result: R) => void;
+  phaseFor?: (result: R) => ConfirmPhase | null;
+  confirmed?: (result: R) => boolean;
+  /** An order to track from the first render (a return from checkout), so the page never flashes its idle state. */
+  initialOrderId?: string | undefined;
+};
+
+/** Tracks one stored order until a real end state with the shared post-payment poller. */
+export function useOrderConfirmation<R extends { status?: string | null | undefined }>(read: (orderId: string) => Promise<R | null | undefined>, options: Options<R> = {}) {
+  const [state, setState] = useState<ConfirmState<R>>({ phase: options.initialOrderId ? "checking" : "idle" });
+  const readRef = useRef(read), optsRef = useRef(options), notified = useRef(""), orderRef = useRef(options.initialOrderId ?? "");
+  const poller = useRef<ReturnType<typeof createConfirmationPoller<R>> | null>(null);
+  useEffect(() => { readRef.current = read; optsRef.current = options; });
   useEffect(() => {
-    const p = createConfirmationPoller({
+    const p = createConfirmationPoller<R>({
       read: (id) => readRef.current(id),
+      phaseFor: optsRef.current.phaseFor ? (r) => optsRef.current.phaseFor!(r) : undefined,
+      confirmed: (r) => optsRef.current.confirmed?.(r) ?? false,
       onChange: (next) => {
         setState(next);
-        if (next.phase === "paid" && next.result && notified.current !== orderRef.current) { notified.current = orderRef.current; paidRef.current(next.result); }
+        if (next.phase === "paid" && next.result && notified.current !== orderRef.current) { notified.current = orderRef.current; optsRef.current.onPaid?.(next.result); }
       },
     });
     poller.current = p;
@@ -28,4 +39,9 @@ export function usePaymentConfirmation(read: (orderId: string) => Promise<Paymen
     signal: (kind: ConfirmSignal) => poller.current?.signal(kind),
     checkAgain: () => poller.current?.checkAgain(),
   };
+}
+
+/** Tracks one pull order until a real end state; calls onPaid once per order when it is confirmed. */
+export function usePaymentConfirmation(read: (orderId: string) => Promise<PaymentResult | null | undefined>, onPaid: (result: PaymentResult) => void) {
+  return useOrderConfirmation<PaymentResult>(read, { onPaid });
 }

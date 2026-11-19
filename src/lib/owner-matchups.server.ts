@@ -44,13 +44,16 @@ export async function createOwnerMatchup(request: Request): Promise<Response> {
 
   // Moderation is binding for the owner too: no override, no bypass.
   const verdict = await moderate("matchup", content);
+  // No verdict is not a rejection: nothing is created and nothing is logged as a moderation decision.
+  if (verdict.outcome === "unavailable")
+    return json({ created: false, error: "Moderation is unavailable right now, so nothing was created. Please try again in a few minutes." }, 503);
   let slug = slugify(m.title) || "matchup";
   const { data: clash, error: clashError } = await db.from("matchups").select("id").eq("slug", slug).maybeSingle();
   if (clashError) return json({ created: false, error: "Could not check the address. Nothing was created." }, 503);
   if (clash) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-  const logged = await log(verdict.allowed ? "allowed" : "rejected", verdict.reason, slug);
+  const logged = await log(verdict.outcome, verdict.reason, slug);
   if (logged.error) return json({ created: false, error: "Could not record the moderation result. Nothing was created." }, 503);
-  if (!verdict.allowed)
+  if (verdict.outcome !== "allowed")
     return json({ created: false, error: "Moderation rejected this matchup. Nothing was created.", reason: verdict.reason || "No reason given" }, 422);
 
   const { data: row, error } = await db

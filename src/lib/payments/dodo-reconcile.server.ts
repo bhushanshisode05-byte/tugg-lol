@@ -24,9 +24,11 @@ export async function reconcileDodo() {
         if (payment.metadata["tugg_order_id"] !== row.id || payment.checkout_session_id !== row.checkout_id || payment.metadata["tugg_environment"] !== environment) throw new Error("Payment does not match stored order");
         if (["succeeded","failed","cancelled"].includes(payment.status)) {
           await processDodoEvent({ type: payment.status === "succeeded" ? "payment.succeeded" : "payment.failed", data: { payment_id: paymentId } }, provider, payment);
-          const stored = await db.from("dodo_orders").select("status").eq("id",row.id).single();
+          const stored = await db.from("dodo_orders").select("status,kind,review_allowed,refund_status").eq("id",row.id).single();
           if (stored.error) throw new Error("Result unavailable");
-          result = stored.data.status;
+          // A paid matchup still waiting on moderation is retried here; it is not yet a finished order.
+          const awaiting = stored.data.status === "paid" && ["standard","featured"].includes(stored.data.kind) && stored.data.review_allowed === null && !stored.data.refund_status;
+          result = awaiting ? "moderation_pending" : stored.data.status;
           if (result === "paid") finalized++;
         }
       }

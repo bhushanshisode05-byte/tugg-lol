@@ -253,6 +253,9 @@ export type Database = {
           id: string
           kind: string
           matchup_id: string | null
+          moderation_alerted_at: string | null
+          moderation_failures: number
+          moderation_first_failed_at: string | null
           paid_at: string | null
           payment_id: string | null
           processing_key: string | null
@@ -284,6 +287,9 @@ export type Database = {
           id?: string
           kind: string
           matchup_id?: string | null
+          moderation_alerted_at?: string | null
+          moderation_failures?: number
+          moderation_first_failed_at?: string | null
           paid_at?: string | null
           payment_id?: string | null
           processing_key?: string | null
@@ -315,6 +321,9 @@ export type Database = {
           id?: string
           kind?: string
           matchup_id?: string | null
+          moderation_alerted_at?: string | null
+          moderation_failures?: number
+          moderation_first_failed_at?: string | null
           paid_at?: string | null
           payment_id?: string | null
           processing_key?: string | null

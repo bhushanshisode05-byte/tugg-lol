@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { config, moderate, publicDb } from "./server-utils.server";
+import { config, moderate, publicDb, SHOUT_OUT_UNAVAILABLE } from "./server-utils.server";
 import { basketActive, paymentReadiness, selectedProvider } from "./payments/selection.server";
 import { productId } from "./payments/dodo.server";
 import { verifyTurnstileForRequest } from "./turnstile.server";
@@ -43,7 +43,9 @@ export const buyPullBasket = createServerFn({ method: "POST" })
       let name = data.name, shout = data.shout;
       if (name || shout) {
         const verdict = await moderate("shout_out", `Name: ${name}\nShout-out: ${shout}`);
-        if (!verdict.allowed) { name = ""; shout = ""; }
+        // An outage is not a rejection: ask the buyer before payment instead of silently dropping their words.
+        if (verdict.outcome === "unavailable") return { error: SHOUT_OUT_UNAVAILABLE };
+        if (verdict.outcome !== "allowed") { name = ""; shout = ""; }
       }
       const product = productId("pull_1");
       await provider.validateProduct(product, PULL_UNIT_CENTS);

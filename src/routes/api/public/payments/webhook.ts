@@ -20,14 +20,15 @@ async function fulfill(session: any, env: StripeEnv) {
     let name: string = (md.name || "").slice(0, 40);
     if (shout || name) {
       const v = await moderate("shout_out", `Name: ${name}\nShout-out: ${shout}`);
-      await supabaseAdmin.from("moderation_log").insert({
+      // Retired endpoint (410). An outage is not a verdict, so it is not logged as one; the text is still withheld.
+      if (v.outcome !== "unavailable") await supabaseAdmin.from("moderation_log").insert({
         subject_type: "shout_out",
         subject_id: session.id,
         content: `${name} | ${shout}`,
-        verdict: v.allowed ? "allowed" : "rejected",
+        verdict: v.outcome,
         reason: v.reason,
       });
-      if (!v.allowed) {
+      if (v.outcome !== "allowed") {
         if (shout) shout = SHOUT_PLACEHOLDER;
         name = "";
       }
@@ -63,7 +64,10 @@ async function fulfill(session: any, env: StripeEnv) {
       .eq("stripe_session_id", session.id);
     const sides = (m as any).sides.sort((a: any, b: any) => a.position - b.position);
     const text = `Title: ${m.title}\nSide A: ${sides[0]?.name}\nSide B: ${sides[1]?.name}\nDescription: ${m.description}`;
-    let v = await moderate("matchup", text);
+    const verdict = await moderate("matchup", text);
+    // Retired endpoint (410). An outage leaves the matchup unpublished and unrefunded rather than rejecting it.
+    if (verdict.outcome === "unavailable") return;
+    let v = { allowed: verdict.outcome === "allowed", reason: verdict.reason };
     if (v.allowed && SIDE_IMAGES_ENABLED) {
       const { reviewMatchupImages } = await import("@/lib/side-images.server");
       const pictures = await reviewMatchupImages(m.id);

@@ -6,6 +6,7 @@ const state = vi.hoisted(() => ({
   updates: [] as any[],
   rpc: vi.fn(),
   allowed: true,
+  unavailable: false,
   refundClaim: true,
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({
@@ -51,10 +52,11 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   },
 }));
 vi.mock("@/lib/server-utils.server", () => ({
-  moderate: vi.fn(async () => ({
-    allowed: state.allowed,
-    reason: state.allowed ? "ok" : "Rejected fixture",
-  })),
+  moderate: vi.fn(async () =>
+    state.unavailable
+      ? { outcome: "unavailable", reason: "Moderation error 503" }
+      : { outcome: state.allowed ? "allowed" : "rejected", reason: state.allowed ? "ok" : "Rejected fixture" },
+  ),
 }));
 import { processDodoEvent } from "@/lib/payments/fulfillment.server";
 import type { PaymentProvider } from "@/lib/payments/provider";

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/tugg/Shell";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,8 +14,11 @@ import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { getPaymentStatus } from "@/lib/payments.functions";
 import { BillingFields, emptyBilling } from "@/components/tugg/BillingFields";
 import { billingSchema } from "@/lib/payments/billing";
-import { paymentProviderText } from "@/lib/payments/copy";
-import { openDodoOverlay } from "@/lib/payments/dodo-overlay";
+import { paymentProviderText, paymentStatementText } from "@/lib/payments/copy";
+import { openDodoOverlay, type DodoOverlayEvent } from "@/lib/payments/dodo-overlay";
+import { useOrderConfirmation } from "@/hooks/use-payment-confirmation";
+import { creationConfirmed, creationPhase, type CreationResult } from "@/lib/payments/creation-status";
+import { CreationCancelledNote, CreationStatusView } from "@/components/tugg/CreationStatus";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -54,22 +57,40 @@ const CATS = [
 ] as const;
 type SideIn = { name: string; emoji: string; color: string };
 
+const ORDER_ID = /^[0-9a-f-]{36}$/i;
+
+/** The form and, after checkout, the stored outcome of the new matchup, checked with the shared post-payment poller. */
 function CreatePage() {
   const { session_id } = Route.useSearch();
-  if (session_id)
-    return (
-      <Shell>
-        <CreationStatus sessionId={session_id} />
-      </Shell>
-    );
+  const navigate = useNavigate();
+  const fetchStatus = useServerFn(getCreationStatus);
+  const returned = session_id && ORDER_ID.test(session_id) ? session_id : undefined;
+  const confirm = useOrderConfirmation<CreationResult>((id) => fetchStatus({ data: { sessionId: id } }), { phaseFor: creationPhase, confirmed: creationConfirmed, initialOrderId: returned });
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => { if (returned) confirm.track(returned); }, [returned]); // eslint-disable-line react-hooks/exhaustive-deps
+  const phase = confirm.state.phase;
+  const showStatus = phase !== "idle" && phase !== "cancelled";
   return (
     <Shell>
-      <CreateForm />
+      {phase === "cancelled" && !dismissed && <CreationCancelledNote onDismiss={() => setDismissed(true)} />}
+      <CreationStatusView state={confirm.state} onCheckAgain={confirm.checkAgain} />
+      {/* Kept mounted (only hidden) while checking, so a closed checkout returns to the buyer's own entries. */}
+      <div hidden={showStatus}>
+        <CreateForm
+          onCheckoutOpened={(orderId) => { setDismissed(false); confirm.track(orderId); }}
+          onCheckoutEvent={(orderId, event) => {
+            confirm.track(orderId);
+            confirm.signal(event);
+            // A sign of payment: keep the order in the address so a reload carries on checking.
+            if (event !== "closed" && session_id !== orderId) void navigate({ to: "/create", search: { session_id: orderId }, replace: true });
+          }}
+        />
+      </div>
     </Shell>
   );
 }
 
-function CreateForm() {
+function CreateForm({ onCheckoutOpened, onCheckoutEvent }: { onCheckoutOpened: (orderId: string) => void; onCheckoutEvent: (orderId: string, event: DodoOverlayEvent) => void }) {
   const checkout = useServerFn(createMatchupCheckout);
   const getPayments = useServerFn(getPaymentStatus);
   const [ready, setReady] = useState(false);
@@ -91,6 +112,7 @@ function CreateForm() {
   const [pay, setPay] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const autoTitle = a.name && b.name ? `${a.name} vs ${b.name}` : "";
   const finalTitle = title || autoTitle;
   const ok =
@@ -248,7 +270,7 @@ function CreateForm() {
           )}
           {!ready && <p className="text-sm text-muted-foreground">{message}</p>}
           {ready && provider === "payglocal" && <BillingFields value={billing} onChange={setBilling}/>}
-          <Turnstile action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
+          <Turnstile key={attempt} action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
           {err && (
             <p role="alert" className="text-sm text-destructive">
               {err}
@@ -277,85 +299,29 @@ function CreateForm() {
                   setErr(r.error);
                   setPay(false);
                   setToken(null);
+                  setAttempt((n) => n + 1);
                 } else {
                   const destination = new URL(r.url);
-                  if (provider === "dodo" && await openDodoOverlay(r.url, r.environment ?? "sandbox", () => {
-                    if (r.orderId) window.location.assign(`${window.location.origin}/create?session_id=${r.orderId}`);
-                  })) setPay(false);
-                  else window.location.assign(destination.toString());
+                  const orderId = r.orderId;
+                  if (provider === "dodo" && orderId && await openDodoOverlay(r.url, r.environment ?? "sandbox", (event) => onCheckoutEvent(orderId, event))) {
+                    // The token was spent on this checkout; a fresh check is ready if the buyer closes it and tries again.
+                    setPay(false); setToken(null); setAttempt((n) => n + 1);
+                    onCheckoutOpened(orderId);
+                  } else window.location.assign(destination.toString());
                 }
               } catch {
                 setErr("Could not open checkout.");
                 setPay(false);
                 setToken(null);
+                setAttempt((n) => n + 1);
               }
             }}
             className="h-auto w-full whitespace-normal py-4 font-display text-xl font-extrabold"
           >
             Pay {tier === "featured" ? "$29" : "$9"} and submit
           </Button>
+          <p className="mt-3 text-sm text-foreground" data-payment-descriptor>{paymentStatementText(provider)}</p>
         </div>
-      )}
-    </div>
-  );
-}
-
-function CreationStatus({ sessionId }: { sessionId: string }) {
-  const fetchStatus = useServerFn(getCreationStatus);
-  const [s, setS] = useState<Awaited<ReturnType<typeof getCreationStatus>> | undefined>(undefined);
-  useEffect(() => {
-    let n = 0;
-    let stop = false;
-    const tick = async () => {
-      const r = await fetchStatus({ data: { sessionId } });
-      if (stop) return;
-      setS(r);
-      if ((!r || r.status === "pending_payment" || r.status === "pending_review") && n++ < 20)
-        setTimeout(tick, 2000);
-    };
-    tick();
-    return () => {
-      stop = true;
-    };
-  }, [sessionId, fetchStatus]);
-
-  return (
-    <div className="mx-auto max-w-xl px-4 py-20 text-center">
-      {s?.paymentStatus === "failed" || s?.paymentStatus === "expired" ? (
-        <><h1 className="font-display text-4xl font-extrabold">Payment not completed</h1><p className="mt-2 text-muted-foreground">No matchup was activated. You can submit again.</p></>
-      ) : !s || s.status === "pending_payment" || s.status === "pending_review" ? (
-        <>
-          <h1 className="font-display text-4xl font-extrabold">Checking your matchup…</h1>
-          <p className="mt-2 text-muted-foreground">
-            Waiting for confirmed payment and moderation. A return from checkout is not payment
-            confirmation.
-          </p>
-        </>
-      ) : s.status === "active" ? (
-        <>
-          <h1 className="font-display text-4xl font-extrabold">It's live! 🎉</h1>
-          <p className="mt-2 text-muted-foreground">{s.title} is ready for pulls.</p>
-          <Link
-            to="/m/$slug"
-            params={{ slug: s.slug }}
-            className="mt-6 inline-block rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground"
-          >
-            Go to your rope
-          </Link>
-        </>
-      ) : (
-        <>
-          <h1 className="font-display text-4xl font-extrabold">Not approved</h1>
-          <p className="mt-2 text-muted-foreground">
-            {s.reason || "This matchup breaks our rules."}
-          </p>
-          <p className="mt-2 text-sm">
-            {s.refunded ? "You've been refunded in full." : "A full refund is on its way."}
-          </p>
-          <Link to="/rules" className="mt-6 inline-block text-primary underline">
-            See what's allowed
-          </Link>
-        </>
       )}
     </div>
   );

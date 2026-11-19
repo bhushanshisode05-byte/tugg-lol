@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({ cards: {} as Record<string, any>, cardError: f
 
 vi.mock("@/lib/server-utils.server", () => ({
   config: () => ({ pauseEmails: false, siteUrl: "https://tugg.lol", paymentProvider: "dodo", paymentsEnv: "sandbox" }),
-  moderate: vi.fn(async () => ({ allowed: true, reason: "ok" })),
+  moderate: vi.fn(async () => ({ outcome: "allowed", reason: "ok" })),
 }));
 vi.mock("@/lib/email-templates/send-email", () => ({ sendTemplateEmail: async (...args: any[]) => { state.sends.push(args); return { sent: true }; } }));
 vi.mock("@/lib/tugg.functions", () => ({

@@ -14,7 +14,7 @@ vi.mock("@/lib/payments/selection.server", () => ({
 vi.mock("@/lib/payments/dodo.server", () => ({ productId: (k: string) => `pdt-${k}` }));
 vi.mock("@/lib/server-utils.server", () => ({
   config: () => ({ pausePulls: process.env["PAUSE_PULLS"] === "true", paymentProvider: "dodo", paymentsEnv: "sandbox" }),
-  moderate: vi.fn(async () => ({ allowed: true, reason: "ok" })),
+  moderate: vi.fn(async () => ({ outcome: "allowed", reason: "ok" })),
   publicDb: () => ({}),
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({

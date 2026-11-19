@@ -14,7 +14,7 @@ export type PaymentResult = { status: string; quantity: number; refundedPulls: n
  *  still checking; cancelled: window closed with no sign of payment, still checking quietly for a short while (a close
  *  never proves nothing was paid); slow: stopped checking without an answer (calm, never an error); the rest are end states. */
 export type ConfirmPhase = "idle" | "checking" | "closed" | "cancelled" | "slow" | "paid" | "failed" | "review";
-export type ConfirmState = { phase: ConfirmPhase; result?: PaymentResult | undefined };
+export type ConfirmState<R = PaymentResult> = { phase: ConfirmPhase; result?: R | undefined };
 export type ConfirmSignal = "closed" | "status" | "completed" | "failed";
 
 /** Gradual backoff: 1s, 1.15s, 1.3s … capped at 4s for the first 3 minutes after tracking starts (when almost every
@@ -43,20 +43,28 @@ export const CONFIRM_MESSAGES = {
 } as const;
 
 type Timer = ReturnType<typeof setTimeout>;
-export function createConfirmationPoller(opts: {
-  read: (orderId: string) => Promise<PaymentResult | null | undefined>;
-  onChange: (state: ConfirmState) => void;
+/** Checks one stored order on the schedule above. Pulls use the order status; other purchases (a new matchup) pass
+ *  `phaseFor` to say when their own outcome is final, and `confirmed` when a read already proves payment while the
+ *  outcome is still pending, so a quiet close never hides a paid order. */
+export function createConfirmationPoller<R extends { status?: string | null | undefined } = PaymentResult>(opts: {
+  read: (orderId: string) => Promise<R | null | undefined>;
+  onChange: (state: ConfirmState<R>) => void;
+  phaseFor?: ((result: R) => ConfirmPhase | null) | undefined;
+  confirmed?: ((result: R) => boolean) | undefined;
   schedule?: typeof CONFIRM_SCHEDULE;
   now?: () => number;
 }) {
   const schedule = opts.schedule ?? CONFIRM_SCHEDULE, now = opts.now ?? (() => Date.now());
-  let state: ConfirmState = { phase: "idle" }, orderId = "", attempt = 0, started = 0, closed = false;
+  const phaseFor = opts.phaseFor ?? ((r: R) => phaseForStatus(r.status));
+  let state: ConfirmState<R> = { phase: "idle" }, orderId = "", attempt = 0, started = 0, closed = false;
   // sawPayment: the checkout window reported progress or a hand-back at least once for this order.
   // quietDone: this order was closed with no sign of payment and its short window has run out.
   let sawPayment = false, closedAt = 0, quietDone = false;
   let timer: Timer | undefined, inflight = false, again = false, generation = 0, stopped = false;
-  const set = (next: ConfirmState) => { state = next; opts.onChange(next); };
+  const set = (next: ConfirmState<R>) => { state = next; opts.onChange(next); };
   const clear = () => { if (timer) clearTimeout(timer); timer = undefined; };
+  // Purchases with a pending outcome after payment (a new matchup) also report what each waiting read showed.
+  const fresh = (r: R | null | undefined) => !!opts.confirmed && !!r && JSON.stringify(r) !== JSON.stringify(state.result);
   const waiting = (): ConfirmPhase => (closed ? (sawPayment ? "closed" : "cancelled") : "checking");
   const cancelled = () => closed && !sawPayment;
   async function check(): Promise<void> {
@@ -64,23 +72,25 @@ export function createConfirmationPoller(opts: {
     if (inflight) { again = true; return; }
     clear(); inflight = true; again = false;
     const gen = generation;
-    let result: PaymentResult | null | undefined = null;
+    let result: R | null | undefined = null;
     try { result = await opts.read(orderId); } catch { result = null; /* A failed check is not a failed payment. */ }
     inflight = false;
     if (stopped || gen !== generation) return;
-    const end = phaseForStatus(result?.status);
+    const end = result ? phaseFor(result) : null;
     if (end && result) { clear(); set({ phase: end, result }); return; }
+    // A stored payment is a sign of payment: after a quiet close, take the full path instead of stopping silently.
+    if (result && opts.confirmed?.(result)) sawPayment = true;
     if (again) { void check(); return; }
     if (cancelled()) {
       // Closed with no sign of payment: never the "still being confirmed" note, just stop quietly.
       const left = closedAt + schedule.cancelledGiveUpMs - now();
       if (left <= 0) { quietDone = true; set({ phase: "idle" }); return; }
-      if (state.phase !== "cancelled") set({ phase: "cancelled", result: result ?? undefined });
+      if (state.phase !== "cancelled" || fresh(result)) set({ phase: "cancelled", result: result ?? undefined });
       timer = setTimeout(() => void check(), Math.min(left, confirmDelay(attempt++, now() - closedAt, schedule)));
       return;
     }
     if (now() - started >= schedule.giveUpMs) { set({ phase: "slow", result: result ?? undefined }); return; }
-    if (state.phase !== waiting()) set({ phase: waiting(), result: result ?? undefined });
+    if (state.phase !== waiting() || fresh(result)) set({ phase: waiting(), result: result ?? undefined });
     timer = setTimeout(() => void check(), confirmDelay(attempt++, now() - started, schedule));
   }
   return {

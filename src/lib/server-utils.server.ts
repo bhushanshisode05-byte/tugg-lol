@@ -79,17 +79,30 @@ export const config = () => ({
 /** True when only live-money pulls may count in public numbers. */
 export const liveOnly = () => config().paymentsEnv === "live";
 
-export type Verdict = { allowed: boolean; reason: string };
+/**
+ * A classifier verdict ("allowed" / "rejected"), or "unavailable" when no verdict could be obtained (no key, an HTTP
+ * error, a timeout or an unreadable reply). Unavailable is never a rejection: content stays unpublished and the caller
+ * retries or asks again later; it must never reject, refund or log a verdict for it.
+ */
+export type Verdict =
+  | { outcome: "allowed" | "rejected"; reason: string }
+  | { outcome: "unavailable"; reason: string };
 
-/** AI classifier for matchup / side / shout-out text. Fails closed. */
+/** Shown before checkout when a name or shout-out could not be checked; nothing has been charged yet. */
+export const SHOUT_OUT_UNAVAILABLE = "We couldn't check your name and shout-out just now. Try again in a minute, or clear them to pull without one. Nothing was charged.";
+
+const unavailable = (reason: string): Verdict => ({ outcome: "unavailable", reason });
+
+/** AI classifier for matchup / side / shout-out text. Content safety fails closed: only "allowed" may publish. */
 export async function moderate(kind: "matchup" | "shout_out", text: string): Promise<Verdict> {
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) return { allowed: false, reason: "Moderation unavailable" };
+  if (!key) return unavailable("Moderation unavailable");
   const rules = moderationRules(kind);
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         model: "openai/gpt-6-astra",
         reasoning: { effort: "low" },
@@ -111,18 +124,20 @@ export async function moderate(kind: "matchup" | "shout_out", text: string): Pro
       }),
     });
     if (!res.ok) {
-      console.error("moderation http", res.status, await res.text());
-      return { allowed: false, reason: `Moderation error ${res.status}` };
+      console.error("moderation http", res.status);
+      return unavailable(`Moderation error ${res.status}`);
     }
     const j: any = await res.json();
     const out =
       j.output_text ??
       j.output?.flatMap((o: any) => o.content ?? []).find((c: any) => c.type === "output_text")?.text;
     const v = JSON.parse(out);
-    return { allowed: !!v.allowed, reason: String(v.reason || "") };
+    // Only a well-formed reply is a verdict; anything else is an error, not a rejection.
+    if (typeof v?.allowed !== "boolean") return unavailable("Moderation reply unreadable");
+    return { outcome: v.allowed ? "allowed" : "rejected", reason: String(v.reason || "") };
   } catch (e) {
-    console.error("moderation failed", e);
-    return { allowed: false, reason: "Moderation failed" };
+    console.error("moderation failed", e instanceof Error ? e.name : "error");
+    return unavailable("Moderation failed");
   }
 }
 

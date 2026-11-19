@@ -1,6 +1,7 @@
 import { activePaymentCopy } from "./payments/copy";
 import { IMAGE_POLICY } from "./side-image";
 import { ALL_TIME_RULE, ROUND_LENGTH_RULE } from "./rounds";
+import { ALLOWED_SUBJECTS, NOT_ALLOWED_SUBJECTS, REAL_PERSON_RULE_PUBLIC } from "./content-policy";
 export const supportAnswers = [
   {
     id: "pulls",
@@ -30,7 +31,8 @@ export const supportAnswers = [
   {
     id: "moderation",
     title: "What is allowed?",
-    text: "Matchups may cover brands, products, places, cities, countries, teams, foods, ideas, and entertainment. Private individuals, political parties or candidates, hate, harassment, sexual content, illegal content, and scams are not allowed. Side names and shout-outs are moderated; a rejected shout-out is replaced with a placeholder and does not refund the pull.",
+    // Built from the same lists the generator and moderation use (content-policy.ts).
+    text: `Matchups may cover ${ALLOWED_SUBJECTS}. ${REAL_PERSON_RULE_PUBLIC} Not allowed: ${NOT_ALLOWED_SUBJECTS}. Side names and shout-outs are moderated; a rejected shout-out is replaced with a placeholder and does not refund the pull.`,
   },
   {
     id: "privacy",

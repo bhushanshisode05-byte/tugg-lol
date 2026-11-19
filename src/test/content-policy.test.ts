@@ -46,8 +46,8 @@ describe("moderate() sends the policy and passes the verdict through", () => {
     }));
     const accused = await moderate("matchup", "Title: Guilty vs Innocent\nSide A: Ronaldo is guilty\nSide B: Ronaldo is innocent\nDescription: Was the accusation against him true?");
     const pick = await moderate("matchup", "Title: Messi vs Ronaldo\nSide A: Messi\nSide B: Ronaldo\nDescription: Who is the greatest footballer?");
-    expect(accused.allowed).toBe(false);
-    expect(pick.allowed).toBe(true);
+    expect(accused.outcome).toBe("rejected");
+    expect(pick.outcome).toBe("allowed");
     expect(sent.every((s) => GUARDRAIL.test(s))).toBe(true);
   });
 });
@@ -58,7 +58,7 @@ describe.skipIf(!process.env["LIVE_MODERATION"])("live moderation", () => {
     const accused = await moderate("matchup", "Title: Guilty vs Innocent\nSide A: Ronaldo is guilty\nSide B: Ronaldo is innocent\nDescription: Was the accusation against him true?");
     const pick = await moderate("matchup", "Title: Messi vs Ronaldo\nSide A: Messi\nSide B: Ronaldo\nDescription: Who is the greatest footballer?");
     console.log("live verdicts", JSON.stringify({ accused, pick }));
-    expect(accused.allowed).toBe(false);
-    expect(pick.allowed).toBe(true);
+    expect(accused.outcome).toBe("rejected");
+    expect(pick.outcome).toBe("allowed");
   }, 60000);
 });

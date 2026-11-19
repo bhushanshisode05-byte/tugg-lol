@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { config, moderate } from "./server-utils.server";
+import { config, moderate, SHOUT_OUT_UNAVAILABLE } from "./server-utils.server";
 import { createDodoProvider, productId, dodoSettings } from "./payments/dodo.server";
 import { PRODUCTS } from "./payments/catalog";
 import { hashWalletToken, newWalletToken, walletTokenPattern } from "./payments/wallet";
@@ -166,17 +166,18 @@ export const spendPulls = createServerFn({ method: "POST" })
         shout = data.shout;
       if (name || shout) {
         const verdict = await moderate("shout_out", `Name: ${name}\nShout-out: ${shout}`);
+        if (verdict.outcome === "unavailable") return { error: SHOUT_OUT_UNAVAILABLE };
         const logged = await db
           .from("moderation_log")
           .insert({
             subject_type: "shout_out",
             subject_id: data.requestId,
             content: `${name} | ${shout}`,
-            verdict: verdict.allowed ? "allowed" : "rejected",
+            verdict: verdict.outcome,
             reason: verdict.reason,
           });
         if (logged.error) throw new Error("Moderation unavailable.");
-        if (!verdict.allowed) {
+        if (verdict.outcome !== "allowed") {
           name = "";
           if (shout) shout = "📣 (shout-out removed)";
         }

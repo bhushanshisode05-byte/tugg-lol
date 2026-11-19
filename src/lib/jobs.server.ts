@@ -126,6 +126,7 @@ export async function runGenerator(opts: { force?: boolean } = {}) {
     );
 
     const created: string[] = [];
+    let moderationUnavailable = 0;
     for (const c of candidates) {
       if (created.length >= slots) break;
       const a = c.a.trim().slice(0, 40), b = c.b.trim().slice(0, 40);
@@ -138,11 +139,13 @@ export async function runGenerator(opts: { force?: boolean } = {}) {
         continue;
       }
       const v = await moderate("matchup", text);
+      // An outage is not a verdict: skip the candidate without writing a "rejected" row to moderation_log.
+      if (v.outcome === "unavailable") { moderationUnavailable++; continue; }
       let slug = slugify(title) || "matchup";
       const { data: clash } = await db.from("matchups").select("id").eq("slug", slug).maybeSingle();
       if (clash) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-      await db.from("moderation_log").insert({ subject_type: "ai_matchup", subject_id: slug, content: text, verdict: v.allowed ? "allowed" : "rejected", reason: v.reason });
-      if (!v.allowed) continue;
+      await db.from("moderation_log").insert({ subject_type: "ai_matchup", subject_id: slug, content: text, verdict: v.outcome, reason: v.reason });
+      if (v.outcome !== "allowed") continue;
       const { data: m, error } = await db
         .from("matchups")
         .insert({ slug, title, description: c.description.slice(0, 280), category: c.category, source: "ai", status: "active" })
@@ -158,8 +161,8 @@ export async function runGenerator(opts: { force?: boolean } = {}) {
       pairs.add(key);
       created.push(slug);
     }
-    await finish("generator", day, "done", { retired, created });
-    return { retired, created };
+    await finish("generator", day, "done", { retired, created, ...(moderationUnavailable ? { moderation_unavailable: moderationUnavailable } : {}) });
+    return { retired, created, ...(moderationUnavailable ? { moderationUnavailable } : {}) };
   } catch (e) {
     await finish("generator", day, e instanceof JobPaused ? "paused" : "failed", { error: String((e as Error).message) });
     await db.from("events").insert({ kind: "ai_generator_error", detail: { error: String((e as Error).message) } });
@@ -221,9 +224,12 @@ export function recapSummary(f: RecapFacts) {
   return parts.join(" ");
 }
 
+/** Recaps are a public, citable record: only live-money pulls count, whatever mode the site is in right now. */
+export const RECAP_LIVE_ONLY = true;
+
 export async function collectFacts(day: string): Promise<RecapFacts> {
   const db = await admin();
-  const live = liveOnly();
+  const live = RECAP_LIVE_ONLY;
   const from = new Date(`${day}T00:00:00Z`);
   const to = new Date(from.getTime() + 86400000);
   const [{ data: dayAgg }, { data: rounds }, { data: dayM }] = await Promise.all([
@@ -258,7 +264,8 @@ export async function collectFacts(day: string): Promise<RecapFacts> {
       return {
         title: r.matchups.title, slug: r.matchups.slug, a: sides[0]?.name, b: sides[1]?.name, a_cents, b_cents,
         pullers: t?.pullers ?? 0,
-        winner: a_cents + b_cents > 0 ? sides.find((s: any) => s.id === r.winner_side_id)?.name ?? null : null,
+        // Name the stored winner only when live money agrees, so a round decided by test pulls is never credited.
+        winner: liveWinner(sides, r.winner_side_id, a_cents, b_cents),
         note: r.result_note,
         length: roundLengthOf(r.round_length),
       };
@@ -270,6 +277,14 @@ export async function collectFacts(day: string): Promise<RecapFacts> {
       return [{ title: m.title, slug: m.slug, a: sides[0]?.name, b: sides[1]?.name, a_cents: Number(d.a_cents), b_cents: Number(d.b_cents), pulls: Number(d.pulls) }];
     }),
   };
+}
+
+function liveWinner(sides: { id: string; position: number; name: string }[], winnerId: string | null, a: number, b: number) {
+  if (a + b <= 0 || !winnerId) return null;
+  const w = sides.find((s) => s.id === winnerId);
+  if (!w) return null;
+  const mine = w.position === 0 ? a : b, theirs = w.position === 0 ? b : a;
+  return mine >= theirs ? w.name : null;
 }
 
 /** A recap is written only when the day has something true to say: a pull, or a round that closed with pulls. */
@@ -291,7 +306,7 @@ export async function runRecap(opts: { day?: string; force?: boolean } = {}) {
   const facts = await collectFacts(day);
   if (!recapHasNews(facts)) {
     // Quiet day: no page, no search-engine ping, but the run is accounted for rather than looking like a failure.
-    const detail = { reason: "no_activity", pulls: facts.pulls, closed_rounds: facts.rounds.length, closed_rounds_with_pulls: 0, note: "No pulls and no round closed with pulls; no recap written and no IndexNow ping." };
+    const detail = { reason: "no_activity", pulls: facts.pulls, closed_rounds: facts.rounds.length, closed_rounds_with_pulls: 0, live_only: true, note: "No live pulls and no round closed with live pulls (test pulls never count); no recap written and no IndexNow ping." };
     await db.from("job_runs").upsert({ job: "recap", day, status: "skipped", detail, finished_at: new Date().toISOString() });
     return { day, skipped: "no activity", detail };
   }

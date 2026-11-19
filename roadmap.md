@@ -1,5 +1,13 @@
 # Tugg roadmap
 
+## Moderation outages, create-matchup status, live-only recaps, rules and statement line (2026-11-19, do not publish)
+- [x] Content check returns allowed / rejected / unavailable; an outage never rejects, refunds or emails a paid matchup; it stays unpublished and is retried by the 5-minute payments check; after 6+ failures over 3+ hours the owner is alerted once.
+- [x] Shout-outs that can't be checked are handed back before payment; the AI generator skips such candidates without logging "rejected"; owner form refuses with "try again".
+- [x] Create-matchup status uses the shared post-payment checker (backoff, 10 minutes, Check again, "Checkout closed. Nothing was charged.", Dismiss); honest "taking longer than usual" note.
+- [x] Recaps count live pulls only; a test-pulls-only day publishes nothing.
+- [x] Rules page and support answer built from the shared content policy; Dodo statement line beside the $9/$29 pay button.
+- [ ] Owner tool to approve or refund a paid matchup stuck on moderation (today: wait for retries, or refund in Dodo). Blocker: owner decision.
+
 ## Round-period wording sweep (2026-11-16, do not publish)
 - [x] Home badge, featured rope, trending cards, matchup and rivalry pages, receipt and share-image text worded from each round's own length; no guessed "daily" for a missing length.
 - [x] Tests: weekly card says "this week" never "today", daily the reverse, neutral wording when unknown, and a scan that fails on hardcoded period copy or a "daily" default.

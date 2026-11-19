@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MODERATION_RETRY } from './payments/moderation-retry'
 import { config } from './server-utils.server'
 import { sendTemplateEmail } from './email-templates/send-email'
 import { ENGAGEMENT_DISCLOSURE } from './engagement/rules'
@@ -214,9 +215,9 @@ export async function sendContactNotices(threadId: string) {
     await deliverNotice('contact-owner', BUSINESS_EMAIL, threadId, { ...data, heading: 'Tugg contact thread', details: [{ label: 'Sender', value: thread.email || 'Not supplied' }, { label: 'Name', value: thread.name || 'Not supplied' }, ...data.details] })
   } catch { await log(`contact-owner:${threadId}`, 'contact-owner', 'notice_data_unavailable') }
 }
-export type AlertKind = 'payment_error' | 'refund_review' | 'dispute'
+export type AlertKind = 'payment_error' | 'refund_review' | 'dispute' | 'moderation_stuck'
 export async function sendOwnerAlert(kind: AlertKind, reference: string, environment: string) {
-  const labels = { payment_error: 'A verified payment processing error needs review.', refund_review: 'A refund outcome needs review. Do not retry an uncertain refund blindly.', dispute: 'A payment dispute needs review.' }
+  const labels = { payment_error: 'A verified payment processing error needs review.', refund_review: 'A refund outcome needs review. Do not retry an uncertain refund blindly.', dispute: 'A payment dispute needs review.', moderation_stuck: `A paid matchup has waited more than ${MODERATION_RETRY.alertAfterMs / 3600000} hours because automatic moderation kept failing (an outage, not a rejection). It is not published and has not been refunded; checks keep retrying until the order is 24 hours old. You decide: wait, or refund the buyer in full.` }
   if (!(kind in labels)) return { sent: false, reason: 'not_genuine' }
   return deliverNotice('owner-alert', BUSINESS_EMAIL, `${kind}:${reference}`, { heading: 'Tugg payment issue needs review', paragraphs: [labels[kind]], details: [{ label: 'Internal reference', value: reference }, { label: 'Environment', value: environment }] })
 }

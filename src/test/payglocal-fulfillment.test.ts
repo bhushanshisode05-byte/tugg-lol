@@ -2,7 +2,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const state=vi.hoisted(()=>({order:{} as any,matchup:{} as any,locked:false,applyCount:0,refundClaim:false,updates:[] as any[],pending:[] as any[],allowed:true}));
 vi.mock("@/lib/payments/payglocal.server",()=>({payglocalSettings:()=>({merchantId:"mid",publicCert:"cert"}),createPayglocalProvider:()=>provider,normalizePayglocal:(v:any)=>v}));
-vi.mock("@/lib/server-utils.server",()=>({config:()=>({paymentProvider:"payglocal",paymentsEnv:"sandbox"}),moderate:async()=>({allowed:state.allowed,reason:"fixture"})}));
+vi.mock("@/lib/server-utils.server",()=>({config:()=>({paymentProvider:"payglocal",paymentsEnv:"sandbox"}),moderate:async()=>({outcome:state.allowed?"allowed":"rejected",reason:"fixture"})}));
 vi.mock("@/integrations/supabase/client.server",()=>({supabaseAdmin:{
   async rpc(name:string){if(name === "payglocal_reconcile_due"){const old=Date.now()-new Date(state.order.created_at).getTime()>=24*3600e3;if(old&&state.order.status==="pending"){state.order.status="expired";return {error:null,data:{rows:[],expired:1}};}return {error:null,data:{rows:state.pending,expired:0}};}if(name === "claim_payglocal_order"){if(state.locked)return {error:null,data:false};state.locked=true;}if(name === "apply_payglocal_payment"){if(state.order.status!=="paid"){state.applyCount++;state.order.status="paid";}}return {error:null,data:true};},
   from(table:string){let update:any;const filters:any[]=[];const q:any={select:()=>q,eq:(k:any,v:any)=>{filters.push([k,v]);return q;},neq:()=>q,is:()=>q,or:()=>q,lt:()=>q,order:()=>q,limit:()=>q,insert:()=>q,

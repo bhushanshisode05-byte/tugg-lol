@@ -17,7 +17,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
     },
   },
 }));
-vi.mock("@/lib/server-utils.server", () => ({ moderate: vi.fn(async () => ({ allowed: true, reason: "ok" })), config: () => ({ siteUrl: "https://tugg.lol" }) }));
+vi.mock("@/lib/server-utils.server", () => ({ moderate: vi.fn(async () => ({ outcome: "allowed", reason: "ok" })), config: () => ({ siteUrl: "https://tugg.lol" }) }));
 vi.mock("@/lib/tugg.functions", () => ({ loadMatchups: async () => [{ id: "m1", slug: "notion-vs-obsidian", title: "Notion vs Obsidian", sides: [{ id, name: "Notion" }, { id: "s2", name: "Obsidian" }], round: { total_a_cents: 3000, total_b_cents: 500 } }] }));
 import { processDodoEvent } from "@/lib/payments/fulfillment.server";
 import { dodoReceipt } from "@/lib/payments/receipt.server";

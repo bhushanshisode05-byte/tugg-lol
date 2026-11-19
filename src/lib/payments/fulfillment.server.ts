@@ -5,6 +5,7 @@ import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { moderate } from "../server-utils.server";
 import { processBasketEvent } from "./basket-fulfillment.server";
 import { storeBuyerEmail } from "./buyer-email.server";
+import { moderationNeedsOwner } from "./moderation-retry";
 
 export const webhookPayload = z
   .object({
@@ -174,7 +175,12 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
       const sides = [...m.sides].sort((a, b) => a.position - b.position);
       const text = `Title: ${m.title}\nSide A: ${sides[0]?.name}\nSide B: ${sides[1]?.name}\nDescription: ${m.description}`;
       const verdict = await moderate("matchup", text);
-      allowed = verdict.allowed;
+      if (verdict.outcome === "unavailable") {
+        // Not a verdict: stay unpublished, never refund or send a rejection; reconciliation retries moderation.
+        await moderationUnavailable(order, provider.environment);
+        return;
+      }
+      allowed = verdict.outcome === "allowed";
       checked(
         await db
           .from("moderation_log")
@@ -247,4 +253,19 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
     // Email observes the committed outcome after the lease is released; it reads stored state and never affects fulfilment.
     try { await (await import("../app-email.server")).sendPurchaseNotices(id, provider.environment, "dodo"); } catch { /* payment outcome unchanged */ }
   }
+}
+
+type StoredOrder = { id: string; moderation_failures?: number | null; moderation_first_failed_at?: string | null; moderation_alerted_at?: string | null };
+/** Counts an unavailable moderation attempt on a paid matchup and, after sustained failure, alerts the owner once. */
+async function moderationUnavailable(order: StoredOrder, environment: string) {
+  const failures = (order.moderation_failures ?? 0) + 1;
+  const first = order.moderation_first_failed_at ?? new Date().toISOString();
+  checked(await db.from("dodo_orders").update({ moderation_failures: failures, moderation_first_failed_at: first }).eq("id", order.id));
+  checked(await db.from("events").insert({ kind: "moderation_unavailable", detail: { orderId: order.id, environment, attempt: failures } }));
+  if (order.moderation_alerted_at || !moderationNeedsOwner(failures, first)) return;
+  const claim = await db.from("dodo_orders").update({ moderation_alerted_at: new Date().toISOString() }).eq("id", order.id).is("moderation_alerted_at", null).select("id").maybeSingle();
+  checked(claim);
+  if (!claim.data) return;
+  checked(await db.from("events").insert({ kind: "moderation_needs_owner", detail: { orderId: order.id, environment, attempts: failures, since: first } }));
+  try { await (await import("../app-email.server")).sendOwnerAlert("moderation_stuck", order.id, environment); } catch { /* order state unchanged */ }
 }

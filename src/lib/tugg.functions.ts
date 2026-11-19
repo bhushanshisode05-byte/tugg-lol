@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { creationResult, type CreationResult } from "./payments/creation-status";
 import { publicDb, config, slugify, liveOnly, resolvePaymentsEnv } from "./server-utils.server";
 import { selectedProvider, selectedProduct, paymentReadiness } from "./payments/selection.server";
 import { billingSchema } from "./payments/billing";
@@ -434,16 +435,15 @@ export const createMatchupCheckout = createServerFn({ method: "POST" })
 
 export const getCreationStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ sessionId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<CreationResult | null> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Public-safe columns only; the outcome is decided from the stored order and matchup, never the browser.
     if (config().paymentProvider === "payglocal") {
       const result = await supabaseAdmin.from("payglocal_orders").select("status,refund_status,review_reason,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
-      const o=result.data; if (!o?.matchups) return null;
-      return { slug:o.matchups.slug,status:o.matchups.status,title:o.matchups.title,refunded:o.refund_status === "succeeded",reason:o.review_reason,paymentStatus:o.status };
+      return creationResult(result.data);
     }
-    const result = await supabaseAdmin.from("dodo_orders").select("status,refund_status,review_reason,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
-    const o = result.data; if (!o || !o.matchups) return null;
-    return { slug: o.matchups.slug, status: o.matchups.status, title: o.matchups.title, refunded: o.refund_status === "succeeded", reason: o.review_reason, paymentStatus: o.status };
+    const result = await supabaseAdmin.from("dodo_orders").select("status,refund_status,review_reason,moderation_failures,matchups(slug,status,title)").eq("id", data.sessionId).eq("environment", config().paymentsEnv).maybeSingle();
+    return creationResult(result.data);
   });
 
 // ---------- Leaderboards / Hall of Fame / Results ----------
