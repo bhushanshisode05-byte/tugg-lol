@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/tugg/Shell";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { openDodoOverlay, type DodoOverlayEvent } from "@/lib/payments/dodo-over
 import { useOrderConfirmation } from "@/hooks/use-payment-confirmation";
 import { creationConfirmed, creationPhase, type CreationResult } from "@/lib/payments/creation-status";
 import { CreationCancelledNote, CreationStatusView } from "@/components/tugg/CreationStatus";
+import { AvailabilityNote, type AvailabilityStatus } from "@/components/tugg/AvailabilityNote";
 
 export const Route = createFileRoute("/create")({
   staticData: { sitemap: true },
@@ -93,15 +94,18 @@ function CreatePage() {
 function CreateForm({ onCheckoutOpened, onCheckoutEvent }: { onCheckoutOpened: (orderId: string) => void; onCheckoutEvent: (orderId: string, event: DodoOverlayEvent) => void }) {
   const checkout = useServerFn(createMatchupCheckout);
   const getPayments = useServerFn(getPaymentStatus);
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<AvailabilityStatus>("loading");
   const [provider,setProvider] = useState("dodo");
   const [message,setMessage] = useState("Dodo checkout is not configured yet. No payment has been taken.");
   const [billing,setBilling] = useState(emptyBilling);
-  useEffect(() => {
+  const loadStatus = useCallback(() => {
+    setStatus("loading");
     getPayments()
-      .then((s) => { setReady(s.ready && !s.paused); setProvider(s.provider); setMessage(s.paused ? "Payments are paused right now." : s.message); })
-      .catch(() => setReady(false));
+      .then((s) => { setStatus(s.ready && !s.paused ? "ready" : "not-ready"); setProvider(s.provider); setMessage(s.paused ? "Payments are paused right now." : s.message); })
+      .catch(() => setStatus("error"));
   }, [getPayments]);
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+  const ready = status === "ready";
   const [a, setA] = useState<SideIn>({ name: "", emoji: "🔥", color: "#e8ff3a" });
   const [b, setB] = useState<SideIn>({ name: "", emoji: "🧊", color: "#ff2e88" });
   const [images, setImages] = useState<{ a?: DraftSideImage; b?: DraftSideImage }>({});
@@ -268,7 +272,7 @@ function CreateForm({ onCheckoutOpened, onCheckoutEvent }: { onCheckoutOpened: (
               may be removed after reports.
             </p>
           )}
-          {!ready && <p className="text-sm text-muted-foreground">{message}</p>}
+          <AvailabilityNote status={status} message={message} onRetry={loadStatus} />
           {ready && provider === "payglocal" && <BillingFields value={billing} onChange={setBilling}/>}
           <Turnstile key={attempt} action={TURNSTILE_ACTIONS.matchup} onToken={setToken} />
           {err && (

@@ -16,13 +16,15 @@ import { usePaymentConfirmation } from "@/hooks/use-payment-confirmation";
 import { PaymentConfirmation } from "./PaymentReceipt";
 import { BASKET_MAX_MATCHUPS, BASKET_MAX_PULLS, BASKET_MIN_PULLS, BASKET_QUICK_PICKS, basketTotal, isWholeBasketAmount, splitPulls } from "@/lib/payments/basket";
 import type { Side } from "@/lib/tugg.functions";
+import { AvailabilityNote, type AvailabilityStatus } from "./AvailabilityNote";
 
 type LineSide = { id: string; name: string; emoji: string };
 type Line = { matchupId: string; title: string; sides: LineSide[]; sideId: string; pulls: number };
 type Option = Awaited<ReturnType<typeof listBasketMatchups>>[number];
 type Step = "viewed" | "bundle_selected" | "turnstile_passed" | "opened" | "cancelled" | "abandoned" | "failed";
 
-export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulled, ready, message }: { matchupId: string; title: string; sides: Side[]; slug: string; paused: boolean; onPulled: () => void; ready: boolean; message: string }) {
+export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulled, status, message, onRetry }: { matchupId: string; title: string; sides: Side[]; slug: string; paused: boolean; onPulled: () => void; status: AvailabilityStatus; message: string; onRetry: () => void }) {
+  const ready = status === "ready";
   const buy = useServerFn(buyPullBasket), read = useServerFn(getImmediatePayment), list = useServerFn(listBasketMatchups), funnel = useServerFn(recordPaymentFunnel);
   const [lines, setLines] = useState<Line[]>([{ matchupId, title, sides, sideId: sides[0]?.id || "", pulls: 5 }]);
   const [custom, setCustom] = useState(""), [options, setOptions] = useState<Option[] | null>(null);
@@ -91,7 +93,7 @@ export function BasketPullPanel({ matchupId, title, sides, slug, paused, onPulle
     </div>}
     <div className="mt-4 grid gap-3 sm:grid-cols-2"><Input aria-label="Display name" placeholder="Display name (optional)" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} /><Input aria-label="Shout-out" placeholder="Shout-out (optional)" value={shout} maxLength={80} onChange={(e) => setShout(e.target.value)} /></div>
     <Turnstile ref={ts} action={TURNSTILE_ACTIONS.pull} onToken={(t) => { setToken(t); if (t) void emit("turnstile_passed"); }} className="mt-4" />
-    {!ready && <p className="mt-4 text-sm text-muted-foreground">{message || "Checkout is unavailable. No payment has been taken."}</p>}
+    <AvailabilityNote status={status} message={message} onRetry={onRetry}/>
     {!isWholeBasketAmount(total) && <p className="mt-3 text-sm text-destructive">Your basket must total between ${BASKET_MIN_PULLS} and ${BASKET_MAX_PULLS}.</p>}
     {error && <p role="alert" className="mt-3 text-destructive">{error}</p>}
     <Button className="mt-4 h-auto w-full whitespace-normal py-4" disabled={!ready || busy || !token || !valid} onClick={async () => {

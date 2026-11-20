@@ -16,7 +16,9 @@ import { PaymentConfirmation } from "./PaymentReceipt";
 import type { PaymentResult } from "@/lib/payments/confirmation";
 import type { Side } from "@/lib/tugg.functions";
 import { ENGAGEMENT_DISCLOSURE } from "@/lib/engagement/rules";
-export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, message, provider = "dodo" }: { sides: Side[]; slug: string; paused: boolean; onPulled: () => void; ready: boolean; message: string; provider?: string }) {
+import { AvailabilityNote, type AvailabilityStatus } from "./AvailabilityNote";
+export function ImmediatePullPanel({ sides, slug, paused, onPulled, status, message, onRetry, provider = "dodo" }: { sides: Side[]; slug: string; paused: boolean; onPulled: () => void; status: AvailabilityStatus; message: string; onRetry: () => void; provider?: string }) {
+  const ready = status === "ready";
   const buy=useServerFn(buyImmediateBundle), read=useServerFn(getImmediatePayment);
   const [side,setSide]=useState(sides[0]?.id || ""),[pack,setPack]=useState<5|10|25>(5),[name,setName]=useState(""),[shout,setShout]=useState("");
   const [dismissed,setDismissed]=useState(false);
@@ -53,7 +55,7 @@ export function ImmediatePullPanel({ sides, slug, paused, onPulled, ready, messa
     <div className="mt-4 grid gap-3 sm:grid-cols-2"><Input aria-label="Display name" placeholder="Display name (optional)" value={name} maxLength={40} onChange={e=>setName(e.target.value)}/><Input aria-label="Shout-out" placeholder="Shout-out (optional)" value={shout} maxLength={80} onChange={e=>setShout(e.target.value)}/></div>
     {ready && provider === "payglocal" && <BillingFields value={billing} onChange={setBilling}/>}
     <Turnstile ref={ts} action={TURNSTILE_ACTIONS.pull} onToken={t=>{setToken(t);if(t)emit("turnstile_passed");}} className="mt-4"/>
-    {!ready && <p className="mt-4 text-sm text-muted-foreground">{message || "Checkout is unavailable. No payment has been taken."}</p>}
+    <AvailabilityNote status={status} message={message} onRetry={onRetry}/>
     {error && <p role="alert" className="mt-3 text-destructive">{error}</p>}
     <Button className="mt-4 h-auto w-full whitespace-normal py-4" disabled={!ready||busy||!token||(provider === "payglocal" && !billingSchema.safeParse(billing).success)||!side} onClick={async()=>{setBusy(true);setError("");try{const r=await buy({data:{funnelId:funnelId.current || (funnelId.current=crypto.randomUUID()),sideId:side,pack,name,shout,...(provider === "payglocal" ? {billing}:{}),returnUrl:`${window.location.origin}/m/${slug}`,turnstileToken:token??undefined}});if("error" in r){setError(r.error);emit("failed");}else {
       setEnvironment(r.environment); completed.current=false; failed.current=false; setDismissed(false);
