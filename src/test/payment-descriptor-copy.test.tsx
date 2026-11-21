@@ -65,7 +65,7 @@ describe("rules page", () => {
 describe("pull panel", () => {
   it("shows the descriptor line, visible text near the pay button", () => {
     vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
-    const view = render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={() => {}} ready message="" provider="dodo" />);
+    const view = render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={() => {}} status="ready" message="" onRetry={() => {}} provider="dodo" />);
     const line = view.container.querySelector("[data-payment-descriptor]")!;
     expect(line.textContent).toBe(DESCRIPTOR);
     const pay = view.getByRole("button", { name: /^Pay \$/ });

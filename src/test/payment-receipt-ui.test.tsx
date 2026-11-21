@@ -29,7 +29,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 async function pay() {
-  render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} ready message="" provider="dodo" />);
+  render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} status="ready" message="" onRetry={() => {}} provider="dodo" />);
   fireEvent.click(screen.getByText("Security passed"));
   fireEvent.click(screen.getByRole("button", { name: "$25 25 pulls" }));
   fireEvent.click(screen.getByRole("button", { name: "Pay $25 · 25 pulls for Notion" }));
@@ -90,7 +90,7 @@ it("a genuinely expired order shows the failure", async () => {
 it("returning from Dodo's redirect with ?payment= resumes checking that order", async () => {
   history.replaceState(null, "", `/m/notion-vs-obsidian?payment=${order}`);
   mocks.read.mockResolvedValueOnce({ status: "pending", quantity: 25, refundedPulls: 0 }).mockResolvedValue({ status: "paid", quantity: 25, refundedPulls: 0, receipt });
-  render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} ready message="" provider="dodo" />);
+  render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} status="ready" message="" onRetry={() => {}} provider="dodo" />);
   await flush(3000);
   expect(mocks.read).toHaveBeenCalledWith({ data: { orderId: order } });
   expect(screen.getByText("Payment confirmed")).toBeInTheDocument();

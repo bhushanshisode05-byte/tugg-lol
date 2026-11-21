@@ -29,6 +29,7 @@
 - Native sharing uses a synchronous tap-time call with a visibility-preloaded story Blob; clipboard runs without blocking the sheet, unsupported files use text-only sharing, and errors use the shared download fallback. Why: preserve user activation and avoid app-specific menus while logging only safe error names.
 - Recent-pulls ticker: only RecentPull fields from tugg_recent_pulls; empty renders nothing. Why: no leaks.
 - SEO surfaces (sitemap via route staticData.sitemap, /feeds/*, llms.txt, IndexNow after the daily recap) read only public data. Why: crawlers must never see private fields.
+- Every price in public/llms.txt must come from PRODUCTS (src/test/llms-pricing.test.ts). Why: a static claim about the catalog once advertised an unreachable $1–$1,000 range.
 
 - Optional side images use metadata-free browser WebP, a full bounded pure-JS server decode and PNG derivative; upload/report records are service-only, and nullable side references preserve old code compatibility. Why: untrusted images must never bypass moderation or break emoji-only rows.
 - Side image files stay in private storage and only approved active/retired side references are served by a public route. Why: workspace policy blocks public buckets and pending or hidden pictures must not be exposed.
