@@ -1,5 +1,9 @@
 # Tugg roadmap
 
+## Transactional sender consolidation (2026-11-21, do not publish)
+- [x] Replace only the transactional send helper with direct Resend, preserving validation, API, stable idempotency, safe error mapping and engagement separation.
+- [x] Exercise receipt, notice, moderation and provider-error tests through mocked Resend requests; full suite 666 passed, 1 skipped after restoring the existing tests' missing temporary image fixtures. No real email sent or publishing performed.
+
 ## Moderation outages, create-matchup status, live-only recaps, rules and statement line (2026-11-19, do not publish)
 - [x] Content check returns allowed / rejected / unavailable; an outage never rejects, refunds or emails a paid matchup; it stays unpublished and is retried by the 5-minute payments check; after 6+ failures over 3+ hours the owner is alerted once.
 - [x] Shout-outs that can't be checked are handed back before payment; the AI generator skips such candidates without logging "rejected"; owner form refuses with "try again".

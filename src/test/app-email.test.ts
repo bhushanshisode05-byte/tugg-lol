@@ -2,11 +2,21 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({ paused: false, claims: new Set<string>(), results: [] as any[], sends: [] as any[], reject: false, limit: false, rows: {} as Record<string, any>, weekly: {} as any }))
 vi.mock('@/lib/server-utils.server', () => ({ config: () => ({ pauseEmails: state.paused }) }))
-vi.mock('@/lib/email-templates/send-email', () => ({ sendTemplateEmail: async (...args: any[]) => {
-  state.sends.push(args)
-  if (state.reject) throw Object.assign(new Error('secret must never be logged'), { code: 'domain_not_verified' })
-  return { sent: true }
-} }))
+// Run the real transactional sender; intercept only rendering and the Resend request.
+let renderedData: Record<string, any> = {};
+vi.mock('@react-email/render', () => ({ render: vi.fn(async (element: any) => { renderedData = element.props; return '<p>Tugg</p>'; }) }));
+beforeEach(() => {
+  vi.stubEnv('RESEND_API_KEY', 'test-only-resend-key');
+  vi.stubEnv('TRANSACTIONAL_EMAIL_FROM', 'Tugg <receipts@updates.tugg.lol>');
+  vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    const key = new Headers(init.headers).get('Idempotency-Key') ?? '';
+    const template = key.replace('tugg-transactional/', '').split(':')[0];
+    state.sends.push([template, body.to[0], { templateData: renderedData }]);
+    if (state.reject) return Response.json({ name: 'validation_error', message: 'The updates.tugg.lol domain is not verified. private body visitor@example.com secret' }, { status: 403 });
+    return Response.json({ id: 'test-email-id' });
+  }));
+});
 vi.mock('@/integrations/supabase/client.server', () => ({ supabaseAdmin: {
   rpc: async (name: string, args: any) => {
     if (name === 'tugg_weekly_notice_facts') return { data: state.weekly, error: null }
@@ -27,6 +37,16 @@ it('rate limits prevent sending', async () => { state.limit=true; expect((await 
 it('has explicit bounded limits', () => { expect(EMAIL_LIMITS).toEqual({recipientPerHour:6,ownerPerHour:15,alertsPerHour:3,attemptsPerEvent:3}) })
 it('invalid recipient/header injection cannot send', async () => { await deliverNotice('contact-reply','visitor@example.com\r\nBcc:x@example.com','one',{}); expect(state.sends).toHaveLength(0) })
 it('unverified failure is harmless and logs no content or raw error', async () => { state.reject=true; const r=await deliverNotice('contact-reply','visitor@example.com','one',{ paragraphs:['private body'] }); expect(r).toEqual({sent:false,reason:'domain_not_verified'}); expect(JSON.stringify(state.results)).not.toContain('private body'); expect(JSON.stringify(state.results)).not.toContain('visitor@example.com'); expect(JSON.stringify(state.results)).not.toContain('secret') })
+it.each([
+  [422, { name: 'recipient_suppressed', message: 'visitor@example.com private body' }, 'recipient_suppressed'],
+  [429, { name: 'rate_limit_exceeded', message: 'visitor@example.com private body' }, 'rate_limited'],
+  [401, { name: 'validation_error', message: 'API key is invalid private body' }, 'emails_disabled'],
+] as const)('deliverNotice preserves the Resend HTTP %s classification without logging private data', async (status, body, reason) => {
+  vi.mocked(fetch).mockResolvedValueOnce(Response.json(body, { status }))
+  expect(await deliverNotice('contact-reply', 'visitor@example.com', 'provider-error', { paragraphs: ['private body'] })).toEqual({ sent: false, reason })
+  expect(state.results).toContainEqual(expect.objectContaining({ detail: expect.objectContaining({ status: reason }) }))
+  expect(JSON.stringify(state.results)).not.toMatch(/visitor@example|private body|API key/)
+})
 it.each([['pull_5',5,500],['standard',0,900],['featured',0,2900]])('PayGlocal receipt %s goes only to buyer with exact USD price', async(kind,quantity,cents) => { state.rows['payglocal_orders']={id:'order1',status:'paid',buyer_email:'buyer@example.com',kind,quantity,expected_cents:cents,merchant_unique_id:'merchantref',paid_at:'2026-11-02T08:00:00Z',matchup_id:'match1',side_id:quantity?'side1':null}; state.rows['sides']={name:'Pizza',matchups:{title:'Pizza vs Burgers',slug:'pizza-vs-burgers'}}; state.rows['matchups']={title:'Pizza vs Burgers',slug:'pizza-vs-burgers'}; await sendPurchaseNotices('order1','sandbox','payglocal'); expect(state.sends[0]?.[0]).toBe('purchase-receipt'); expect(state.sends[0]?.[1]).toBe('buyer@example.com'); expect(state.sends[0]?.[2].templateData.details).toContainEqual({label:'Amount',value:`$${(Number(cents)/100).toFixed(2)} USD`}); expect(state.sends).toHaveLength(1) })
 it('unpaid order never emails a receipt', async () => { state.rows['payglocal_orders']={environment:'live',status:'pending',buyer_email:'buyer@example.com'}; await sendPurchaseNotices('one','live','payglocal'); expect(state.sends).toHaveLength(0) })
 it('rejection distinguishes requested from completed refunds and includes reason', async () => { state.rows['payglocal_orders']={status:'paid',buyer_email:'buyer@example.com',kind:'standard',quantity:0,expected_cents:900,merchant_unique_id:'ref',review_allowed:false,review_reason:'Not permitted',refund_status:'submitted'}; await sendPurchaseNotices('one','live','payglocal'); expect(state.sends[1]?.[0]).toBe('matchup-rejection'); expect(state.sends[1]?.[2].templateData.details).toContainEqual({label:'Refund status',value:'Refund requested, not yet confirmed'}); expect(state.sends[1]?.[2].templateData.details).toContainEqual({label:'Reason',value:'Not permitted'}) })

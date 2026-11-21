@@ -11,7 +11,21 @@ vi.mock("@/lib/server-utils.server", () => ({
   config: () => ({ pauseEmails: false, siteUrl: "https://tugg.lol", paymentProvider: "dodo", paymentsEnv: "sandbox" }),
   moderate: vi.fn(async () => ({ outcome: "allowed", reason: "ok" })),
 }));
-vi.mock("@/lib/email-templates/send-email", () => ({ sendTemplateEmail: async (...args: any[]) => { state.sends.push(args); return { sent: true }; } }));
+// Run the real transactional sender; intercept only rendering and the Resend request.
+let renderedData: Record<string, any> = {};
+vi.mock('@react-email/render', () => ({ render: vi.fn(async (element: any) => { renderedData = element.props; return '<p>Tugg</p>'; }) }));
+beforeEach(() => {
+  vi.stubEnv('RESEND_API_KEY', 'test-only-resend-key');
+  vi.stubEnv('TRANSACTIONAL_EMAIL_FROM', 'Tugg <receipts@updates.tugg.lol>');
+  vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    const key = new Headers(init.headers).get('Idempotency-Key') ?? '';
+    const template = key.replace('tugg-transactional/', '').split(':')[0];
+    state.sends.push([template, body.to[0], { templateData: renderedData }]);
+
+    return Response.json({ id: 'test-email-id' });
+  }));
+});
 vi.mock("@/lib/tugg.functions", () => ({
   loadMatchups: async ({ ids }: { ids: string[] }) => (state.tables["matchups"] ?? []).filter((m) => ids.includes(m.id)).map((m) => ({
     ...m, sides: (state.tables["sides"] ?? []).filter((s) => s.matchup_id === m.id), round: { total_a_cents: 0, total_b_cents: 0, round_length: "weekly" },

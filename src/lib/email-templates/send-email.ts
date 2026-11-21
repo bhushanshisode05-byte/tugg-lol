@@ -1,18 +1,14 @@
 import * as React from 'react'
 import { render } from '@react-email/render'
-import { EmailAPIError, sendLovableEmail } from '@lovable.dev/email-js'
 import { TEMPLATES } from './registry'
 
-// Server-only: reads LOVABLE_API_KEY. Never import from client components.
+// Server-only: reads Resend credentials. Never import from client components.
+// Keep sender validation identical to the separate engagement adapter.
+const FROM = /^(?:[A-Za-z0-9 .'&-]{1,40} )?<?([^\s@<>"\r\n]{1,64}@[^\s@<>"\r\n]{1,189}\.[A-Za-z]{2,24})>?$/
 
-// Configuration baked in at scaffold time
-const SITE_NAME = "Tugg"
-// SENDER_DOMAIN is the verified sender FQDN: a delegated subdomain (e.g., "notify.example.com"),
-// or the root itself when the domain is registered through Lovable. It MUST match the sender verified in Lovable's email setup.
-const SENDER_DOMAIN = "hello.tugg.lol"
-// FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
-// Can be the root domain when display_from_root is enabled — this is cosmetic only.
-const FROM_DOMAIN = "tugg.lol"
+function sendingError(code: 'emails_disabled' | 'domain_not_verified' | 'rate_limited') {
+  return Object.assign(new Error(`Transactional email failed: ${code}`), { code })
+}
 
 export type SendTemplateEmailResult =
   | { sent: true }
@@ -26,21 +22,18 @@ export interface SendTemplateEmailOptions {
 }
 
 /**
- * Renders a registered template and sends it through Lovable's managed email
- * API. Suppression, retries, and rate limits are enforced by Lovable
- * server-side. A suppressed recipient is an expected outcome
- * ({ sent: false }); any other failure throws — EmailAPIError exposes
- * .code and .status for branching.
+ * Renders a registered template and sends it through Resend. Explicit provider
+ * suppression is an expected outcome; recognised failures expose .code for
+ * existing notice handling. Provider bodies and addresses never enter errors.
  */
 export async function sendTemplateEmail(
   templateName: string,
   to: string,
   options: SendTemplateEmailOptions = {}
 ): Promise<SendTemplateEmailResult> {
-  const apiKey = process.env['LOVABLE_API_KEY']
-  if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured')
-  }
+  const apiKey = process.env['RESEND_API_KEY']
+  const from = process.env['TRANSACTIONAL_EMAIL_FROM'] || process.env['ENGAGEMENT_EMAIL_FROM']
+  if (!apiKey || !from || !FROM.test(from)) throw sendingError('emails_disabled')
 
   const template = TEMPLATES[templateName]
   if (!template) {
@@ -71,28 +64,48 @@ export async function sendTemplateEmail(
       : template.subject
   if (/[\r\n]/.test(subject)) throw new Error('Invalid email subject')
 
+  let response: Response
+  let body: Record<string, unknown> = {}
   try {
-    await sendLovableEmail(
-      {
-        to: recipient,
-        from: { name: SITE_NAME, address: `hello@${FROM_DOMAIN}` },
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: 'transactional',
-        label: templateName,
-        idempotency_key: options.idempotencyKey || crypto.randomUUID(),
-        reply_to: replyTo,
+    response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': `tugg-transactional/${options.idempotencyKey || crypto.randomUUID()}`,
       },
-      { apiKey, sendUrl: process.env['LOVABLE_SEND_URL'] }
-    )
-  } catch (error) {
-    if (error instanceof EmailAPIError && error.code === 'recipient_suppressed') {
-      return { sent: false, reason: 'recipient_suppressed' }
-    }
-    throw error
+      body: JSON.stringify({
+        from, to: [recipient], reply_to: replyTo, subject, html, text,
+        tags: [{ name: 'category', value: 'transactional' }],
+      }),
+      signal: AbortSignal.timeout(8000),
+    })
+    const raw = await response.text()
+    let parsed: unknown = null
+    try { parsed = JSON.parse(raw) } catch { /* A non-JSON error still retains its HTTP classification. */ }
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) body = parsed as Record<string, unknown>
+  } catch {
+    // Fetch/timeout errors can contain request details. Never propagate them.
+    throw new Error('Transactional email request failed')
   }
 
+  // Inspect only for classification; never interpolate any provider fields.
+  const name = typeof body['name'] === 'string' ? body['name'].toLowerCase() : ''
+  const code = typeof body['code'] === 'string' ? body['code'].toLowerCase() : name
+  const message = typeof body['message'] === 'string' ? body['message'].toLowerCase() : ''
+  const suppressed = ['recipient_suppressed', 'email_suppressed', 'suppressed'].includes(code)
+    || body['status'] === 'suppressed'
+    || /(?:recipient|email|address)[\s\S]*\bsuppressed\b/.test(message)
+    || /\b(?:suppression|block|blocked|bounce|bounced)[ -]?list\b/.test(message)
+  if (suppressed) return { sent: false, reason: 'recipient_suppressed' }
+  if (response.status === 429) throw sendingError('rate_limited')
+  if ((response.status === 403 || response.status === 422)
+    && (code === 'domain_not_verified' || /\bdomain\b[\s\S]*\b(?:not verified|not been verified|unverified)\b/.test(message))) {
+    throw sendingError('domain_not_verified')
+  }
+  if (response.status === 401 || (response.status === 403
+    && (['invalid_api_key', 'missing_api_key', 'restricted_api_key', 'invalid_permission'].includes(code)
+      || /\bapi[ _-]?key\b/.test(message)))) throw sendingError('emails_disabled')
+  if (!response.ok) throw new Error(`Transactional email request failed (HTTP ${response.status})`)
   return { sent: true }
 }
