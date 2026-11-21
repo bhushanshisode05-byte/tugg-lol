@@ -9,6 +9,10 @@ export { AI_CATEGORIES };
 
 export const AI_DAILY = 3;
 export const AI_ACTIVE_CAP = 30;
+export async function runTrendScout() {
+  const { runScout } = await import("./trends/scout.server");
+  return runScout();
+}
 export const PALETTE = ["#ff3b30", "#0a84ff", "#ffd60a", "#30d158", "#bf5af2", "#ff9f0a", "#64d2ff", "#ff375f"];
 
 async function admin() {

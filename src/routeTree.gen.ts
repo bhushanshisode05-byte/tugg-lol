@@ -41,7 +41,9 @@ import { Route as RecapIndexRouteImport } from './routes/recap.index'
 import { Route as RecapDateRouteImport } from './routes/recap.$date'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
 import { Route as RivalriesSlugRouteImport } from './routes/rivalries.$slug'
+import { Route as AuthenticatedAdminDraftsRouteImport } from './routes/_authenticated/admin_.drafts'
 import { Route as ApiPublicAdminDataRouteImport } from './routes/api/public/admin/data'
+import { Route as ApiPublicAdminDraftsRouteImport } from './routes/api/public/admin/drafts'
 import { Route as ApiPublicAdminMatchupsRouteImport } from './routes/api/public/admin/matchups'
 import { Route as ApiPublicEmailUnsubscribeRouteImport } from './routes/api/public/email/unsubscribe'
 import { Route as ApiPublicJobsDailyRouteImport } from './routes/api/public/jobs/daily'
@@ -222,9 +224,20 @@ const RivalriesSlugRoute = RivalriesSlugRouteImport.update({
   path: '/rivalries/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminDraftsRoute =
+  AuthenticatedAdminDraftsRouteImport.update({
+    id: '/admin_/drafts',
+    path: '/admin/drafts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicAdminDataRoute = ApiPublicAdminDataRouteImport.update({
   id: '/api/public/admin/data',
   path: '/api/public/admin/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAdminDraftsRoute = ApiPublicAdminDraftsRouteImport.update({
+  id: '/api/public/admin/drafts',
+  path: '/api/public/admin/drafts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAdminMatchupsRoute = ApiPublicAdminMatchupsRouteImport.update({
@@ -368,7 +381,9 @@ export interface FileRoutesByFullPath {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
+  '/admin/drafts': typeof AuthenticatedAdminDraftsRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/drafts': typeof ApiPublicAdminDraftsRoute
   '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
@@ -422,7 +437,9 @@ export interface FileRoutesByTo {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap': typeof RecapIndexRoute
+  '/admin/drafts': typeof AuthenticatedAdminDraftsRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/drafts': typeof ApiPublicAdminDraftsRoute
   '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
@@ -478,7 +495,9 @@ export interface FileRoutesById {
   '/results/$id': typeof ResultsIdRoute
   '/rivalries/$slug': typeof RivalriesSlugRoute
   '/recap/': typeof RecapIndexRoute
+  '/_authenticated/admin_/drafts': typeof AuthenticatedAdminDraftsRoute
   '/api/public/admin/data': typeof ApiPublicAdminDataRoute
+  '/api/public/admin/drafts': typeof ApiPublicAdminDraftsRoute
   '/api/public/admin/matchups': typeof ApiPublicAdminMatchupsRoute
   '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
   '/api/public/jobs/daily': typeof ApiPublicJobsDailyRoute
@@ -534,7 +553,9 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/recap/'
+    | '/admin/drafts'
     | '/api/public/admin/data'
+    | '/api/public/admin/drafts'
     | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
@@ -588,7 +609,9 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/recap'
+    | '/admin/drafts'
     | '/api/public/admin/data'
+    | '/api/public/admin/drafts'
     | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
@@ -643,7 +666,9 @@ export interface FileRouteTypes {
     | '/results/$id'
     | '/rivalries/$slug'
     | '/recap/'
+    | '/_authenticated/admin_/drafts'
     | '/api/public/admin/data'
+    | '/api/public/admin/drafts'
     | '/api/public/admin/matchups'
     | '/api/public/email/unsubscribe'
     | '/api/public/jobs/daily'
@@ -699,6 +724,7 @@ export interface RootRouteChildren {
   RivalriesSlugRoute: typeof RivalriesSlugRoute
   RecapIndexRoute: typeof RecapIndexRoute
   ApiPublicAdminDataRoute: typeof ApiPublicAdminDataRoute
+  ApiPublicAdminDraftsRoute: typeof ApiPublicAdminDraftsRoute
   ApiPublicAdminMatchupsRoute: typeof ApiPublicAdminMatchupsRoute
   ApiPublicEmailUnsubscribeRoute: typeof ApiPublicEmailUnsubscribeRoute
   ApiPublicJobsDailyRoute: typeof ApiPublicJobsDailyRoute
@@ -947,11 +973,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RivalriesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin_/drafts': {
+      id: '/_authenticated/admin_/drafts'
+      path: '/admin/drafts'
+      fullPath: '/admin/drafts'
+      preLoaderRoute: typeof AuthenticatedAdminDraftsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/admin/data': {
       id: '/api/public/admin/data'
       path: '/api/public/admin/data'
       fullPath: '/api/public/admin/data'
       preLoaderRoute: typeof ApiPublicAdminDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/drafts': {
+      id: '/api/public/admin/drafts'
+      path: '/api/public/admin/drafts'
+      fullPath: '/api/public/admin/drafts'
+      preLoaderRoute: typeof ApiPublicAdminDraftsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/admin/matchups': {
@@ -1099,10 +1139,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminDraftsRoute: typeof AuthenticatedAdminDraftsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminDraftsRoute: AuthenticatedAdminDraftsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -1141,6 +1183,7 @@ const rootRouteChildren: RootRouteChildren = {
   RivalriesSlugRoute: RivalriesSlugRoute,
   RecapIndexRoute: RecapIndexRoute,
   ApiPublicAdminDataRoute: ApiPublicAdminDataRoute,
+  ApiPublicAdminDraftsRoute: ApiPublicAdminDraftsRoute,
   ApiPublicAdminMatchupsRoute: ApiPublicAdminMatchupsRoute,
   ApiPublicEmailUnsubscribeRoute: ApiPublicEmailUnsubscribeRoute,
   ApiPublicJobsDailyRoute: ApiPublicJobsDailyRoute,

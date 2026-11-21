@@ -1,5 +1,10 @@
 # Tugg roadmap
 
+## Trend scout and manual post drafts (do not publish)
+- [x] Add private drafts, disabled flag, bounded leased daily scouting on the existing 01:05 UTC schedule, shared moderated owner creation, and five-candidate voice judging.
+- [x] Add owner mobile queue with copy, manual status changes, source and share-card links; caps/access/validation/no-posting tests and real database rollback checks pass; 687 tests passed, one skipped.
+- [ ] Live xAI check waits for owner-supplied XAI_API_KEY and explicit TREND_SCOUT_ENABLED activation; genuine owner queue persistence check waits for configured-owner sign-in (requester's account is non-owner; owner session mint unavailable). No publishing.
+
 ## Transactional sender consolidation (2026-11-21, do not publish)
 - [x] Replace only the transactional send helper with direct Resend, preserving validation, API, stable idempotency, safe error mapping and engagement separation.
 - [x] Exercise receipt, notice, moderation and provider-error tests through mocked Resend requests; full suite 666 passed, 1 skipped after restoring the existing tests' missing temporary image fixtures. No real email sent or publishing performed.

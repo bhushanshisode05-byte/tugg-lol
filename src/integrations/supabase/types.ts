@@ -875,6 +875,50 @@ export type Database = {
           },
         ]
       }
+      post_drafts: {
+        Row: {
+          body: string
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          matchup_id: string | null
+          source_context: string | null
+          source_url: string | null
+          status: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          matchup_id?: string | null
+          source_context?: string | null
+          source_url?: string | null
+          status?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          matchup_id?: string | null
+          source_context?: string | null
+          source_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_drafts_matchup_id_fkey"
+            columns: ["matchup_id"]
+            isOneToOne: false
+            referencedRelation: "matchups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pull_wallet_ledger: {
         Row: {
           amount_cents: number
@@ -1337,6 +1381,30 @@ export type Database = {
         }
         Relationships: []
       }
+      trend_scout_runs: {
+        Row: {
+          attempts: number
+          completed: boolean
+          day: string
+          lease: string
+          lease_until: string
+        }
+        Insert: {
+          attempts?: number
+          completed?: boolean
+          day: string
+          lease: string
+          lease_until: string
+        }
+        Update: {
+          attempts?: number
+          completed?: boolean
+          day?: string
+          lease?: string
+          lease_until?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -1409,6 +1477,10 @@ export type Database = {
       }
       claim_payglocal_order: {
         Args: { p_env: string; p_key: string; p_order: string }
+        Returns: boolean
+      }
+      claim_trend_scout: {
+        Args: { p_day: string; p_lease: string }
         Returns: boolean
       }
       claim_tugg_notice: {
@@ -1538,10 +1610,26 @@ export type Database = {
         Args: { p_image: string; p_ip: string }
         Returns: Json
       }
+      reserve_trend_rope: {
+        Args: { p_day: string; p_lease: string }
+        Returns: boolean
+      }
       retire_idle_ai_matchups: { Args: { p_live: boolean }; Returns: number }
       round_end_after: {
         Args: { p_from: string; p_length: string }
         Returns: string
+      }
+      save_trend_drafts: {
+        Args: {
+          p_context: string
+          p_day: string
+          p_lease: string
+          p_matchup: string
+          p_quote: string
+          p_reply: string
+          p_source: string
+        }
+        Returns: boolean
       }
       spend_wallet_pull: {
         Args: {

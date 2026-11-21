@@ -3,7 +3,7 @@ import { z } from "zod";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 
-const body = z.object({ task: z.enum(["generate", "recap", "cleanup_images"]) });
+const body = z.object({ task: z.enum(["generate", "recap", "cleanup_images", "trend_scout"]) });
 
 export const Route = createFileRoute("/api/public/jobs/daily")({
   staticData: { sitemap: false },
@@ -16,14 +16,19 @@ export const Route = createFileRoute("/api/public/jobs/daily")({
         if (!parsed.success) return Response.json({ error: "bad body" }, { status: 400 });
         if (parsed.data.task === "cleanup_images" && !SIDE_IMAGES_ENABLED)
           return Response.json({ ok: true, skipped: "feature dormant" });
-        const { runGenerator, runRecap } = await import("@/lib/jobs.server");
+        const { runGenerator, runRecap, runTrendScout } = await import("@/lib/jobs.server");
         try {
+          // Reuse the existing 01:05 UTC daily schedule; a scout failure must not stop the generator.
+          if (parsed.data.task === "generate") {
+            const scout = await runTrendScout().catch(() => ({ error: "Scout incomplete; review owner records" }));
+            return Response.json({ ok: true, ...await runGenerator(), trendScout: scout });
+          }
           const out =
-            parsed.data.task === "cleanup_images"
+            parsed.data.task === "trend_scout"
+              ? await runTrendScout()
+              : parsed.data.task === "cleanup_images"
               ? await (await import("@/lib/side-images.server")).cleanupSideImages()
-              : parsed.data.task === "generate"
-                ? await runGenerator()
-                : await runRecap();
+              : await runRecap();
           return Response.json({ ok: true, ...out });
         } catch (e) {
           console.error("daily job", parsed.data.task, e);

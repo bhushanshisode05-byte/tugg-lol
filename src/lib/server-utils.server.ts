@@ -29,6 +29,8 @@ export const config = () => ({
   pauseEmails: flag("PAUSE_EMAILS", false),
   testMode: flag("TEST_MODE", true),
   aiGenerator: flag("AI_GENERATOR_ENABLED", true),
+  trendScout: flag("TREND_SCOUT_ENABLED", false),
+  xaiKey: process.env["XAI_API_KEY"] || "",
   ownerEmail: process.env["OWNER_EMAIL"]?.trim() || "",
   ownerName: process.env["OWNER_NAME"]?.trim() || "",
   paymentProvider: (process.env["PAYMENT_PROVIDER"] || "dodo").toLowerCase(),

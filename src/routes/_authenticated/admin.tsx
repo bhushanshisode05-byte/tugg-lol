@@ -60,6 +60,7 @@ function Admin() {
     <main className="mx-auto max-w-6xl px-4 py-10">
       <p className="font-mono text-sm text-primary">TUGG / OWNER</p>
       <h1 className="mt-3 font-display text-4xl font-extrabold">Owner records</h1>
+      <Button className="mt-4" variant="outline" asChild><Link to="/admin/drafts">Post drafts</Link></Button>
       <section className="mt-8 border-y border-border py-6">
         <h2 className="text-2xl font-bold">Add a matchup</h2>
         <OwnerMatchupForm />

@@ -1,0 +1,20 @@
+# Manual trend drafts
+
+- Review queue: `https://tugg.lol/admin/drafts` (available after publishing this code). The existing owner check remains authoritative; being the project requester does not grant owner access.
+- Default: dormant. Add your own `XAI_API_KEY` and explicitly set `TREND_SCOUT_ENABLED=true` in Project Settings → Secrets only when ready. No X posting credentials are used or supported.
+- Schedule: reuses the existing daily generator callback at 01:05 UTC (one scout opportunity per day; low-frequency callbacks may arrive about 30 seconds later). The authenticated daily endpoint also accepts `{"task":"trend_scout"}`. No new schedule or extra polling cost was added.
+- xAI's current X Search documentation requires `/v1/responses` with `tools: [{type:"x_search"}]`, not legacy chat completions. Uses documented `grok-4.7`, your own account and a 10-second timeout per call. Search and model inference incur xAI costs when enabled. No inference was performed during implementation.
+- A normal full batch makes one search request plus four generation/judging requests per rope (maximum 13 requests). Each of the two post kinds gets five candidates and one independent judging pass. No automatic request retries.
+- Source notes are untrusted context, not sporting evidence. Copy gets side names and no verified scores; it must express opinions rather than invent match facts. Historical voice examples illustrate tone, not current product claims. The historical example exceeds 280 characters and explains mechanics; generated copy follows the explicit rules instead.
+- Every rope uses the same moderated owner creator, creates no orders and uses source `owner`. Red/blue emoji defaults accompany palette-based side colours. Draft generation precedes creation so unavailable or noncompliant copy creates no rope. A database write failure after creation can still leave a legitimate moderated rope without drafts; its reserved attempt is consumed and the run records the failure instead of duplicating work.
+- Database: service-only drafts with RLS, matching private admin tables; owner endpoint authorizes with `requireOwner` before using privileged access. Exclusive daily lease, three reserved creation attempts, atomic two-draft insertion under a ten-pending cap, and source deduplication. Expired pending drafts are discarded during enabled runs and filtered out of the queue immediately.
+- Provider authentication/billing/denial/rate-limit failures persist a paused `job_state` row and show in the queue; owner recovery can clear that pause after fixing the account. Unknown outcomes finish the daily run without replay. Inspect private `job_runs` for incomplete runs.
+- No code posts, opens a social compose window, or uses social write APIs. Copy and status buttons do only what their names say. Share images reuse the existing current-data OG renderer, not model-generated scores.
+
+## Verification
+
+- Full regression suite: 687 passed, 1 skipped. Existing missing temporary picture fixtures were restored outside the project; picture code was unchanged.
+- Managed database transaction tested lease exclusivity, three reserved slots, ten-draft cap, atomic pairs, source replay refusal, expiry and no direct visitor access; all fixtures rolled back.
+- Signed-out UI and actual non-owner authenticated requests are refused. The requester's account differs from the configured owner. Owner session minting was unavailable, so genuine owner UI read/update persistence remains unverified; access was not weakened.
+- Phone/desktop layout, clipboard, review control and real share-image rendering were checked using a clearly labelled browser response fixture. This is visual verification only, not authenticated end-to-end verification. Temporary database drafts were removed.
+- Live xAI search and generation remain unverified: no key configured and the flag stays off. Nothing published; schema changes are additive and already applied to the shared database.

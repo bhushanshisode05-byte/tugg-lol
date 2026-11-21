@@ -3,6 +3,7 @@ import { moderate, slugify } from "./server-utils.server";
 import { requireOwner } from "./owner-auth.server";
 import { PALETTE, pairKey } from "./jobs.server";
 import { moderationText, ownerMatchupSchema } from "./owner-matchup-schema";
+import type { OwnerCheck } from "./owner-auth.server";
 
 export const OWNER_SUBJECT = "owner_matchup";
 const PAGE = 1000;
@@ -15,9 +16,13 @@ export type OwnerMatchupResult =
 export async function createOwnerMatchup(request: Request): Promise<Response> {
   const owner = await requireOwner(request);
   if (!owner.ok) return owner.response;
-  const db = owner.admin;
+  return createModeratedOwnerMatchup(owner.admin, await request.json().catch(() => null));
+}
 
-  const parsed = ownerMatchupSchema.safeParse(await request.json().catch(() => null));
+/** Internal service-only creation shared by the verified owner endpoint and authenticated scout job. */
+export async function createModeratedOwnerMatchup(db: Extract<OwnerCheck, { ok: true }>["admin"], input: unknown): Promise<Response> {
+
+  const parsed = ownerMatchupSchema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return json({ created: false, error: issue?.message ?? "Check the form.", field: String(issue?.path[0] ?? "") }, 400);
@@ -65,9 +70,11 @@ export async function createOwnerMatchup(request: Request): Promise<Response> {
     return json({ created: false, error: error?.code === "23505" ? "That address was just taken. Please submit again." : "Could not save the matchup. Nothing was created." }, error?.code === "23505" ? 409 : 503);
 
   const i = 2 * Math.floor(Math.random() * (PALETTE.length / 2));
+  const aColor = PALETTE[i], bColor = PALETTE[i + 1];
+  if (!aColor || !bColor) throw new Error("Palette unavailable");
   const sides = await db.from("sides").insert([
-    { matchup_id: row.id, position: 0, name: m.a, emoji: m.aEmoji, color: PALETTE[i]! },
-    { matchup_id: row.id, position: 1, name: m.b, emoji: m.bEmoji, color: PALETTE[i + 1]! },
+    { matchup_id: row.id, position: 0, name: m.a, emoji: m.aEmoji, color: aColor },
+    { matchup_id: row.id, position: 1, name: m.b, emoji: m.bEmoji, color: bColor },
   ]);
   const round = sides.error ? null : await db.rpc("ensure_open_round", { p_matchup: row.id });
   if (sides.error || !round || round.error) {
@@ -91,5 +98,5 @@ async function existingPairs(db: Extract<Awaited<ReturnType<typeof requireOwner>
     }
     if ((data ?? []).length < PAGE) break;
   }
-  return new Set([...byM.values()].filter((p) => p[0] && p[1]).map((p) => pairKey(p[0]!, p[1]!)));
+  return new Set([...byM.values()].flatMap((p) => p[0] && p[1] ? [pairKey(p[0], p[1])] : []));
 }
