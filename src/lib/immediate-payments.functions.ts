@@ -6,14 +6,20 @@ import { basketActive, paymentReadiness, selectedProvider, selectedProduct } fro
 import { verifyTurnstileForRequest } from "./turnstile.server";
 import { TURNSTILE_ACTIONS, turnstileTokenSchema } from "./turnstile";
 import { hashWalletToken } from "./payments/wallet";
+import { immediateAmountSchema, immediatePurchase } from "./payments/custom-pull";
+import { CUSTOM_AMOUNT_ERROR } from "./payments/catalog";
 export const buyImmediateBundle = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid().optional(), sideId: z.string().uuid(), pack: z.union([z.literal(5),z.literal(10),z.literal(25)]), name: z.string().trim().max(40).default(""), shout: z.string().trim().max(80).default(""), billing: billingSchema.optional(), returnUrl: z.string().url().max(500), turnstileToken: turnstileTokenSchema }).parse(d))
+  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid().optional(), sideId: z.string().uuid(), pack: z.union([z.literal(5),z.literal(10),z.literal(25),z.literal("custom")]), customCents: z.number().optional(), name: z.string().trim().max(40).default(""), shout: z.string().trim().max(80).default(""), billing: billingSchema.optional(), returnUrl: z.string().url().max(500), turnstileToken: turnstileTokenSchema }).parse(d))
   .handler(async ({ data }) => {
     if (config().pausePulls) return { error: "Pulls are paused right now. Please try again later." };
     if (!["dodo","payglocal"].includes(config().paymentProvider) || config().pullMode !== "immediate") return { error: "Immediate checkout is unavailable." };
     try {
       paymentReadiness(); const provider = selectedProvider();
       await verifyTurnstileForRequest(data.turnstileToken, TURNSTILE_ACTIONS.pull);
+      const amount = immediateAmountSchema.safeParse({ pack: data.pack, ...(data.customCents === undefined ? {} : { customCents: data.customCents }) });
+      if (!amount.success) return { error: CUSTOM_AMOUNT_ERROR };
+      const purchase = immediatePurchase(amount.data);
+      if (purchase.kind === "pull_custom" && config().paymentProvider !== "dodo") return { error: "Custom pulls are available through Dodo only." };
       const { getRequest, getRequestIP } = await import("@tanstack/react-start/server");
       if (new URL(data.returnUrl).origin !== new URL(getRequest().url).origin) return { error: "Invalid return address." };
       const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -28,23 +34,26 @@ export const buyImmediateBundle = createServerFn({ method: "POST" })
         if (verdict.outcome === "unavailable") return { error: SHOUT_OUT_UNAVAILABLE };
         if (verdict.outcome !== "allowed") { name=""; shout=""; }
       }
-      const kind = `pull_${data.pack}` as "pull_5" | "pull_10" | "pull_25";
+      const kind = purchase.kind;
       const product = selectedProduct(kind);
-      await provider.validateProduct(product, data.pack*100);
+      if (kind === "pull_custom") {
+        if (!provider.validateCustomProduct) return { error: "Custom checkout is unavailable. No payment has been taken." };
+        await provider.validateCustomProduct(product);
+      } else await provider.validateProduct(product, purchase.cents);
       if (config().paymentProvider === "payglocal" && !data.billing) return { error: "Billing details are required for digital purchases." };
       const id=crypto.randomUUID(), returnUrl=new URL(data.returnUrl); returnUrl.searchParams.set("payment", id);
       if (config().paymentProvider === "dodo") {
-        const order = await db.from("dodo_orders").insert({ id, environment: provider.environment, kind, product_id: product, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, funnel_id: data.funnelId ?? null }).select("id").single();
+        const order = await db.from("dodo_orders").insert({ id, environment: provider.environment, kind, product_id: product, expected_cents: purchase.cents, quantity: purchase.pulls, side_id: data.sideId, display_name: name, shout_out: shout, funnel_id: data.funnelId ?? null }).select("id").single();
         if (order.error) throw new Error("Could not start checkout.");
-        const session = await provider.checkout({ productId: product, orderId: id, returnUrl: returnUrl.toString() });
+        const session = await provider.checkout({ productId: product, orderId: id, returnUrl: returnUrl.toString(), ...(kind === "pull_custom" ? { customAmountCents: purchase.cents } : {}) });
         const saved = await db.from("dodo_orders").update({ checkout_id: session.sessionId }).eq("id",id).is("checkout_id",null);
         if (saved.error) throw new Error("Checkout confirmation pending. Please do not pay again.");
         return { url: session.url, orderId: id, environment: provider.environment, provider: "dodo", codedropId: "" };
       }
       if (!data.billing) return { error: "Billing details are required." };
-      const order = await db.from("payglocal_orders").insert({ id, buyer_email: data.billing.emailId, funnel_id: data.funnelId ?? null, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: data.pack*100, quantity: data.pack, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
+      const order = await db.from("payglocal_orders").insert({ id, buyer_email: data.billing.emailId, funnel_id: data.funnelId ?? null, environment: provider.environment, merchant_unique_id: `${provider.environment === "live" ? "L" : "S"}${id.replaceAll("-", "")}`, kind: `pull_${data.pack}`, expected_cents: purchase.cents, quantity: purchase.pulls, side_id: data.sideId, display_name: name, shout_out: shout, billing_country: data.billing.addressCountry, return_path: returnUrl.pathname+returnUrl.search }).select("id").single();
       if (order.error) throw new Error("Could not start checkout.");
-      const session=await provider.checkout({ productId: `pull_${data.pack}`, orderId: id, returnUrl: returnUrl.toString(), cents: data.pack*100, billing: data.billing });
+      const session=await provider.checkout({ productId: `pull_${data.pack}`, orderId: id, returnUrl: returnUrl.toString(), cents: purchase.cents, billing: data.billing });
       const saved=await db.from("payglocal_orders").update({ gid: session.sessionId, status_url: session.statusUrl || null }).eq("id", id).is("gid", null);
       if (saved.error) throw new Error("Checkout confirmation pending. Please do not pay again.");
       return { url: session.url, orderId: id, environment: provider.environment, provider: "payglocal", codedropId: config().payglocal.codedropId };
@@ -71,10 +80,10 @@ export const getCodeDropConfig = createServerFn({ method: "GET" }).handler(async
   environment: config().paymentsEnv, provider: config().paymentProvider, codedropId: config().paymentProvider === "payglocal" ? config().payglocal.codedropId : "",
 }));
 export const recordPaymentFunnel = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid(), step: z.enum(["viewed","bundle_selected","turnstile_passed","opened","cancelled","abandoned","failed"]), bundle: z.number().int().min(5).max(500), mode: z.enum(["none","drawer","redirect"]).default("none") }).strict().parse(d))
+  .inputValidator((d: unknown) => z.object({ funnelId: z.string().uuid(), step: z.enum(["viewed","bundle_selected","turnstile_passed","opened","cancelled","abandoned","failed"]), bundle: z.number().int().min(5).max(1000), mode: z.enum(["none","drawer","redirect"]).default("none") }).strict().parse(d))
   .handler(async ({ data }) => {
     // Custom basket amounts are only recorded while the Dodo basket is on; fixed bundles otherwise.
-    if (![5,10,25].includes(data.bundle) && !basketActive()) return;
+    if (![5,10,25].includes(data.bundle) && config().paymentProvider !== "dodo" && !basketActive()) return;
     const { getRequestIP } = await import("@tanstack/react-start/server");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const slot = await db.rpc("take_checkout_slot", { p_ip: `funnel:${await hashWalletToken(getRequestIP({xForwardedFor:true}) || "unknown")}`, p_max: 120, p_window_minutes: 60 });

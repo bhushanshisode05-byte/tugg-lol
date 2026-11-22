@@ -22,11 +22,14 @@ export type VerifiedPayment = {
 export interface PaymentProvider {
   environment: PaymentsEnv;
   validateProduct(id: string, cents: number): Promise<void>;
+  validateCustomProduct?(id: string): Promise<void>;
   checkout(input: {
     productId: string;
     orderId: string;
     returnUrl: string;
     cents?: number;
+    /** Explicit PWYW cart amount; never set for fixed-price products. */
+    customAmountCents?: number;
     /** Dodo basket only: quantity of the single $1 product and allocation metadata. */
     quantity?: number;
     metadata?: Record<string, string>;

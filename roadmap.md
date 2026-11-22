@@ -1,5 +1,9 @@
 # Tugg roadmap
 
+## Custom single-side pulls (2026-11-22, do not publish)
+- [ ] Add explicit PWYW catalog, server and SQL amount guards, confirmed-money application, Other input and regression tests; keep fixed bundles and basket unchanged.
+- [ ] Real custom checkout verification waits for sandbox custom product and a successful payment/Turnstile flow; do not use a live payment for testing.
+
 ## Homepage rope ordering (2026-11-22, do not publish)
 - [x] Rank only Trending ropes by open-round totals descending, then creation date descending; preserve featured selection, filters and shared reads.
 - [x] Add a muted text NEW marker for ropes younger than 48 hours; 40 targeted tests pass; desktop/phone checks confirm all 43 ropes, seven NEW labels, filters/search, unchanged featured selection and no overflow or page errors. Nothing published.

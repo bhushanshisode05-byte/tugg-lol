@@ -1,6 +1,6 @@
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { config, moderate } from "../server-utils.server";
-import { PRODUCTS } from "./catalog";
+import { fixedProductCents } from "./catalog";
 import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { normalizePayglocal, payglocalSettings, createPayglocalProvider } from "./payglocal.server";
 import { decodePayglocalHint, verifyPayglocalToken } from "./payglocal-crypto";
@@ -38,7 +38,7 @@ export async function processPayglocalOrder(id: string, provider: PaymentProvide
     if (!o.gid || payment.payment_id !== o.gid || payment.metadata["tugg_environment"] !== o.environment) throw new Error("Payment identity mismatch");
     let status = o.status;
     if (payment.status === "SENT_FOR_CAPTURE") {
-      if (!paymentMatches(payment, o, merchant) || o.expected_cents !== PRODUCTS[o.kind as keyof typeof PRODUCTS]?.cents) throw new Error("Payment does not match purchase");
+      if (!paymentMatches(payment, o, merchant) || o.expected_cents !== fixedProductCents(o.kind)) throw new Error("Payment does not match purchase");
       const applied = await db.rpc("apply_payglocal_payment", { p_order: id, p_gid: payment.payment_id, p_env: provider.environment, p_cents: payment.total_amount, p_country: payment.billing?.country || o.billing_country }); checked(applied);
       status = "paid";
       if (o.quantity === 0 && o.matchup_id) {

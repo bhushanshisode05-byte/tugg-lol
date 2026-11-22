@@ -57,7 +57,7 @@ export const config = () => ({
       secret: process.env[`${prefix}_WEBHOOK_SECRET`] || "",
       otherKey: process.env[`${other}_API_KEY`] || "",
       otherSecret: process.env[`${other}_WEBHOOK_SECRET`] || "",
-      products: Object.fromEntries(["pull_1", "pull_5", "pull_10", "pull_25", "standard", "featured"].map(kind => [kind, process.env[`${prefix}_PRODUCT_${kind.toUpperCase()}`] || ""])),
+      products: Object.fromEntries(["pull_1", "pull_5", "pull_10", "pull_25", "pull_custom", "standard", "featured"].map(kind => [kind, process.env[`${prefix}_PRODUCT_${kind.toUpperCase()}`] || ""])),
     };
   })(),
   payglocal: (() => {

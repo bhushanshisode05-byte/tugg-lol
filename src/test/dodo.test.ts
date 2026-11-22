@@ -178,3 +178,27 @@ describe("Dodo provider with mocked HTTP", () => {
     expect(await hashWalletToken(token)).not.toBe(token);
   });
 });
+
+describe("Dodo custom PWYW cart",()=>{
+ beforeEach(()=>{vi.stubEnv("PAYMENTS_ENV","sandbox");vi.stubEnv("DODO_TEST_API_KEY","public-test-api-fixture");vi.stubEnv("DODO_TEST_WEBHOOK_SECRET",fixture);});
+ it.each([500,1700,100000])("carries exact %s cents in the cart amount with one product",async cents=>{
+  const http=vi.fn<typeof fetch>(async()=>Response.json({session_id:"cs",checkout_url:"https://checkout.dodopayments.com/test"}));
+  await createDodoProvider(http).checkout({productId:"custom",orderId:"order",returnUrl:"https://tugg.lol",customAmountCents:cents});
+  const call=http.mock.calls[0];if(!call)throw new Error("No checkout request");
+  expect(JSON.parse(String(call[1]?.body)).product_cart).toEqual([{product_id:"custom",quantity:1,amount:cents}]);
+ });
+ it("validates price as the PWYW minimum, not a fixed amount",async()=>{
+  const p=createDodoProvider(async()=>Response.json({price:{type:"one_time_price",currency:"USD",price:500,pay_what_you_want:true,tax_inclusive:true,suggested_price:1000}}));
+  await expect(p.validateCustomProduct?.("custom")).resolves.toBeUndefined();
+  await expect(p.validateProduct("custom",500)).rejects.toThrow("exact");
+ });
+ it.each([{price:499},{pay_what_you_want:false},{currency:"INR"},{tax_inclusive:false},{discount_bps:100}])("refuses unsafe custom product %j",async change=>{
+  const p=createDodoProvider(async()=>Response.json({price:{type:"one_time_price",currency:"USD",price:500,pay_what_you_want:true,tax_inclusive:true,...change}}));
+  await expect(p.validateCustomProduct?.("custom")).rejects.toThrow("custom product");
+ });
+ it.each([499,1500.5,0,-100,100001,550])("provider itself rejects invalid cart %s",async cents=>{
+  const http=vi.fn<typeof fetch>();
+  await expect(createDodoProvider(http).checkout({productId:"custom",orderId:"order",returnUrl:"https://tugg.lol",customAmountCents:cents})).rejects.toThrow("whole dollar");
+  expect(http).not.toHaveBeenCalled();
+ });
+});

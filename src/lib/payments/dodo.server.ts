@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { config } from "../server-utils.server";
-import { DODO_NOT_READY, type PaymentsEnv, type ProductKind } from "./catalog";
+import { CUSTOM_AMOUNT_ERROR, DODO_NOT_READY, isCustomPullCents, PRODUCTS, type PaymentsEnv, type ProductKind } from "./catalog";
 import type { PaymentProvider } from "./provider";
 
 export function dodoSettings(env: PaymentsEnv = config().paymentsEnv) {
@@ -91,11 +91,21 @@ export function createDodoProvider(fetchImpl: typeof fetch = fetch, timeoutMs = 
           "Dodo product must have the exact tax-inclusive one-time USD price. No payment has been taken.",
         );
     },
+    async validateCustomProduct(id) {
+      const product = await api(`/products/${encodeURIComponent(id)}`);
+      const p = product.price;
+      if (!p || p.type !== "one_time_price" || p.currency !== "USD" || p.pay_what_you_want !== true ||
+          p.price !== PRODUCTS.pull_custom.minCents || p.tax_inclusive !== true ||
+          p.purchasing_power_parity || p.discount || p.discount_bps) {
+        throw new Error("Dodo custom product must be tax-inclusive, pay-what-you-want USD with a $5 minimum. No payment has been taken.");
+      }
+    },
     async checkout(input) {
+      if (input.customAmountCents !== undefined && (!isCustomPullCents(input.customAmountCents) || (input.quantity ?? 1) !== 1)) throw new Error(CUSTOM_AMOUNT_ERROR);
       const result = await api(
         "/checkouts",
         {
-          product_cart: [{ product_id: input.productId, quantity: input.quantity ?? 1 }],
+          product_cart: [{ product_id: input.productId, quantity: input.quantity ?? 1, ...(input.customAmountCents === undefined ? {} : { amount: input.customAmountCents }) }],
           billing_currency: "USD",
           allowed_payment_method_types: ["credit", "debit", "apple_pay", "google_pay", "cashapp"],
           feature_flags: {

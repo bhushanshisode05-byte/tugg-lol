@@ -219,3 +219,22 @@ it("refuses refund belonging to a different payment",async()=>{
   const p=provider();p.refundStatus=vi.fn(async()=>({refund_id:"r",payment_id:"wrong",status:"succeeded"}));
   await expect(processDodoEvent({type:"refund.succeeded",data:{payment_id:"pay-fixture",refund_id:"r"}},p)).rejects.toThrow("mismatch");
 });
+
+it.each([500,1700,100000])("custom fulfilment passes only verified %s cents into the atomic application",async cents=>{
+ Object.assign(state.order,{kind:"pull_custom",expected_cents:cents,quantity:cents/100,side_id:id,matchup_id:null});
+ const p=provider();
+ p.payment=vi.fn(async()=>({...payment(),metadata:{...payment().metadata,quantity:1000,customCents:100000}}));
+ await processDodoEvent({type:"payment.succeeded",data:{payment_id:"pay-fixture"}},p);
+ expect(state.rpc).toHaveBeenCalledWith("apply_dodo_bundle",expect.objectContaining({p_cents:cents}));
+});
+it("underpaid custom payment applies nothing",async()=>{
+ Object.assign(state.order,{kind:"pull_custom",expected_cents:2100,quantity:21,side_id:id});
+ const p=provider();p.payment=vi.fn(async()=>({...payment(),total_amount:2000}));
+ await expect(processDodoEvent({type:"payment.succeeded",data:{payment_id:"pay-fixture"}},p)).rejects.toThrow("Payment does not match order");
+ expect(state.rpc).not.toHaveBeenCalledWith("apply_dodo_bundle",expect.anything());
+});
+it("tampered stored custom quantity cannot over-credit",async()=>{
+ Object.assign(state.order,{kind:"pull_custom",expected_cents:2100,quantity:1000,side_id:id});
+ await expect(processDodoEvent({type:"payment.succeeded",data:{payment_id:"pay-fixture"}},provider())).rejects.toThrow("match order");
+ expect(state.rpc).not.toHaveBeenCalledWith("apply_dodo_bundle",expect.anything());
+});

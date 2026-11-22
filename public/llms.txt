@@ -1,6 +1,6 @@
 # Tugg
 
-> Tugg is a global pay-to-pull rivalry game: visitors buy one-time bundles of 5, 10 or 25 pulls at $1 per pull ($5, $10 or $25, in whole US dollars) to pull a virtual rope toward their side of a matchup such as Pizza vs Burgers. Each matchup runs in rounds that last one calendar week (ending Monday 00:00 UTC) or, for busy matchups, one day (ending 00:00 UTC); the side with more money when its round closes wins bragging rights. Each side's all-time total and round wins never reset. It is paid entertainment only: there are no prizes, payouts or winnings.
+> Tugg is a global pay-to-pull rivalry game: visitors buy one-time bundles of 5, 10 or 25 pulls at $1 per pull ($5, $10 or $25, in whole US dollars) or choose custom whole-dollar amounts from $5 to $1,000, at $1 per pull, to pull a virtual rope toward their side of a matchup such as Pizza vs Burgers. Each matchup runs in rounds that last one calendar week (ending Monday 00:00 UTC) or, for busy matchups, one day (ending 00:00 UTC); the side with more money when its round closes wins bragging rights. Each side's all-time total and round wins never reset. It is paid entertainment only: there are no prizes, payouts or winnings.
 
 All numbers on Tugg come from real, confirmed payments. Rounds that receive no pulls have no winner. Matchups are created by Tugg or by players ($9 standard, $29 featured for 7 days) and are checked by moderation; rejected matchups are refunded automatically. Payments are processed by Dodo Payments as merchant of record.
 

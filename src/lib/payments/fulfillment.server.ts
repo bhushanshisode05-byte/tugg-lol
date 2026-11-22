@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRODUCTS } from "./catalog";
+import { orderPriceMatches } from "./catalog";
 import type { PaymentProvider, VerifiedPayment } from "./provider";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { moderate } from "../server-utils.server";
@@ -64,7 +64,7 @@ export async function processDodoEvent(event: Event, provider: PaymentProvider, 
       (event.type !== "payment.failed" && (payment.product_cart.length !== 1 ||
       payment.product_cart[0]?.product_id !== order.product_id ||
       payment.product_cart[0]?.quantity !== 1)) ||
-      order.expected_cents !== PRODUCTS[order.kind as keyof typeof PRODUCTS]?.cents ||
+      !orderPriceMatches(order.kind, order.expected_cents, order.quantity) ||
       payment.checkout_session_id !== order.checkout_id ||
       (order.payment_id && order.payment_id !== payment.payment_id)
     )

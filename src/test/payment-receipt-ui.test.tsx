@@ -134,3 +134,20 @@ it("a dismissal does not carry into the next checkout", async () => {
   await flush();
   expect(screen.getByText(/Confirming your payment/)).toBeInTheDocument();
 });
+
+it("Other defaults to 10 and shows exact 17 pulls, with accessible amount errors",async()=>{
+ render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} status="ready" message="" onRetry={()=>{}}/>);
+ fireEvent.click(screen.getByRole("button",{name:/Other/}));
+ const input=screen.getByLabelText("Amount in US dollars");
+ expect(input).toHaveValue(10);expect(input).toHaveAttribute("inputmode","numeric");
+ for (const value of ["4","0","-1","1001","15.5",""]) {
+  fireEvent.change(input,{target:{value}});
+  expect(input).toHaveAttribute("aria-invalid","true");
+  expect(screen.getByRole("alert")).toHaveTextContent("Enter a whole dollar amount from $5 to $1,000.");
+  expect(screen.getByRole("button",{name:/^Pay/})).toBeDisabled();
+ }
+ fireEvent.change(input,{target:{value:"17"}});
+ expect(input).toHaveAttribute("aria-invalid","false");expect(screen.getByRole("status")).toHaveTextContent("17 pulls");
+ fireEvent.click(screen.getByText("Security passed"));fireEvent.click(screen.getByRole("button",{name:"Pay $17 · 17 pulls for Notion"}));await flush();
+ expect(mocks.buy).toHaveBeenCalledWith({data:expect.objectContaining({pack:"custom",customCents:1700})});
+});
