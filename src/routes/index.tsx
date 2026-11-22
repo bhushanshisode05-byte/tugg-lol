@@ -11,6 +11,7 @@ import { Rope, usd } from "@/components/tugg/Rope";
 import { RoundStatus } from "@/components/tugg/RoundStatus";
 import { cadenceSummary, pullersText } from "@/lib/rounds";
 import { useLive } from "@/hooks/use-live";
+import { trendingRopes } from "@/lib/home-ropes";
 
 const homeQuery = queryOptions({ queryKey: ["home"], queryFn: () => getHome() });
 const recentQuery = queryOptions({ queryKey: ["recent-pulls"], queryFn: () => getRecentPulls() });
@@ -84,6 +85,13 @@ function Home() {
   });
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
+  // Render the same calm state on server and hydration; refresh age labels without a reload.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const featured = useMemo(() => {
     const f = data.matchups.filter(
@@ -93,10 +101,7 @@ function Home() {
     return [...pool].sort((a, b) => total(b) - total(a))[0];
   }, [data.matchups]);
 
-  const list = data.matchups
-    .filter((m) => cat === "All" || m.category === cat)
-    .filter((m) => !q || m.title.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => total(b) - total(a));
+  const list = trendingRopes(data.matchups, cat, q);
 
   const cadence = cadenceSummary(data.matchups.flatMap((m) => (m.round ? [m.round.round_length] : [])));
 
@@ -173,7 +178,7 @@ function Home() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((m) => (
-            <TrendingRopeCard key={m.id} m={m} siteUrl={data.siteUrl} />
+            <TrendingRopeCard key={m.id} m={m} siteUrl={data.siteUrl} now={now} />
           ))}
         </div>
         {!list.length && (

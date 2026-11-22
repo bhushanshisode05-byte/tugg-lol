@@ -1,5 +1,9 @@
 # Tugg roadmap
 
+## Homepage rope ordering (2026-11-22, do not publish)
+- [x] Rank only Trending ropes by open-round totals descending, then creation date descending; preserve featured selection, filters and shared reads.
+- [x] Add a muted text NEW marker for ropes younger than 48 hours; 40 targeted tests pass; desktop/phone checks confirm all 43 ropes, seven NEW labels, filters/search, unchanged featured selection and no overflow or page errors. Nothing published.
+
 ## Trend scout and manual post drafts (do not publish)
 - [x] Add private drafts, disabled flag, bounded leased daily scouting on the existing 01:05 UTC schedule, shared moderated owner creation, and five-candidate voice judging.
 - [x] Add owner mobile queue with copy, manual status changes, source and share-card links; caps/access/validation/no-posting tests and real database rollback checks pass; 687 tests passed, one skipped.

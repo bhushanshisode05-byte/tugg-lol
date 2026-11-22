@@ -7,6 +7,7 @@ import { RoundStatus } from "./RoundStatus";
 import { cardVersion, matchupCardInput } from "@/lib/og/card";
 import { openRoundsPulled, pullersText } from "@/lib/rounds";
 import type { Matchup } from "@/lib/tugg.functions";
+import { isNewRope } from "@/lib/home-ropes";
 
 export const toShare = (m: Matchup) => ({
   slug: m.slug,
@@ -29,12 +30,15 @@ export function OpenRoundsPulled({ matchups }: { matchups: Matchup[] }) {
 }
 
 /** One trending rope on the home page. Every period word comes from this matchup's own open round. */
-export function TrendingRopeCard({ m, siteUrl }: { m: Matchup; siteUrl: string }) {
+export function TrendingRopeCard({ m, siteUrl, now = null }: { m: Matchup; siteUrl: string; now?: number | null }) {
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary" data-rope-card>
       <Link to="/m/$slug" params={{ slug: m.slug }} className="block">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          <span>{m.category}</span>
+          <span className="flex flex-wrap items-center gap-x-2">
+            <span>{m.category}</span>
+            {now !== null && isNewRope(m.created_at, now) && <span className="font-mono">NEW</span>}
+          </span>
           {addedByTugg(m.source) && <span>Added by Tugg</span>}
         </div>
         <h3 className="mt-1 text-xl font-extrabold">
