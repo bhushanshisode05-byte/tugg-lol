@@ -136,11 +136,11 @@ it("a dismissal does not carry into the next checkout", async () => {
 });
 
 it("Other defaults to 10 and shows exact 17 pulls, with accessible amount errors",async()=>{
- render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} status="ready" message="" onRetry={()=>{}}/>);
+ render(<ImmediatePullPanel sides={sides} slug="notion-vs-obsidian" paused={false} onPulled={pulled} status="ready" message="" onRetry={()=>{}} customAvailable/>);
  fireEvent.click(screen.getByRole("button",{name:/Other/}));
  const input=screen.getByLabelText("Amount in US dollars");
  expect(input).toHaveValue(10);expect(input).toHaveAttribute("inputmode","numeric");
- for (const value of ["4","0","-1","1001","15.5",""]) {
+ for (const value of ["4","0","-1","1001","7.50","15.5",""]) {
   fireEvent.change(input,{target:{value}});
   expect(input).toHaveAttribute("aria-invalid","true");
   expect(screen.getByRole("alert")).toHaveTextContent("Enter a whole dollar amount from $5 to $1,000.");

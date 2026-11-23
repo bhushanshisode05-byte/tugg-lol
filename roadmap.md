@@ -1,8 +1,10 @@
 # Tugg roadmap
 
 ## Custom single-side pulls (2026-11-22, do not publish)
-- [ ] Add explicit PWYW catalog, server and SQL amount guards, confirmed-money application, Other input and regression tests; keep fixed bundles and basket unchanged.
-- [ ] Real custom checkout verification waits for sandbox custom product and a successful payment/Turnstile flow; do not use a live payment for testing.
+- [x] Add explicit PWYW catalog, server and SQL $5–$1,000 whole-dollar guards, exact checkout cart cents, confirmed-money application, Other input and regression tests; fixed bundles and basket unchanged. Main implementation was committed on 2026-11-22.
+- [x] Close out on 2026-11-23: hide Other unless checkout is ready and the current environment has its custom product; never fall back to a live product in test mode. Restored temporary picture fixtures; full suite 732 passed, 1 existing opt-in live moderation test skipped. Preview build OK.
+- [x] Verify the real phone-width preview (390×844): numeric keyboard hint, 17/5/1000 live pull counts, inline errors for 4/1001/7.50, keyboard Enter/Tab selection, labelled field and announced errors; no overflow or page errors. No checkout request, payment, secret change or publication.
+- [ ] Provider end-to-end verification is deliberately excluded from this close-out: owner must create the sandbox PWYW product and supply DODO_TEST_PRODUCT_PULL_CUSTOM before separately authorizing a test checkout; successful Turnstile and webhook delivery also required. No live charge. Physical phone keyboard and actual screen-reader output remain unverified.
 
 ## Homepage rope ordering (2026-11-22, do not publish)
 - [x] Rank only Trending ropes by open-round totals descending, then creation date descending; preserve featured selection, filters and shared reads.

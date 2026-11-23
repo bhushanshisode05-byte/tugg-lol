@@ -54,3 +54,18 @@ it("a failed status call shows a neutral retry state and never claims checkout i
   await waitFor(() => expect(payButton()).not.toBeDisabled());
   expect(mocks.getPaymentStatus).toHaveBeenCalledTimes(2);
 });
+
+it("missing custom product hides Other without disabling the fixed bundles", async () => {
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "sandbox", provider: "dodo", ready: true, customAvailable: false, basket: false, paused: false, message: "" });
+  panel();
+  fireEvent.click(screen.getByText("Security passed"));
+  await waitFor(() => expect(payButton()).toBeEnabled());
+  expect(screen.queryByRole("button", { name: /Other/ })).toBeNull();
+});
+
+it("configured custom product exposes Other through the real pull panel", async () => {
+  mocks.getPaymentStatus.mockResolvedValue({ environment: "live", provider: "dodo", ready: true, customAvailable: true, basket: false, paused: false, message: "" });
+  panel();
+  fireEvent.click(await screen.findByRole("button", { name: /Other/ }));
+  expect(screen.getByLabelText("Amount in US dollars")).toHaveValue(10);
+});

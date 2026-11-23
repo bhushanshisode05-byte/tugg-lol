@@ -17,5 +17,5 @@ export function PullPanel(props: { matchupId: string; title: string; sides: Side
   // PULL_BASKET_ENABLED (server-side, Dodo only) switches to the basket; otherwise the fixed 5/10/25 bundles.
   if (configuration?.basket) return <BasketPullPanel {...props} paused={paused} status={status} message={message} onRetry={load}/>;
   const { sides, slug, onPulled } = props;
-  return <ImmediatePullPanel sides={sides} slug={slug} onPulled={onPulled} paused={paused} provider={configuration?.provider || "dodo"} status={status} message={message} onRetry={load}/>;
+  return <ImmediatePullPanel sides={sides} slug={slug} onPulled={onPulled} paused={paused} provider={configuration?.provider || "dodo"} customAvailable={status === "ready" && !!configuration?.customAvailable} status={status} message={message} onRetry={load}/>;
 }

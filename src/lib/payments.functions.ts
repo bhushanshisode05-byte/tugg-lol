@@ -17,7 +17,8 @@ export const getPaymentStatus = createServerFn({ method: "GET" }).handler(async 
   } catch (e) {
     message = e instanceof Error ? e.message : "Checkout is unavailable. No payment has been taken.";
   }
-  return { environment: config().paymentsEnv, provider: config().paymentProvider, pullMode: config().pullMode, ready, message, paused: config().pausePulls, basket: basketActive() };
+  const customAvailable = ready && config().paymentProvider === "dodo" && !basketActive() && !!config().dodo.products["pull_custom"];
+  return { environment: config().paymentsEnv, provider: config().paymentProvider, pullMode: config().pullMode, ready, message, paused: config().pausePulls, basket: basketActive(), customAvailable };
 });
 export const getWallet = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
