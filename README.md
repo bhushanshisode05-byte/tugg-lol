@@ -1,26 +1,35 @@
-# Tugg Lol
+# Tugg
 
-Implement exactly the screenshot and nothing else
+**Pay to pull. Pick a side.**
 
-This project was built with [Lovable](https://lovable.dev).
+A global rivalry rope. Every dollar drags it toward your team. Rounds close, winners get a badge, and every dollar ever pulled stays on the all-time score.
 
-**Live app**: https://tugg-lol.lovable.app
+No prizes. No payouts. No betting. Just bragging rights.
 
-## Build with Lovable
+**→ [tugg.lol](https://tugg.lol)**
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9033a0bc-640c-42ce-a129-772699249f67).
+## How it works
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+Pick a rivalry — Messi vs Ronaldo, Arsenal vs Dortmund, Pizza vs Burgers. Pick a side. Pull.
+
+- $1 per pull, in bundles of 5, 10, 25, or any amount you choose
+- Each dollar moves the rope toward your side
+- Rounds run daily or weekly and close at 00:00 UTC
+- Whoever's ahead when the round closes takes it
+- All-time scores never reset
+
+Anyone can create a rivalry. Trending ones are generated automatically from what people are arguing about.
+
+## Stack
+
+React, TypeScript and TanStack Start on Cloudflare Workers, with Postgres and row-level security on Supabase. Payments run through Dodo Payments as merchant of record; transactional email through Resend.
+
+Built with [Lovable](https://lovable.dev).
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+git clone https://github.com/bhushanshisode05-byte/tugg-lol.git
+cd tugg-lol
+npm install
 npm run dev
-```
