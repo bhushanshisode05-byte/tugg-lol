@@ -36,7 +36,7 @@ const text = (el: HTMLElement) => (el.textContent ?? "").toLowerCase();
 describe("home rope cards word the period from the matchup's own round", () => {
   it("a weekly matchup card says this week and never today", () => {
     const { container } = render(<TrendingRopeCard m={matchup("weekly")} siteUrl="https://tugg.lol" />);
-    expect(text(container)).toContain("no pulls yet this week");
+    expect(text(container)).toContain("open. first pull takes the lead.");
     expect(text(container)).toContain("this week's round");
     expect(text(container)).not.toContain("today");
   });
@@ -69,12 +69,12 @@ describe("matchup and rivalry sentences", () => {
   });
   it("an unknown length (no open round) is neutral, never a guessed daily period", () => {
     const s = roundSentence({ ...matchup("weekly"), round: null }, "2026-11-17");
-    expect(s).toBe("As of 2026-11-17 (UTC), the current round has no pulls yet.");
+    expect(s).toBe("As of 2026-11-17 (UTC): Open. First pull takes the lead.");
     for (const f of [currentRound, CurrentRound, roundPeriod, roundEnds, roundCloses]) {
       expect(f(null).toLowerCase()).not.toMatch(/\btoday\b|this week/);
       expect(f(undefined)).toBe(f(null));
     }
-    expect(pullersText(null, 0)).toBe("No pulls yet this round");
+    expect(pullersText(null, 0)).toBe("Open. First pull takes the lead.");
     expect(roundCloses("weekly")).toBe("weekly round ends on Monday at 00:00 UTC");
     expect(roundCloses("daily")).toBe("daily round ends at 00:00 UTC");
   });

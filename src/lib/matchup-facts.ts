@@ -1,7 +1,7 @@
 /** Browser-safe, quotable sentences about a matchup's live round and its never-resetting history. */
 import { usd } from "@/components/tugg/Rope";
 import type { Matchup, Side } from "@/lib/tugg.functions";
-import { closedRoundName, currentRound, type RoundLength } from "@/lib/rounds";
+import { EMPTY_ROUND_TEXT, closedRoundName, currentRound, type RoundLength } from "@/lib/rounds";
 
 type M = Pick<Matchup, "sides" | "round" | "history">;
 
@@ -41,7 +41,7 @@ export function roundSentence(m: M, today: string) {
   const noun = currentRound(roundLength(m));
   if (a === 0 && b === 0) {
     const last = lastRound(m);
-    return `As of ${today} (UTC), ${noun} has no pulls yet.${last ? ` Last round (${last.name}): ${last.result}.` : ""}`;
+    return `As of ${today} (UTC): ${EMPTY_ROUND_TEXT}${last ? ` Last round (${last.name}): ${last.result}.` : ""}`;
   }
   if (a === b) return `As of ${today} (UTC), ${A.name} and ${B.name} are tied at ${usd(a)} in ${noun}.`;
   const [lead, trail, hi, lo] = a > b ? [A, B, a, b] : [B, A, b, a];

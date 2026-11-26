@@ -55,9 +55,11 @@ export const roundCloses = (length: KnownLength) =>
     : length === "daily"
       ? "daily round ends at 00:00 UTC"
       : "round ends (Monday 00:00 UTC for weekly rounds, 00:00 UTC for daily ones)";
-/** "12 pullers this week" / "1 puller today" / "No pulls yet this week". */
+export const EMPTY_ROUND_TEXT = "Open. First pull takes the lead.";
+
+/** "12 pullers this week" / "1 puller today" / the empty-round invitation. */
 export const pullersText = (length: KnownLength, pullers: number) =>
-  pullers > 0 ? `${pullers} puller${pullers === 1 ? "" : "s"} ${roundPeriod(length)}` : `No pulls yet ${roundPeriod(length)}`;
+  pullers > 0 ? `${pullers} puller${pullers === 1 ? "" : "s"} ${roundPeriod(length)}` : EMPTY_ROUND_TEXT;
 
 /**
  * Money in the rounds that are open right now, worded from those rounds' own lengths: "this week" when every open

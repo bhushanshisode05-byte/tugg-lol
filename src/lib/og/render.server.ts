@@ -9,7 +9,7 @@ import { ropePosition, usd } from "@/components/tugg/Rope";
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
 import { emojiArtUrl, emojiCode } from "@/lib/emoji-art";
 import { SITE_COLORS } from "./theme";
-import { roundPeriod, type RoundLength } from "@/lib/rounds";
+import { EMPTY_ROUND_TEXT, roundPeriod, type RoundLength } from "@/lib/rounds";
 
 // Live and result card palette: the site's real tokens from ./theme, the same single source the pull card reads.
 const BG = SITE_COLORS.background;
@@ -327,7 +327,7 @@ export async function renderCard(input: CardInput, size: CardSize): Promise<Uint
 
   if (history) {
     drawHistory(r, history, A, B, m, W, inner);
-    const cta = fit(display, `Be the first to pull ${roundPeriod(len)} →`, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
+    const cta = fit(display, EMPTY_ROUND_TEXT, m.centered ? inner : inner * 0.68, m.pull, m.pull * 0.55);
     text(r, display, cta.text, m.centered ? (W - cta.w) / 2 : m.pad, m.pullY, cta.size, hex(LIME));
     const bw = width(mono, "tugg.lol", m.brand);
     text(r, mono, "tugg.lol", m.centered ? (W - bw) / 2 : W - m.pad - bw, m.brandY, m.brand, hex(FG));
@@ -397,7 +397,7 @@ function drawHistory(r: Raster, h: NonNullable<CardInput["history"]>, A: string,
   const names = [A, B];
   const last = h.last;
   const line1 = !last
-    ? "First round · no pulls yet"
+    ? "First round"
     : last.winner === null
       ? "Last round: no pulls"
       : `Last round: ${names[last.winner]} won ${usd(Math.max(last.a, last.b))} to ${usd(Math.min(last.a, last.b))}${last.tie ? " (tie-break)" : ""}`;

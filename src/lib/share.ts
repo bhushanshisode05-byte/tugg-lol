@@ -1,5 +1,6 @@
 import { usd } from "@/components/tugg/Rope";
 import { matchupImagePath, pullImagePath, type CardSize } from "@/lib/og/card";
+import { EMPTY_ROUND_TEXT } from "@/lib/rounds";
 
 export type ShareInput = {
   slug: string;
@@ -34,8 +35,8 @@ function emptyRoundText(m: ShareInput) {
   const [a, b] = m.sides;
   const ta = a?.all_time_cents ?? 0, tb = b?.all_time_cents ?? 0;
   return ta + tb > 0
-    ? `${m.title} on Tugg: a new round is open. All-time: ${a?.name} ${usd(ta)} vs ${b?.name} ${usd(tb)}. Be the first to pull.`
-    : `${m.title} on Tugg: a new round is open with no pulls yet. Be the first to pull.`;
+    ? `${m.title} on Tugg: ${EMPTY_ROUND_TEXT} All-time: ${a?.name} ${usd(ta)} vs ${b?.name} ${usd(tb)}.`
+    : `${m.title} on Tugg: ${EMPTY_ROUND_TEXT}`;
 }
 
 export function shareLinks(text: string, url: string) {

@@ -19,7 +19,7 @@ import { RecentPulls } from "@/components/tugg/RecentPulls";
 import { cardVersion, matchupCardInput, matchupImagePath } from "@/lib/og/card";
 import { AllTimeScore } from "@/components/tugg/AllTimeScore";
 import { allTimeSentence, isEmptyRound, roundLength, roundSentence } from "@/lib/matchup-facts";
-import { CurrentRound, closedRoundName, currentRound, pullersText, roundEnds, roundPeriod } from "@/lib/rounds";
+import { CurrentRound, EMPTY_ROUND_TEXT, closedRoundName, currentRound, pullersText, roundEnds, roundPeriod } from "@/lib/rounds";
 
 const mq = (slug: string) =>
   queryOptions({ queryKey: ["matchup", slug], queryFn: () => getMatchup({ data: { slug } }) });
@@ -178,7 +178,7 @@ function MatchupPage() {
           <div className="mt-2 grid grid-cols-3 items-end">
             <SideTotal side={A} cents={a} quiet={empty} />
             <p className="text-center text-sm text-muted-foreground">
-              {empty ? `No pulls yet ${roundPeriod(len)}. Be the first.` : pullersText(len, m.round?.pullers ?? 0)}
+              {empty ? EMPTY_ROUND_TEXT : pullersText(len, m.round?.pullers ?? 0)}
             </p>
             <SideTotal side={B} cents={b} right quiet={empty} />
           </div>

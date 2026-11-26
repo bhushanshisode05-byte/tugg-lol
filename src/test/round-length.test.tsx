@@ -146,12 +146,12 @@ describe("empty round on the page and in share text", () => {
   it("leads with the previous round and the all-time score, never two zeros", () => {
     const m: any = emptyWeek();
     const s = roundSentence(m, "2026-11-16");
-    expect(s).toBe("As of 2026-11-16 (UTC), this week's round has no pulls yet. Last round (ended 2026-11-12): Notion won $25 to $5.");
+    expect(s).toBe("As of 2026-11-16 (UTC): Open. First pull takes the lead. Last round (ended 2026-11-12): Notion won $25 to $5.");
     expect(s).not.toContain("$0");
     expect(recordText(m)).toBe("Notion 1 — Obsidian 0 over 15 rounds");
     expect(allTimeSentence(m)).toBe("All-time score (never resets): rounds won Notion 1 — Obsidian 0 over 15 rounds; Notion $25 and Obsidian $5 pulled all-time.");
     expect(shareText({ slug: "n", title: "Notion vs Obsidian", sides: notion, a: 0, b: 0 })).toBe(
-      "Notion vs Obsidian on Tugg: a new round is open. All-time: Notion $25 vs Obsidian $5. Be the first to pull.",
+      "Notion vs Obsidian on Tugg: Open. First pull takes the lead. All-time: Notion $25 vs Obsidian $5.",
     );
   });
   it("a live round still reads as the live score", () => {

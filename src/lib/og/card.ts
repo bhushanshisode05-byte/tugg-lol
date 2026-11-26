@@ -1,6 +1,6 @@
 /** Shared (browser-safe) share-image definitions. */
 import { SIDE_IMAGES_ENABLED } from "@/lib/feature-flags";
-import { weekStart } from "@/lib/rounds";
+import { EMPTY_ROUND_TEXT, weekStart } from "@/lib/rounds";
 
 export const CARD_SIZES = {
   story: [1080, 1920],
@@ -174,7 +174,7 @@ export function cardVersion(input: CardInput) {
   const sideKey = (s: CardSide) => [s.name, s.emoji, s.color, s.image_id ?? "", s.image_status ?? ""].join("\u0001");
   const base = [CARD_RENDER_VERSION, input.kind, input.day, sideKey(input.a), sideKey(input.b), input.winner ?? "", input.pullers ?? ""];
   // Weekly rounds and empty-round history are appended only when present, so existing daily URLs keep their tokens.
-  const extra = [input.period ?? "", input.history ? JSON.stringify(input.history) : ""];
+  const extra = [input.period ?? "", input.history ? `${JSON.stringify(input.history)}\u0001${EMPTY_ROUND_TEXT}` : ""];
   const fingerprint = fnv((extra.some(Boolean) ? [...base, ...extra] : base).join("\u0002"));
   return `${Math.round(input.a.cents)}-${Math.round(input.b.cents)}-${fingerprint}`;
 }
